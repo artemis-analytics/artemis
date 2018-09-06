@@ -1,3 +1,3 @@
-# artemis
+# Artemis
 
-Artemis state machine -- a processing framework for administrative data powered by Apache Arrow&trade.  
+Artemis -- stateful processing framework for administrative data powered by Apache Arrow™.  
