@@ -28,7 +28,8 @@ class PropertyTestCase(unittest.TestCase):
     def setUp(self):
         
         self.mydummy = self.DummyClass()
-    
+        self.mydummy2 = self.DummyClass(a_property='dynamic')
+
     def tearDown(self):
         pass
 
@@ -36,9 +37,9 @@ class PropertyTestCase(unittest.TestCase):
         assert(self.mydummy.static_prop == 'static')
     
     def test_property(self):
-        self.mydummy2 = self.DummyClass(a_property='dynamic')
+        
         print(self.mydummy2.__dict__)
-        assert(self.mydummy2.a_property == 'dynamic')
+        assert(self.mydummy2.properties.a_property == 'dynamic')
 
 
 

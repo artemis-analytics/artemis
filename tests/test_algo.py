@@ -18,7 +18,10 @@ class AlgoTestCase(unittest.TestCase):
     
     def setUp(self):
         self.testalgo = DummyAlgo1("dummyalgo", myproperty='ptest')
+        print(self.testalgo.__dict__)
         self.testalgo.initialize()
+        print(self.testalgo.__dict__)
+        print(self.testalgo.properties.myproperty)
     
     def tearDown(self):
         pass

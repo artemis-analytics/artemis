@@ -23,11 +23,11 @@ from collections import OrderedDict
 from transitions import Machine
 
 # Framework
-from core.properties import Properties
-from core.steering import Steering
+from artemis.core.properties import Properties
+from artemis.core.steering import Steering
 
 # Data generators
-from generators.generators import GenCsvLike
+from artemis.generators.generators import GenCsvLike
 
 
 class Artemis():
