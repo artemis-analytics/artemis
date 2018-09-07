@@ -40,15 +40,10 @@ variables:
   KUBERNETES_VERSION: 1.9.3
   HELM_VERSION: 2.8.1
 
-  PROJECT_NAME: stcdatascience/adds
+  PROJECT_NAME: stcdatascience/artemis
 
 stages:
   - test
-  - login
-  - build
-  - review
-  - cleanup
-  - deploy
 
 test:
   stage: test
@@ -61,40 +56,6 @@ test:
   only:
     - branches
 
-login:
-  stage: login
-  image: microsoft/azure-cli:2.0.31
-  variables:
-    DOCKER_DRIVER: overlay2
-  script:
-    - az login --service-principal -u "${CLIENT_ID}" -p "${CLIENT_SECRET}" -t "${TENANT_ID}"
-    - az account set -s "${SUBSCRIPTION_ID}"
-    - export ACR=`az acr show -o json -n datasci -g Containers-Management-rg`
-    - echo "${ACR}" > acr.txt
-  artifacts:
-    paths: [acr.txt]
-  only:
-    refs:
-      - branches
-      - tags  
-
-build:
-  stage: build
-  image: sylus/gitlab-ci
-  services:
-     - docker:stable-dind
-  dependencies:
-     - login
-  variables:
-    DOCKER_DRIVER: overlay2
-  script:
-    - echo "Building ${PROJECT_NAME} test runner"
-    - setup_docker
-    - build
-    - cat acr.txt
-  only:
-    - branches
-    - tags  
 
 # ---------------------------------------------------------------------------
 
