@@ -10,7 +10,7 @@
 Steering 
 """
 
-from algo import AlgoBase
+from .algo import AlgoBase
 
 
 class Steering(AlgoBase):

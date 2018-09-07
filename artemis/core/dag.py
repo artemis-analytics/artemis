@@ -22,7 +22,7 @@ from toposort import toposort, toposort_flatten
 from collections import OrderedDict, deque
 from functools import reduce as _reduce
 
-from tree import Tree, Node
+from .tree import Tree, Node
 
 
 class Sequence():
@@ -238,7 +238,7 @@ class Menu():
     def __init__(self, name):
         self._name = name
         self._chains = []
-        self._sequence = OrderedDict() # Should be the menu data structure, an iterable actually with lookup to get algos
+        self._sequence = OrderedDict()  # Should be the menu data structure, an iterable actually with lookup to get algos
         self._seq_tree = Tree()
     
     @property
