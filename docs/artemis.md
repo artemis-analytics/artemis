@@ -2,36 +2,29 @@
 
 Artemis is a generic administrative data processing framework powered by Apache Arrow. 
 The Artemis prototype presented in this document is a python data processing system 
-with the following objectives: 
+with the following development goals: 
 
-* Demonstrate the use of the Apache Arrow standard data model for tabular data.
+* Demonstrate the use of the Apache Arrow standard data format for tabular data.
 * Demonstrate the ability to represent generic business processes in the form of directed 
 acyclic graphs which can be executed in-memory to transform tabular data efficiently.
 * Demonstrate the use of a histogram-based data validation and quality assurance framework.
 
-The design decisions for Artemis must uphold data scientists core requirements for performing 
-rigourous data analysis and the requirements defined by the Common Statistical Production Achitecture (CSPA). 
+The Artemis design decisions presented here must uphold data scientists core requirements for performing 
+rigourous data analysis and align with capabilities defined in the Common Statistical Production Achitecture (CSPA). 
 Furthermore, design choices align with the Apache Arrow objective to provide a development platform for data science systems
-which decouples the vertical integration of data processing components:
-
-* Job configuration and algorithm scheduling (Metadata management)
-* I/O and deserialization (Data management)
-* In-memory storage (Data format standardization)
-* Computing engine (Code re-use)
+which decouples the vertical integration of data processing components: configuration, I/O, in-memory storage, computational
+engine, and front-end API.
 
 ## Introduction
 
 The use of non-traditional administrative data for Official Statistics has a several notable features:
 
-* Data is closest to the true nature of demographics.
-* Preservation of the raw state of the data for analysts is required to extract the information.
+* Data is closest to the true nature of population demographics.
+* Preservation of the raw state of the data for analysts is required to extract the relevant and accurate statistics.
 * Data access patterns differ from traditional survey data.
 
-Traditional sampling survey defines in advance the data which is collected,
-thus facilitating the creation of a data model with a schema that can be enforced on write.
-
-The challenge presented to Official Statistics agencies is how to ingest, store and process adminstrative while 
-preserving the raw nature of the data for analysts. 
+The challenge facing NSAs is how to ingest, store and process adminstrative data while 
+preserving the raw state of the data for analysts. 
 This challenge is significantly inhibited by a lack
 of common data format with which to record the data and to analyze the data in-memory. 
 
@@ -42,18 +35,17 @@ of common data format with which to record the data and to analyze the data in-m
 * Ingestable data formats, such as csv, may be convenient but are not efficient on disk or in-memory.
 * Data conversions result in loss of information, significant performance overhead, and sustain fractured data architectures systems.
 
-Analytical workloads for administrative data sources which reside in a data store (filesystem, distributed datastore, object store, etc...) 
-will follow a pattern of write once, read many times. Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
-business needs. Analytical queries will have common data access patterns such as 
-
-* reading subsets of columns for large number of rows at a time.
-* accessing elements in adjacent columns in succession. 
-
-These data access patterns can benefit from column oriented table structures over traditional row-oriented access patterns which are more commonly found
-in traditional databases.
+Analytical workloads for administrative data sources which reside in a data store 
+(filesystem, distributed datastore, object store, etc...) will follow a pattern of write once, read many times. 
+Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
+business needs. Analytical queries will have common data access patterns such as reading subsets of columns for 
+large number of rows at a time or accessing elements in adjacent columns in succession. 
+The workload and access patterns can benefit from column oriented table structures over traditional 
+row-oriented access patterns which are more commonly found in traditional databases.
 
 Common data format which defines data primitive types that occur in data science, social science and business data will ensure that the
-raw state of the data can be preserved when consumed by organizations. 
+raw state of the data can be preserved when consumed by organizations. Data organized in a column-oriented will result in improved
+computational and I/O performance.
 
 ### Administrative Data Preprocessing and Processing Requirements
 
@@ -62,11 +54,8 @@ Description of current ADD processing.
 ### Data standardization
 
 Open standards allow for systems to directly communicate with each other.
-Direct communication using standard protocols and data formats 
-* simplifies system architecture
-* reduces ecosystem fragmentation
-* improves interoperability across processes. 
-* eliminates dependency on proprietary systems.
+Direct communication using standard protocols and data formats simplifies system architecture,
+ reduces ecosystem fragmentation, improves interoperability across processes, and eliminates dependency on proprietary systems.
 Most importantly, common data formats faciliate code reuse, sharing, effective collaboration 
 and data exchange, resulting in algorithms and libraries which are supported by a large open community.  
 
@@ -89,27 +78,27 @@ fortran-compatible array which allows for re-use of linear algrabra routines, pr
 zero-overhead memory sharing to/from various libraries and processes.
 
 The data science and social science community typically deal with tabular data which
-manifests itself in various forms, most commonly refered to as DataFrames. The dataframe
-concept and the semantics found in various systems are common to the various DataFrames. 
+manifests itself in various forms, most commonly refered to as *DataFrames*. The *DataFrame*
+concept and the semantics found in various systems are common to the various *DataFrames*. 
 However, the underlying byte-level memory represention varies across systems. The difference in
 the in-memory representation prevents sharing of algorithmic code across various systems and 
-programming languages. Effectively, no standard exists for in-memory
-tabular data. Common examples of tabular data in-use today by data and social scientists:
+programming languages. No standard exists for in-memory
+tabular data, however, tabular is ubiquitious  Tabular data is commonly found in SQL, 
+the "Big Data" community developed Spark and Hive, and In-memory *DataFrames* are found across popular data science languages.
+R, python and Julia all have a *DataFrame* in-memory tabular data which is commonly used by analysts.
 
-* Tabular data is commonly found in SQL.
-* Big data community developed Spark and Hive.
-* In-memory data frame in data science languages: 
-python has pandas, R has data.table, and Julia has jil.table.
-
-Tha Apache Arrow project solves the non-portable dataframe problem by
+Tha Apache Arrow project solves the non-portable *DataFrame* problem by
 providing a cross-language development platform for in-memory data which specifies a 
 standardized language-independent columnar memory format for flat and hierarchical data, 
 organized for efficient analytic operations on modern hardware. Arrow provides computational 
 libraries and zero-copy streaming messaging and interprocess communication. The key benefits of Arrow:
 
-Fast – enables execution engines to take advantage of the latest SIMD (Single input multiple data) operations in modern processes, for native vectorized optimization of analytical data processing. Columnar layout is optimized for data locality for better performance. The Arrow format supports zero-copy reads for fast data access without serialization overhead.
+Fast – enables execution engines to take advantage of the latest SIMD (Single input multiple data) operations in modern processes, 
+for native vectorized optimization of analytical data processing. Columnar layout is optimized for data locality for better performance. 
+The Arrow format supports zero-copy reads for fast data access without serialization overhead.
 
-Flexible – Arrow acts as a high performance interface between various systems and supports a wide variety of industry specific languages, including Python, C++ with Go in progress.
+Flexible – Arrow acts as a high performance interface between various systems and supports a wide variety of industry specific languages, 
+including Python, C++ with Go in progress.
 
 Standard – Apache Arrow is backed by key developers from major open-source projects.
 
@@ -138,6 +127,11 @@ stack that is vertically integrated, providing public APIs for each component:
 * In-memory storage
 * Compute engine
 * Front-end API
+
+* Job configuration and algorithm scheduling (Metadata management)
+* I/O and deserialization (Data management)
+* In-memory storage (Data format standardization)
+* Computing engine (Code re-use)
 
 where the latter front-end API is really up to the users who are developing Arrow powered
 data science systems.
@@ -347,7 +341,8 @@ starting point.
 * Histogram data store and user-defined histograms.
 * Reading/writing histograms and post-processing for job and data validation. 
 * Standalone post-processing application.
-
+* Logging
+* Error and Status Handling
 
 ## Dependencies
 
