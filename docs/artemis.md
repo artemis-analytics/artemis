@@ -113,7 +113,8 @@ Flexible – Arrow acts as a high performance interface between various systems 
 
 Standard – Apache Arrow is backed by key developers from major open-source projects.
 
-Arrow defines language agnostic column-oriented data structures for array data which includei (add reference to Data Format Confluence):
+Arrow defines language agnostic column-oriented data structures for array data which include 
+(see the Columnar Format 1.0 Milestone on Arrow Confluence https://cwiki.apache.org/confluence/display/ARROW/Columnar+Format+1.0+Milestone):
 
 * Fixed-length primitive types: numbers, booleans, date and times, fixed size binary, decimals, and other values that fit into a given number
 * Variable-length primitive types: binary, string
@@ -141,8 +142,8 @@ stack that is vertically integrated, providing public APIs for each component:
 where the latter front-end API is really up to the users who are developing Arrow powered
 data science systems.
 
-![Arrow Shared][img-arrow-shared]
-![Arrow Copy][img-arrow-copy]
+![Arrow Shared][arrow-shared.png]
+![Arrow Copy][arrow-copy.png]
 
 ## Artemis Prototype
 
@@ -321,25 +322,29 @@ starting point.
 * Job configuration data model. Reading and writing to/from JSON file format.
 * State definitions, transitions, and trigger functions.
 * Event loop for handling data requests and looping over partitioned data sets.
-* In-memory model for data provenance.
-* Data class for holding input raw data and Arrow tabular data formats.
+* In-memory model for data provenance (*Tree*, *Node*).
+* Data class (*Element*) for holding input raw data and Arrow tabular data formats.
 * Pre-processing algorithm using Arrow type-inference engine for data conversion, metadata extraction and validation.
 * Finalization algorithm Arrow table serialization from data provenance model leave nodes.
 * User-defined properties for algorithmic configuration.
 * Global job histograms and job metrics (timers, counters).
 * Histogram data store and user-defined histograms.
-* Reading/writing histograms and post-processing for job and data validation. Standalone post-processing application.
+* Reading/writing histograms and post-processing for job and data validation. 
+* Standalone post-processing application.
 
+### Milestone
+Artemis 0.1 release -- Preprocess algorithm on tax dataset to confirm record layout and convert data to Arrow and store in
+a columnar data format (Parquet or serialized Arrow tables).
 
 ## Dependencies
 
-* Apache Arrow for Python - [https://pypi.org/project/pyarrow/|pyarrow]
-* Topological Sorting algorithm for user-defined business processes - [https://pypi.org/project/toposort/|toposort]
-* Python State Machine - [https://pypi.org/project/transitions/|transitions]
-* Python Histogram for Data analysis - [https://pypi.org/project/histbook/|histbook]
+* Pyarrow - Apache Arrow for python (https://pypi.org/project/pyarrow/)
+* Toposort - topological sorting algorithm (https://pypi.org/project/toposort/)
+* Transitions - python state machine (https://pypi.org/project/transitions/)
+* Histbook - python histogram for aata analysis (https://pypi.org/project/histbook/)
 
 ## References:
-
+* https://cwiki.apache.org/confluence/display/ARROW/Columnar+Format+1.0+Milestone
 * [Ursa Labs](https://ursalabs.org/)
 * http://wesmckinney.com/blog/announcing-ursalabs/
 * https://mapr.com/blog/evolving-parquet-self-describing-data-format-new-paradigms-consumerization-hadoop-data/
