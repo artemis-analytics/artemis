@@ -333,10 +333,10 @@ starting point.
 
 ## Dependencies
 
-[pyarrow|https://pypi.org/project/pyarrow/
-[toposort|https://pypi.org/project/toposort/]
-[transitions|https://pypi.org/project/transitions/]
-[histbook|https://pypi.org/project/histbook/]
+* Apache Arrow for Python - [https://pypi.org/project/pyarrow/|pyarrow]
+* Topological Sorting algorithm for user-defined business processes - [https://pypi.org/project/toposort/|toposort]
+* Python State Machine - [https://pypi.org/project/transitions/|transitions]
+* Python Histogram for Data analysis - [https://pypi.org/project/histbook/|histbook]
 
 ## References:
 
