@@ -180,15 +180,13 @@ Artemis framework design features
 * Automatic collection of processing metrics.
 * User-defined histograms and data tables.
 
-Artemis framework defines a common set of base classes for user defined
-algorithms and tools to interact with data. User-defined 
-algorithms inherit methods which are invoked by the Artemis application. Artemis manages the 
-the data processing event loop, provides data to the algorithms, and handles data serialization
+Artemis framework defines a common set of base classes for user defined *Chains* as 
+an ordered collection of algorithms and tools which transform data. User-defined 
+algorithms inherit methods which are invoked by the Artemis application, such that the *Chains* are managed by a *Steering* algorithm. 
+Artemis manages the the data processing *Event Loop*, provides data to the algorithms, and handles data serialization
 and job finalization.
 
-Artemis Diagram
-
-Input -> Data Handler -> Data Event Loop -> Pipelines and Outputs
+![Artemis Control Flow](ArtemisControlFlow.png)
 
 ### State Machine
 
