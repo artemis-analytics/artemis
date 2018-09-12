@@ -190,45 +190,41 @@ and job finalization.
 
 ### State Machine
 
-State machines are common in event-driven data processing systems. Computer users are familiar 
-with Graphical User Interfaces which respond to mouse clicks on the computer screen.
-Certain clicks of a mouse cause the application to transition to a different
-state (e.g., click open to Open a File). From physics, common of example of states and transitions
-is water which states gas, liquid, solid. Water transitions from states due
-to changes in temputure, volume and pressure, which we refer to as triggers. 
-
-Job control flow is implemented as a state machine to provide deterministic, fault tolerant
-data processing. Artemis defines states which transition from one another via
-trigger functions. The trigger functions must succesfully execute in order for the application
-to proceed. The state machine implementation is currently facilitated by the python library transitions (add reference).
-Explicit definition of states naturally factorize the application into distinct stages, functionality
-to handle errors and manage job aborts when required.
-The trigger functions can invoke separate classes, modules, or even processes to handle certain
+Artemis job control flow is implemented as a state machine to provide deterministic, fault tolerant
+data processing. Artemis defines *States* which undergo *Transitions* from one another via
+*Triggers*. *Triggers* invoke *Transitions* functions which must succesfully execute in order for the application
+to proceed via *State Transitions*. The state machine implementation is currently facilitated by the python library *Transitions*.
+Explicit definition of *States* naturally factorize the application into distinct stages, simplyfying error handling and job management.
+The *Transition* functions can invoke separate classes, modules, or even processes to handle certain
 tasks.
 
-Artemis currently defines the following states
+State machines are common in event-driven data processing systems and application frameworks.
+A state machine can be described as a directed graph which consists of a set of nodes (*States*)
+with a corresponding set of *Transition* functions. The machine runs by responding to a series of events.
+In the case of Artemis, this is a predefined control flow to take the job from a dormant or ready state to
+a finalization state. Each event is in the scope of the *Transition* function belonging to the current node, where the function
+range is a subset of the nodes.
 
-**States** 
+**State Definitions**
 
-* Quiescent or Dormant -- Artemis object instantiation and initial state of the machine.
-* Start - Job start
-* Configuration - Configure all required services, e.g. connections, handles for data access, etc...
-* Initialization - Define all job, algorithm and tool properties for executing and reproducing the job.
-* Lock - Freeze the job configuration
-* Meta - Persist the job configuration
-* Book - Configure additional metadata information to be collected throughout the data processing for
+* *Quiescent or Dormant* -- Artemis object instantiation and initial state of the machine.
+* *Start* - Job start
+* *Configuration* - Configure all required services, e.g. connections, handles for data access, etc...
+* *Initialization* - Define all job, algorithm and tool properties for executing and reproducing the job.
+* *Lock* - Freeze the job configuration
+* *Meta* - Persist the job configuration
+* *Book* - Configure additional metadata information to be collected throughout the data processing for
 data processing, process profiling and process metrics (input and output rates) 
     * histograms
     * timers
     * counters
-* Run - Loop over data requests. Outer part of the Event Loop.
-* Execution - Algorithm execution over the datums. Effectively is the inner part of an Event Loop.
-* End
-* Abort
-* Error
-* Finalize
+* *Run* - Loop over data requests. Outer part of the Event Loop.
+* *Execution* - Algorithm execution over the datums. Effectively is the inner part of an Event Loop.
+* *End*
+* *Abort*
+* *Error*
+* *Finalize*
 
-**Transitions** 
 
 ### Data Handle and Access
 
@@ -244,7 +240,9 @@ manages the request, fills a buffer and returns a generator which is consumed by
 The *DataHanlder* provides a python generator of partitions of data in predetermined chunk sizes.
 Artemis *Run* and *Execution* states manage the processing of data chunks and serves these to the algorithms.
 
-Assumption -- Each job receives a subset of a complete dataset. Each subset is partioned into
+**Assumption** 
+
+Each job receives a subset of a complete dataset. Each subset is partioned into
 chunks up to a predetermined chunk size. 
 
 ### Algorithm scheduling via DAGs and topological sorting
@@ -261,7 +259,8 @@ are defined by the user. User-defined inputs and outputs can be shared across al
 the algorithmic execution is handled through a sorting algorithm. Users only need to ensure their pipeline defines the input(s), 
 the sequence of algorithms to act on those inputs, and the output. 
 
-Definitions:
+**Definitions**
+
 * *Sequence* - Tuple of algorithms (by name) which must be executed in the order defined.
 * *Element* - Name of an output business process.
 * *Chain* - Unordered list of input Elements (by name), a Sequence, and a single output Element.
@@ -272,17 +271,28 @@ of a directed graph is a linear ordering of the vertices such that for every dir
 *u* comes before *v* in the ordering. Artemis uses the python library toposort, available on PyPi, to create the ordered list.
 For more information, please refer to the Wikipedia description of topological sorting.
 
-Assumption -- All business processes are acyclic.
+**Assumption**
 
-Diagram of Artemis Menu DAG and output ordering.
+All business processes are acyclic.
 
 ### Base Classes and Properties
 
-```python
+Only two base classes are anticipated for the Artemis prototype for user-defined algorithms. Base
+classes are required so that the framework and *Steering* algorithm can manage the initialization, execution and
+finalization of all user-defined algorithms. In addition, a generic *Properties* class can be used to decorate
+user-defined algorithms with attributes that are retained as metadata.
 
-```
+* AlgoBase - For accessing data in user-defined algorithms, filling histograms from data tables and passing data to tools 
+for fast computation of new quantities, features, tables, and/or arrays.
+
+* ToolBase - Computational workhorse. User-defined tools can wrap existing python libraries and take as input Arrow data tables.
+
+* Properties - Dynamically defined properties for algorithms and tools to allow for configurables at the Menu generation. Properties
+provide code re-use by altering behavior of algorithm while leaving the algorithmic and computational functionality in tact.
+
 ### Data Provenance and data access
 
+**TODO**
 Description of the Tree data structure, Node and Element classes.
 
 ### Histogram-based Data Analysis
@@ -305,13 +315,21 @@ a variety of tools, and provide a data model from which to easily describe a dat
 can be applied to histograms which can serve as safe way to produce realistic synthetic data. The initial use case for Artemis
 is to monitor job statistics and to implement a simple data validation workflow for data preprocessing.
 
+**Assumption**
+
+Multiple-pass processing will dynamically determine histogram binning for new datasets.
+
+**TODO**
 Diagram of anticipated data validation workflow.
 
-### Configuration and metadata
+## Milestones and Deliverables 
 
-User defined properties
+### Milestone
+Artemis 0.1 release features
 
-## Milestones and delivarables
+* Preprocessing algorithm on tax dataset to confirm record layout with Arrow type inference.
+* Convert data to Arrow and store in a columnar data format (Parquet or serialized Arrow tables).
+* Publish data validation histograms.
 
 ### Deliverables
 
@@ -330,9 +348,6 @@ starting point.
 * Reading/writing histograms and post-processing for job and data validation. 
 * Standalone post-processing application.
 
-### Milestone
-Artemis 0.1 release -- Preprocess algorithm on tax dataset to confirm record layout and convert data to Arrow and store in
-a columnar data format (Parquet or serialized Arrow tables).
 
 ## Dependencies
 
@@ -353,6 +368,8 @@ a columnar data format (Parquet or serialized Arrow tables).
 * https://www.mapd.com/blog/mapd-pandas-arrow/
 * https://www.dremio.com/webinars/arrow-c
 * [Projects Powered by Arrow](https://arrow.apache.org/powered_by/)
+* https://www.ibm.com/developerworks/library/l-python-state/index.html
+* http://python-3-patterns-idioms-test.readthedocs.io/en/latest/
 
 Recent talk by Wes McKinney at the SciPy 2018 Conference, Austin, TX
 
