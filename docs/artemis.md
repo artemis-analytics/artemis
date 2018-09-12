@@ -4,50 +4,67 @@ Artemis is a generic administrative data processing framework powered by Apache 
 The Artemis prototype presented in this document is a python data processing system 
 with the following objectives: 
 
-* demonstrate the use of the Apache Arrow standard data model for tabular data.
-* demonstrate the ability to represent generic business processes in the form of directed 
-acyclic graphs which can run in-memory to transform tabular data efficiently.
-* demonstrate the use of a histogram-based data validation and quality assurance framework.
+* Demonstrate the use of the Apache Arrow standard data model for tabular data.
+* Demonstrate the ability to represent generic business processes in the form of directed 
+acyclic graphs which can be executed in-memory to transform tabular data efficiently.
+* Demonstrate the use of a histogram-based data validation and quality assurance framework.
 
-The design decisions for Artemis align with the Apache Arrow objectives to decouple the
-vertical integration in current big data systems in order to decouple the following components:
-* Job configuration and algorithm scheduling
-* I/O and deserialization
-* In-memory storage
-* Computing engine
+The design decisions for Artemis must uphold data scientists core requirements for performing 
+rigourous data analysis and the requirements defined by the Common Statistical Production Achitecture (CSPA). 
+Furthermore, design choices align with the Apache Arrow objective to provide a development platform for data science systems
+which decouples the vertical integration of data processing components:
+
+* Job configuration and algorithm scheduling (Metadata management)
+* I/O and deserialization (Data management)
+* In-memory storage (Data format standardization)
+* Computing engine (Code re-use)
 
 ## Introduction
 
-One of the most striking differences and challenges of non-traditional administrative data is the lack of a common data model.
+The use of non-traditional administrative data for Official Statistics has a several notable features:
+
+* Data is closest to the true nature of demographics.
+* Preservation of the raw state of the data for analysts is required to extract the information.
+* Data access patterns differ from traditional survey data.
+
 Traditional sampling survey defines in advance the data which is collected,
 thus facilitating the creation of a data model with a schema that can be enforced on write.
-Non-traditional “Big Data” lacks a common data model which to express the data either on-disk or
-in-memory which is a result of several key challenges:
+
+The challenge presented to Official Statistics agencies is how to ingest, store and process adminstrative while 
+preserving the raw nature of the data for analysts. 
+This challenge is significantly inhibited by a lack
+of common data format with which to record the data and to analyze the data in-memory. 
 
 * Variety of file formats are acquired with no common tool to read or convert data to a more suitable format in an organization.
 * Enforcing schema on write can impede or prevent the ingestion of data.
 * Traditional database modeling focuses on optimizing write operations for transactional, row oriented data.
 * Conversion of data to a propriety organizational data format or model can inhibit collaboration.
 * Ingestable data formats, such as csv, may be convenient but are not efficient on disk or in-memory.
+* Data conversions result in loss of information, significant performance overhead, and sustain fractured data architectures systems.
 
-Analytical workloads for administrative data sources which reside in a distributed data store will follow a pattern of write once,
-read many times. Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
-business needs. Analytical queries will read subsets of columns for large number of rows at a time. Columnar data storage
-both in-memory and on-disk greatly enhances the performance of analytical workloads by organizing data for a given column contiguously. The advantages are:
+Analytical workloads for administrative data sources which reside in a data store (filesystem, distributed datastore, object store, etc...) 
+will follow a pattern of write once, read many times. Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
+business needs. Analytical queries will have common data access patterns such as 
 
-* Reduced number of seeks for multi-row reads.
-* Performant compression on columns due to single data types.
+* reading subsets of columns for large number of rows at a time.
+* accessing elements in adjacent columns in succession. 
+
+These data access patterns can benefit from column oriented table structures over traditional row-oriented access patterns which are more commonly found
+in traditional databases.
+
+Common data format which defines data primitive types that occur in data science, social science and business data will ensure that the
+raw state of the data can be preserved when consumed by organizations. 
 
 ### Data standardization
 
-Open standards, simply put, allow for systems to directly communicate with each other.
+Open standards allow for systems to directly communicate with each other.
 Direct communication using standard protocols and data formats 
 * simplifies system architecture
 * reduces ecosystem fragmentation
 * improves interoperability across processes. 
 * eliminates dependency on proprietary systems.
-Most importantly, common data model faciliate code reuse, sharing, effective collaboration 
-and data exchange, resulting in algorithms and libraries.  
+Most importantly, common data formats faciliate code reuse, sharing, effective collaboration 
+and data exchange, resulting in algorithms and libraries which are supported by a large open community.  
 
 Several examples of data standards in computing today:
 * Human-readable semi-structured: XML, JSON
@@ -69,22 +86,38 @@ zero-overhead memory sharing to/from various libraries and processes.
 
 The data science and social science community typically deal with tabular data which
 manifests itself in various forms, most commonly refered to as DataFrames. The dataframe
-concept and semantics found in various systems are common, however, the underlying byte-level
-memory represention varies across systems. So, it is very rare to directly share code 
-across languages are processing systems. Effectively, no standard exists for in-memory
-tables which are found in varios systems:
-Tabular data is commonly found in SQL.
-Big data community developed Spark and Hive.
-In-memory data frame in data science languages: 
+concept and the semantics found in various systems are common to the various DataFrames. 
+However, the underlying byte-level memory represention varies across systems. The difference in
+the in-memory representation prevents sharing of algorithmic code across various systems and 
+programming languages. Effectively, no standard exists for in-memory
+tabular data. Common examples of tabular data in-use today by data and social scientists:
+
+* Tabular data is commonly found in SQL.
+* Big data community developed Spark and Hive.
+* In-memory data frame in data science languages: 
 python has pandas, R has data.table, and Julia has jil.table.
 
 Tha Apache Arrow project solves the non-portable dataframe problem by
-defining an open, language independent common record format. The outcome of Arrow
-is a development platform for data scientists for building data processing systems. 
-Arrow focuses on standard format and performance  
-for efficient in-memory processing on modern computing 
-architectures which is cross-language and focues on system interoperability.
+defining an open, cross-language development platform for in-memory data which specifies a 
+standardized language-independent columnar memory format for flat and hierarchical data, 
+organized for efficient analytic operations on modern hardware. Arrow provides computational 
+libraries and zero-copy streaming messaging and interprocess communication. The key benefits of Arrow:
 
+Fast – enables execution engines to take advantage of the latest SIMD (Single input multiple data) operations in modern processes, for native vectorized optimization of analytical data processing. Columnar layout is optimized for data locality for better performance. The Arrow format supports zero-copy reads for fast data access without serialization overhead.
+
+Flexible – Arrow acts as a high performance interface between various systems and supports a wide variety of industry specific languages, including Python, C++ with Go in progress.
+
+Standard – Apache Arrow is backed by key developers from major open-source projects.
+
+Arrow defines language agnostic column-oriented data structures for array data which include:
+
+* Fixed-length primitive types: numbers, booleans, date and times, fixed size binary, decimals, and other values that fit into a given number
+* Variable-length primitive types: binary, string
+* Nested types: list, struct, and union
+* Dictionary type: An encoded categorical type
+
+Arrow is an ideal in-memory transport layer for data being read or written to Apache Parquet files. Apache Parquet (Parquet, n.d.) project provides open-source columnar data storage format for use in data analysis systems. Parquet contains in-file metadata of column data types and names. Files can be organized as Parquet datasets which facilitate partitioned data. Data columns can be read or written as subsets, facilitating fast reading and skimming of datasets.
+Apache Arrow and Parquet will facilitate fast data processing, efficient data storage, and improved governance on data access due to the in-file metadata. The key aspect for integration into a simulation framework and processing framework for non-traditional administrative data is the data validation to correctly infer and define column data types, and convert the raw data to the common format. Arrow supports Pandas which will likely accelerate the adoption of Python and Pandas as the de-factor processing tool.
 Apache Arrow is a column-oriented in-memory format with direct persistency to various
 column-oriented backend storage systems. The choice for column-oriented format is based
 on the benefits achieved for performance reasons.
@@ -116,23 +149,12 @@ Columnar, serializable persistent storage provides efficient I/O capability and 
 Apache Parquet data format (originally developed for Hadoop) meets additional requirements for support of hierarchal data formats and in-file meta-data.
 
 
-Apache ArrowTM (Arrow, n.d.) is a cross-language development platform for in-memory data which specifies a standardized language-independent columnar memory format for flat and hierarchical data, organized for efficient analytic operations on modern hardware. Arrow provides computational libraries and zero-copy streaming messaging and interprocess communication. The key benefits of Arrow:
 
-Fast – enables execution engines to take advantage of the latest SIMD (Single input multiple data) operations in modern processes, for native vectorized optimization of analytical data processing. Columnar layout is optimized for data locality for better performance. The Arrow format supports zero-copy reads for fast data access without serialization overhead.
+Columnar data storage
+both in-memory and on-disk greatly enhances the performance of analytical workloads by organizing data for a given column contiguously. The advantages are:
 
-Flexible – Arrow acts as a high performance interface between various systems and supports a wide variety of industry specific languages, including Python, C++ with Go in progress.
-
-Standard – Apache Arrow is backed by key developers from major open-source projects.
-
-Arrow defines language agnostic column-oriented data structures for array data which include:
-
-* Fixed-length primitive types: numbers, booleans, date and times, fixed size binary, decimals, and other values that fit into a given number
-* Variable-length primitive types: binary, string
-* Nested types: list, struct, and union
-* Dictionary type: An encoded categorical type
-
-Arrow is an ideal in-memory transport layer for data being read or written to Apache Parquet files. Apache Parquet (Parquet, n.d.) project provides open-source columnar data storage format for use in data analysis systems. Parquet contains in-file metadata of column data types and names. Files can be organized as Parquet datasets which facilitate partitioned data. Data columns can be read or written as subsets, facilitating fast reading and skimming of datasets.
-Apache Arrow and Parquet will facilitate fast data processing, efficient data storage, and improved governance on data access due to the in-file metadata. The key aspect for integration into a simulation framework and processing framework for non-traditional administrative data is the data validation to correctly infer and define column data types, and convert the raw data to the common format. Arrow supports Pandas which will likely accelerate the adoption of Python and Pandas as the de-factor processing tool.
+* Reduced number of seeks for multi-row reads.
+* Performant compression on columns due to single data types.
 
 ![Arrow Shared][img-arrow-shared]
 ![Arrow Copy][img-arrow-copy]
