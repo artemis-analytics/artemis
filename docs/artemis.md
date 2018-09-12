@@ -196,7 +196,7 @@ with Graphical User Interfaces which respond to mouse clicks on the computer scr
 Certain clicks of a mouse cause the application to transition to a different
 state (e.g., click open to Open a File). From physics, common of example of states and transitions
 is water which states gas, liquid, solid. Water transitions from states due
-to changes in temputure, volume and pressure, which we refer to as triggers.
+to changes in temputure, volume and pressure, which we refer to as triggers. 
 
 Job control flow is implemented as a state machine to provide deterministic, fault tolerant
 data processing. Artemis defines states which transition from one another via
@@ -233,36 +233,110 @@ data processing, process profiling and process metrics (input and output rates)
 
 ### Data Handle and Access
 
-I/O and data access are currently managed by a seperate class. However, modularity of I/O would allow 
-for  a seperate process entirely to serve data to the application.
+I/O and data access are currently managed by a seperate class. Modularity of I/O would allow 
+for a seperate process entirely to serve data to the application.
 In the case of a seperate process this may allow for asyncronous buffering of data 
 from a filesystem, database or network node while processing
-of the actual data continues in Artemis. Generically, Artemis will interact with a DataHandler whereby
-the DataHandler is a data producer which interacts with the persistent data to load into a memory buffer, and Artemis
-is a data consumer which empties the DataHandler buffer and fills its own buffer.
-Artemis sends a data request. The data handler
-manages the request, fills a buffer and provides a generator which is consumed by Artemis.
-The DataHanlder provides a python generator of partitions of data in predetermined chunk sizes.
-Artemis Run and Execution states manage the processing of data chunks and serves these to the algorithms.
+of the actual data continues in Artemis. Generically, Artemis will interact with a *DataHandler* whereby
+the *DataHandler* is a data producer which interacts with the persistent data to load into a memory buffer
+Artemis is a data consumer that concumes the *DataHandler* buffer and fills its own output buffer.
+Artemis sends a data request. The DataHandler
+manages the request, fills a buffer and returns a generator which is consumed by Artemis.
+The *DataHanlder* provides a python generator of partitions of data in predetermined chunk sizes.
+Artemis *Run* and *Execution* states manage the processing of data chunks and serves these to the algorithms.
 
 Assumption -- Each job receives a subset of a complete dataset. Each subset is partioned into
 chunks up to a predetermined chunk size. 
 
-
 ### Algorithm scheduling via DAGs and topological sorting
 
-Artemis design decouples the job configuration and the algorithm scheduling from the job
+Artemis design decouples the job configuration and the algorithm scheduling from the job and algorithm
 execution. The entire job is defined in metadata that can be persisted. This flexibility allows
 for dynamic creation of algorithms to run on the same data with different configurations, 
-allows for the job to be reproducible, and facilitates data validation and data process testing.
+allows for the job to be reproducible, and facilitates data validation and code testing.
+The algorithm scheduling and control flow is an extension of the Artemis state machine concept that
+ensures that the data dependencies are met before the execution of an algorithm.
 
+In order to provide a flexible means of defining business processes to execute on data, directed graphs
+are defined by the user. User-defined inputs and outputs can be shared across algorithm sequences. The ordering of
+the algorithmic execution is handled through a sorting algorithm. Users only need to ensure their pipeline defines the input(s), 
+the sequence of algorithms to act on those inputs, and the output. 
+
+Definitions:
+* *Sequence* - Tuple of algorithms (by name) which must be executed in the order defined.
+* *Element* - Name of an output business process.
+* *Chain* - Unordered list of input Elements (by name), a Sequence, and a single output Element.
+* *Menu* - Collection of user-defined Chains to be processed on a particular dataset. 
+
+Artemis application requires the topological sorted list of output Elements and Sequences. The topological sort 
+of a directed graph is a linear ordering of the vertices such that for every directed edge *uv* from vertex *u* to vertex *v*,
+*u* comes before *v* in the ordering. Artemis uses the python library toposort, available on PyPi, to create the ordered list.
+For more information, please refer to the Wikipedia description of topological sorting.
+
+Assumption -- All business processes are acyclic.
+
+Diagram of Artemis Menu DAG and output ordering.
+
+### Base Classes and Properties
+
+```python
+
+```
 ### Data Provenance and data access
 
-### Configuration
+Description of the Tree data structure, Node and Element classes.
+
+### Histogram-based Data Analysis
+
+The Data Science ecosystem currently uses histograms primarily for interactive data visualization. However, histograms
+are a powerful statistical tool to analyze large datasets. Histograms, in this sense, act primarily as tables of numbers
+and would be similar to the disseminated census tables produced by Statistics Canada. However, with a properly implemented 
+histogram class, histograms can filled and refilled through a large dataset, or in parallel and later combined with addition.
+As a key component to the Artemis framework, a single histogram store will be available for user-defined histograms. 
+Aggregated data, such as per-column distributions, can be stored in histograms. For large datasets, subsets of the data will
+be produced in the form of histograms. Each subjob will produce a collection of histograms. Once the entire data set is processed
+a postprocessing step will combine the histogram collections from each subjob to form the total aggregated profiles of the per-column distributions. 
+The Histbook project is a python implementation similar to the histogramming packages developed and used for particle physics, such as CERN HBOOK
+and modern-day ROOT histograms.
+
+Histograms provide a convenient way to validate data both visually, overlaying control histograms with the processed histograms 
+to observe deviations, and statistically by applying chi-squared, Person's or Kolmogorov-Smirnov tests to automatically
+flag deviations from a control sample. Histograms are easily stored in a compact, efficient manner, can be easily viewed with
+a variety of tools, and provide a data model from which to easily describe a dataset. Application of differential privacy algorithms 
+can be applied to histograms which can serve as safe way to produce realistic synthetic data. The initial use case for Artemis
+is to monitor job statistics and to implement a simple data validation workflow for data preprocessing.
+
+Diagram of anticipated data validation workflow.
+
+### Configuration and metadata
 
 User defined properties
 
 ## Milestones and delivarables
+
+### Deliverables
+
+* Data handler class. Reading and chunking of CSV file format from a linux filesystem. Dask IO code may be a suitable 
+starting point.
+* Job configuration data model. Reading and writing to/from JSON file format.
+* State definitions, transitions, and trigger functions.
+* Event loop for handling data requests and looping over partitioned data sets.
+* In-memory model for data provenance.
+* Data class for holding input raw data and Arrow tabular data formats.
+* Pre-processing algorithm using Arrow type-inference engine for data conversion, metadata extraction and validation.
+* Finalization algorithm Arrow table serialization from data provenance model leave nodes.
+* User-defined properties for algorithmic configuration.
+* Global job histograms and job metrics (timers, counters).
+* Histogram data store and user-defined histograms.
+* Reading/writing histograms and post-processing for job and data validation. Standalone post-processing application.
+
+
+## Dependencies
+
+[pyarrow|https://pypi.org/project/pyarrow/
+[toposort|https://pypi.org/project/toposort/]
+[transitions|https://pypi.org/project/transitions/]
+[histbook|https://pypi.org/project/histbook/]
 
 ## References:
 
