@@ -19,13 +19,30 @@ engine, and front-end API.
 
 The use of non-traditional administrative data for Official Statistics has a several notable features:
 
-* Data is closest to the true nature of population demographics.
+* Data is closest to the true and timely state of population demographics.
 * Preservation of the raw state of the data is required to extract the relevant and accurate statistics.
 * Data access patterns differ from traditional survey data.
 
 The challenge facing NSAs is how to ingest, store and process adminstrative data while 
-preserving the raw state of the data for analysts. Development of systems to meet these capabilities is 
-significantly inhibited by a lack of common data format with which to record and analyze the data. 
+preserving the raw state of the data in a format that is familiar and userful for analysts. 
+Analytical workloads for administrative data sources will follow a pattern of write once, read many times. 
+Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
+business needs. Analytical queries will have common data access patterns based on a tabular data structure such as reading subsets of columns for 
+large number of rows at a time or accessing elements in adjacent columns in succession. 
+The workload and access patterns can benefit from column oriented table structures over traditional 
+row-oriented access patterns which are more commonly found in traditional databases.
+
+Common data format which defines data primitive types that occur in data science, social science 
+and business data will ensure that the
+raw state of the data can be preserved when consumed by organizations. 
+Tabular data organized in a column-oriented will result in improved
+computational and I/O performance.
+
+## Administrative Data Common Workflow
+
+Description of current ADD processing.
+
+Issues commonly found with adminstrative data sources 
 
 * Variety of file formats are acquired with no common tool to read or convert data to a more suitable format in an organization.
 * Enforcing schema on write can impede or prevent the ingestion of data.
@@ -34,37 +51,38 @@ significantly inhibited by a lack of common data format with which to record and
 * Common data formats, such as CSV, are inefficient in terms of storage and processing. 
 * Data conversions result in loss of information, significant performance overhead, and sustain fractured data architectures systems.
 
-Analytical workloads for administrative data sources which reside in a data store 
-(filesystem, distributed datastore, object store, etc...) will follow a pattern of write once, read many times. 
-Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
-business needs. Analytical queries will have common data access patterns such as reading subsets of columns for 
-large number of rows at a time or accessing elements in adjacent columns in succession. 
-The workload and access patterns can benefit from column oriented table structures over traditional 
-row-oriented access patterns which are more commonly found in traditional databases.
-
-Common data format which defines data primitive types that occur in data science, social science and business data will ensure that the
-raw state of the data can be preserved when consumed by organizations. Data organized in a column-oriented will result in improved
-computational and I/O performance.
-
-## Administrative Data Common Workflow
-
-Description of current ADD processing.
+Development of systems to resolve such issues is 
+significantly inhibited by a lack of common data format with which to record and analyze the data. 
 
 ## Requirements for Adminstrative Data Processing
 
-**Performance** 
+**Performance** The typical performance indicator is the turnaround time required to run
+the entire processing chain when new requirements or data are introduced. 
+Runtime is limited by transfer of data, loading of data between successive 
+stages (or even succesive pipelines), and conversion between various formats to 
+be used across fragmented systems. The software must minimize the number of read/write operations on data
+and process as much in memory as possible. Distinct stages should be modular, such that changes in 
+in stages can be rerun quickly.
 
-**Maintainability**
+**Maintainability** Modular software with a clear seperation between algorithmic code 
+and configuration facilitate introduction of new code which can be integrated without
+affecting existing processes through configuration. Modular code also enforces 
+code structure and encourages re-use. Common data format separates the I/O and deserialization
+from the algorithmic code, and provide computing recipes and boiler-plate code structure 
+to introduce new processes into the system.
 
-**Reliability**
+**Reliability** The system is built on well-maintained, open-source libraries with design features
+to easily introduce existing libraries for common analysis routines. 
 
-**Flexibility**
+**Flexibility** Re-use of common processes is faciliated through configurable algorithmic code. 
+Use of a common in-memory data format simplify introducing new feautures, quantities and data structures
+into the datasets.
 
 ### Data standardization
 
 Open standards allow for systems to directly communicate with each other.
 Direct communication using standard protocols and data formats simplifies system architecture,
- reduces ecosystem fragmentation, improves interoperability across processes, and eliminates dependency on proprietary systems.
+reduces ecosystem fragmentation, improves interoperability across processes, and eliminates dependency on proprietary systems.
 Most importantly, common data formats faciliate code reuse, sharing, effective collaboration 
 and data exchange, resulting in algorithms and libraries which are supported by a large open community.  
 
@@ -137,11 +155,6 @@ stack that is vertically integrated, providing public APIs for each component:
 * Compute engine
 * Front-end API
 
-* Job configuration and algorithm scheduling (Metadata management)
-* I/O and deserialization (Data management)
-* In-memory storage (Data format standardization)
-* Computing engine (Code re-use)
-
 where the latter front-end API is really up to the users who are developing Arrow powered
 data science systems.
 
@@ -173,20 +186,19 @@ data processing systems used in the HEP community.
 
 Artemis framework design features
 
-* Seperation of algorithmic code and configuration.
-* Seperation of I/O from data processing.
-* Managed I/O at the framework level to minimize read/write. 
-* State machine for job control flow to ensure reliablity.
-* Managed data pipeline algorithms to guarantee data dependencies.
-* In-memory provenance of data transformations.
-* Modular code design to faciliate code re-use, simplify testing and development.
-* Automatic collection of processing metrics.
-* User-defined histograms and data tables.
+* Metadata management - seperation of algorithmic code and configuration.
+* Performance - seperation of I/O from data processing managed at the framework level to minimize read/write. 
+* Reliability - State machine for job control flow and global steering of data pipeline algorithms.
+* Reproduciblity - in-memory provenance of data transformations.
+* Flexibility - modular code design to faciliate code re-use, simplify testing and development.
+* Automation - automatic collection of processing metrics.
+* Configuration - user-defined histograms and data tables.
 
-Artemis framework defines a common set of base classes for user defined *Chains* as 
-an ordered collection of algorithms and tools which transform data. User-defined 
-algorithms inherit methods which are invoked by the Artemis application, such that the *Chains* are managed by a *Steering* algorithm. 
-Artemis manages the the data processing *Event Loop*, provides data to the algorithms, and handles data serialization
+Artemis framework defines a common set of base classes for user defined *Chains*, representing business processes,
+as an ordered collection of algorithms and tools which transform data. User-defined 
+algorithms inherit methods which are invoked by the Artemis application, 
+such that the *Chains* are managed by a *Steering* algorithm (which also inherits from a common base algorithm class). 
+Artemis manages the data processing *Event Loop*, provides data to the algorithms, and handles data serialization
 and job finalization.
 
 ![Artemis Control Flow](ArtemisControlFlow.png)
@@ -231,17 +243,18 @@ data processing, process profiling and process metrics (input and output rates)
 
 ### Data Handle and Access
 
-I/O and data access are currently managed by a seperate class. Modularity of I/O would allow 
-for a seperate process entirely to serve data to the application.
-In the case of a seperate process this may allow for asyncronous buffering of data 
-from a filesystem, database or network node while processing
-of the actual data continues in Artemis. Generically, Artemis will interact with a *DataHandler* whereby
+Generically, Artemis will interact with a *DataHandler* whereby
 the *DataHandler* is a data producer which interacts with the persistent data to load into a memory buffer
-Artemis is a data consumer that concumes the *DataHandler* buffer and fills its own output buffer.
+Artemis is a data consumer, consuming the *DataHandler* buffer and fills its own output buffer.
 Artemis sends a data request. The DataHandler
 manages the request, fills a buffer and returns a generator which is consumed by Artemis.
 The *DataHanlder* provides a python generator of partitions of data in predetermined chunk sizes.
 Artemis *Run* and *Execution* states manage the processing of data chunks and serves these to the algorithms.
+
+Modularity of I/O can allow 
+for a seperate process entirely to serve data to the application. Arrow developments for I/O tools,
+performant database connectors, and messaging are on the roadmap, and Artemis must be able
+to easily leverage these capabilities as they become available.
 
 **Assumption** 
 
@@ -251,12 +264,12 @@ chunks up to a predetermined chunk size.
 ### Algorithm scheduling via DAGs and topological sorting
 
 Artemis design decouples the job configuration and the algorithm scheduling from the job and algorithm
-execution. The entire job is defined in metadata that can be persisted. This flexibility allows
-for dynamic creation of algorithms to run on the same data with different configurations, 
+execution. The entire job is defined in metadata that can be persisted (currently stored in JSON format). 
+This flexibility allows for various configuration to be used on the same data, 
 allows for the job to be reproducible, and facilitates data validation and code testing.
-The algorithm scheduling and control flow is an extension of the Artemis state machine concept that
-ensures that the data dependencies are met before the execution of an algorithm.
 
+The algorithm scheduling and control flow is an extension of the Artemis state machine concept.
+The ordering of algorithms must ensures that the data dependencies are met before the execution of an algorithm.
 In order to provide a flexible means of defining business processes to execute on data, directed graphs
 are defined by the user. User-defined inputs and outputs can be shared across algorithm sequences. The ordering of
 the algorithmic execution is handled through a sorting algorithm. Users only need to ensure their pipeline defines the input(s), 
@@ -271,8 +284,9 @@ the sequence of algorithms to act on those inputs, and the output.
 
 Artemis application requires the topological sorted list of output Elements and Sequences. The topological sort 
 of a directed graph is a linear ordering of the vertices such that for every directed edge *uv* from vertex *u* to vertex *v*,
-*u* comes before *v* in the ordering. Artemis uses the python library toposort, available on PyPi, to create the ordered list.
-For more information, please refer to the Wikipedia description of topological sorting.
+*u* comes before *v* in the ordering. Artemis uses the python library *toposort* to create the ordered list.
+For more information, please refer to the Wikipedia description of topological sorting and the toposort algorithm
+available on BitBucket.
 
 **Assumption**
 
@@ -311,12 +325,10 @@ a postprocessing step will combine the histogram collections from each subjob to
 The Histbook project is a python implementation similar to the histogramming packages developed and used for particle physics, such as CERN HBOOK
 and modern-day ROOT histograms.
 
-Histograms provide a convenient way to validate data both visually, overlaying control histograms with the processed histograms 
-to observe deviations, and statistically by applying chi-squared, Person's or Kolmogorov-Smirnov tests to automatically
-flag deviations from a control sample. Histograms are easily stored in a compact, efficient manner, can be easily viewed with
-a variety of tools, and provide a data model from which to easily describe a dataset. Application of differential privacy algorithms 
-can be applied to histograms which can serve as safe way to produce realistic synthetic data. The initial use case for Artemis
-is to monitor job statistics and to implement a simple data validation workflow for data preprocessing.
+Histograms provide a convenient way to validate data both visually and statistically.
+Histograms are easily stored in a compact, efficient manner, can be easily viewed with
+a variety of tools, and provide a data model from which to easily describe a dataset. 
+The initial use of histograms in Artemis is to monitor job statistics and for data validation.
 
 **Assumption**
 
