@@ -20,19 +20,18 @@ engine, and front-end API.
 The use of non-traditional administrative data for Official Statistics has a several notable features:
 
 * Data is closest to the true nature of population demographics.
-* Preservation of the raw state of the data for analysts is required to extract the relevant and accurate statistics.
+* Preservation of the raw state of the data is required to extract the relevant and accurate statistics.
 * Data access patterns differ from traditional survey data.
 
 The challenge facing NSAs is how to ingest, store and process adminstrative data while 
-preserving the raw state of the data for analysts. 
-This challenge is significantly inhibited by a lack
-of common data format with which to record the data and to analyze the data in-memory. 
+preserving the raw state of the data for analysts. Development of systems to meet these capabilities is 
+significantly inhibited by a lack of common data format with which to record and analyze the data. 
 
 * Variety of file formats are acquired with no common tool to read or convert data to a more suitable format in an organization.
 * Enforcing schema on write can impede or prevent the ingestion of data.
 * Traditional database modeling focuses on optimizing write operations for transactional, row oriented data.
 * Conversion of data to a propriety organizational data format or model can inhibit collaboration.
-* Ingestable data formats, such as csv, may be convenient but are not efficient on disk or in-memory.
+* Common data formats, such as CSV, are inefficient in terms of storage and processing. 
 * Data conversions result in loss of information, significant performance overhead, and sustain fractured data architectures systems.
 
 Analytical workloads for administrative data sources which reside in a data store 
@@ -47,9 +46,19 @@ Common data format which defines data primitive types that occur in data science
 raw state of the data can be preserved when consumed by organizations. Data organized in a column-oriented will result in improved
 computational and I/O performance.
 
-### Administrative Data Preprocessing and Processing Requirements
+## Administrative Data Common Workflow
 
 Description of current ADD processing.
+
+## Requirements for Adminstrative Data Processing
+
+**Performance** 
+
+**Maintainability**
+
+**Reliability**
+
+**Flexibility**
 
 ### Data standardization
 
