@@ -47,7 +47,7 @@ Issues commonly found with adminstrative data sources
 * Variety of file formats are acquired with no common tool to read or convert data to a more suitable format in an organization.
 * Enforcing schema on write can impede or prevent the ingestion of data.
 * Traditional database modeling focuses on optimizing write operations for transactional, row oriented data.
-* Conversion of data to a propriety organizational data format or model can inhibit collaboration.
+* Conversion of data to a proprietary organizational data format or model can inhibit collaboration.
 * Common data formats, such as CSV, are inefficient in terms of storage and processing. 
 * Data conversions result in loss of information, significant performance overhead, and sustain fractured data architectures systems.
 
@@ -61,10 +61,10 @@ the entire processing chain when new requirements or data are introduced.
 Runtime is limited by transfer of data, loading of data between successive 
 stages (or even succesive pipelines), and conversion between various formats to 
 be used across fragmented systems. The software must minimize the number of read/write operations on data
-and process as much in memory as possible. Distinct stages should be modular, such that changes in 
+and process as much in memory as possible. Distinct stages should be modular, such that changes
 in stages can be rerun quickly.
 
-**Maintainability** Modular software with a clear seperation between algorithmic code 
+**Maintainability** Modular software with a clear separation between algorithmic code 
 and configuration facilitate introduction of new code which can be integrated without
 affecting existing processes through configuration. Modular code also enforces 
 code structure and encourages re-use. Common data format separates the I/O and deserialization
@@ -83,7 +83,7 @@ into the datasets.
 Open standards allow for systems to directly communicate with each other.
 Direct communication using standard protocols and data formats simplifies system architecture,
 reduces ecosystem fragmentation, improves interoperability across processes, and eliminates dependency on proprietary systems.
-Most importantly, common data formats faciliate code reuse, sharing, effective collaboration 
+Most importantly, common data formats facilitate code reuse, sharing, effective collaboration 
 and data exchange, resulting in algorithms and libraries which are supported by a large open community.  
 
 Several examples of data standards in computing today:
@@ -97,7 +97,7 @@ Several examples of data standards in computing today:
 * Binary blobs via RPC protocols
     * Apache Avro
     * Protocol buffers (Google)
-
+(COMMENT: The following three paragraphs are an excellent explanation that should work for people in a wide variety of fields.)
 The scientific community developed many common libraries in-use by data scientists
 today in Fortran, such as linear algebra routines. The scientific programming ecosystem
 in python effectively united around the ndarray, which is the NumPy multidimensional
@@ -107,10 +107,10 @@ zero-overhead memory sharing to/from various libraries and processes.
 The data science and social science community typically deal with tabular data which
 manifests itself in various forms, most commonly refered to as *DataFrames*. The *DataFrame*
 concept and the semantics found in various systems are common to the various *DataFrames*. 
-However, the underlying byte-level memory represention varies across systems. The difference in
+However, the underlying byte-level memory representation  varies across systems. The difference in
 the in-memory representation prevents sharing of algorithmic code across various systems and 
 programming languages. No standard exists for in-memory
-tabular data, however, tabular is ubiquitious  Tabular data is commonly found in SQL, 
+tabular data, however, tabular data is ubiquitous.  Tabular data is commonly found in SQL, 
 the "Big Data" community developed Spark and Hive, and In-memory *DataFrames* are found across popular data science languages.
 R, python and Julia all have a *DataFrame* in-memory tabular data which is commonly used by analysts.
 
@@ -248,7 +248,7 @@ the *DataHandler* is a data producer which interacts with the persistent data to
 Artemis is a data consumer, consuming the *DataHandler* buffer and fills its own output buffer.
 Artemis sends a data request. The DataHandler
 manages the request, fills a buffer and returns a generator which is consumed by Artemis.
-The *DataHanlder* provides a python generator of partitions of data in predetermined chunk sizes.
+The *DataHandler* provides a python generator of partitions of data in predetermined chunk sizes.
 Artemis *Run* and *Execution* states manage the processing of data chunks and serves these to the algorithms.
 
 Modularity of I/O can allow 
@@ -258,7 +258,7 @@ to easily leverage these capabilities as they become available.
 
 **Assumption** 
 
-Each job receives a subset of a complete dataset. Each subset is partioned into
+Each job receives a subset of a complete dataset. Each subset is partitioned into
 chunks up to a predetermined chunk size. 
 
 ### Algorithm scheduling via DAGs and topological sorting
@@ -273,12 +273,12 @@ The ordering of algorithms must ensures that the data dependencies are met befor
 In order to provide a flexible means of defining business processes to execute on data, directed graphs
 are defined by the user. User-defined inputs and outputs can be shared across algorithm sequences. The ordering of
 the algorithmic execution is handled through a sorting algorithm. Users only need to ensure their pipeline defines the input(s), 
-the sequence of algorithms to act on those inputs, and the output. 
+the sequence of algorithms to act on those inputs, and the output. (COMMENT: Very good introduction of Artemis vocabulary in relation to more generic vocabulary.)
 
 **Definitions**
 
 * *Sequence* - Tuple of algorithms (by name) which must be executed in the order defined.
-* *Element* - Name of an output business process.
+* *Element* - Name of an output business process. (COMMENT: We need to standardize/figure out our naming scheme. Also, if an Element is the output of a business process, we should state here what is the business process.)
 * *Chain* - Unordered list of input Elements (by name), a Sequence, and a single output Element.
 * *Menu* - Collection of user-defined Chains to be processed on a particular dataset. 
 
@@ -311,6 +311,14 @@ provide code re-use by altering behavior of algorithm while leaving the algorith
 
 **TODO**
 Description of the Tree data structure, Node and Element classes.
+
+Artemis will process a chunk of data by running it through the entire list of algorithms in the *Menu*. The *Tree*, *Node*, and *Element* classes hold the relationships between the data, and provide access to the data. The *Menu* documents what is done to the data algorithmically, the *Tree* documents what was done to which data at *Sequence*.
+
+* *Element* - The *Element* provides access to the output data created by a *Sequence* processing a specific chunk of input data.
+* *Node* - The *Node* holds the *Elements* created by a *Sequence* processing multiple chunks of data. A *Node* also lists the *Nodes* holding the *Elements* required as input and the *Nodes* that use its *Element* as input.
+* *Tree* - The *Tree* holds all the *Nodes*. The *Tree* contains the same information as the *Menu*, except in an unordered state.
+
+
 
 ### Histogram-based Data Analysis
 
