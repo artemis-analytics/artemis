@@ -12,7 +12,7 @@ Testing algorithms
 import sys
 
 from artemis.core.algo import AlgoBase
-
+from artemis.logger import Logger
 
 class DummyAlgo1(AlgoBase):
    
@@ -26,7 +26,7 @@ class DummyAlgo1(AlgoBase):
         pass
 
     def execute(self, payload):
-        print('Run ', self.name)
+        Logger.info('Run: {} '.format(self.name))
         print('Input ', sys.getsizeof(payload))
         print('Test property', self.properties.myproperty)
 

@@ -23,12 +23,14 @@ from collections import OrderedDict
 from transitions import Machine
 
 # Framework
+from artemis.logger import Logger
 from artemis.core.properties import Properties
 from artemis.core.steering import Steering
 
 # Data generators
 from artemis.generators.generators import GenCsvLike
 
+Logger.init()
 
 class Artemis():
     
@@ -154,7 +156,7 @@ class Artemis():
         Stateful Job processing via pytransitions
         '''
 
-        print(self.state)
+        Logger.info(self.state)
         self.launch()
         self.configure()
         self.initialize()
@@ -164,10 +166,10 @@ class Artemis():
         self.run_job()
         self.no_data()
         self.error()
-        print('Ending test')
+        Logger.info('Ending test')
 
     def _launch(self):
-        print("Artemis is ready")
+        Logger.info("Artemis is ready")
 
     def _configure(self):
         '''

@@ -13,7 +13,7 @@ Algorithms
 import sys
 from abc import ABC, abstractproperty, abstractmethod
 from artemis.core.properties import Properties
-
+from artemis.logger import Logger
 # TODO Create an interface class to AlgoBase to expose the run, finalize methods to framework
 # Interface IAlgoBase class to expose the methods to the framework (apparently, I should not write a framework, see Fluent Python ... I am bored but probably getting paid)
 # Concrete implementation of interface with AlgoBase
