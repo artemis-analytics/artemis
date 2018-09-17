@@ -58,12 +58,15 @@ test:
     - branches
 
 document:
+    # See github.com/Grayda/gitlab-doc-builder
     stage: document
     image: jagregory/pandoc
     script:
         - find . -name '*.md' -exec sh -c 'pandoc -f markdown -t latex $0 -o $0.pdf' {} \;
     artifacts:
         untracked: true
+    only:
+        - master
 # ---------------------------------------------------------------------------
 
 .auto_devops: &auto_devops |
