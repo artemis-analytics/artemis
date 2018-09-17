@@ -201,7 +201,7 @@ such that the *Chains* are managed by a *Steering* algorithm (which also inherit
 Artemis manages the data processing *Event Loop*, provides data to the algorithms, and handles data serialization
 and job finalization.
 
-![Artemis Control Flow](ArtemisControlFlow.png)
+![Artemis Control Flow](docs/ArtemisControlFlow.png)
 
 ### State Machine
 
