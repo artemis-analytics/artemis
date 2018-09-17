@@ -44,6 +44,7 @@ variables:
 
 stages:
   - test
+  - document  
 
 test:
   stage: test
@@ -56,7 +57,11 @@ test:
   only:
     - branches
 
-
+document:
+    stage: document
+    image: jagregory/pandoc
+    script:
+        - pandoc -f markdown -t latex docs/artemis.md -o docs/artemis.pdf 
 # ---------------------------------------------------------------------------
 
 .auto_devops: &auto_devops |
