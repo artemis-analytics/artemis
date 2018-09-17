@@ -61,7 +61,7 @@ document:
     stage: document
     image: jagregory/pandoc
     script:
-        - pandoc -f markdown -t latex docs/artemis.md -o docs/artemis.pdf 
+        - find . -name '*.md' -exec sh -c 'pandoc -f markdown -t latex $0 -o $0.pdf' {} \; 
 # ---------------------------------------------------------------------------
 
 .auto_devops: &auto_devops |
