@@ -158,8 +158,8 @@ stack that is vertically integrated, providing public APIs for each component:
 where the latter front-end API is really up to the users who are developing Arrow powered
 data science systems.
 
-![Arrow Shared](arrow-shared.png)
-![Arrow Copy](arrow-copy.png)
+![Arrow Shared](docs/arrow-shared.png)
+![Arrow Copy](docs/arrow-copy.png)
 
 ## Artemis Prototype
 
