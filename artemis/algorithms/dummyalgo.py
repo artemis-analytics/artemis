@@ -37,6 +37,7 @@ class DummyAlgo1(AlgoBase):
         self.__logger.info('Run: {} '.format(self.name))
         print('Input ', sys.getsizeof(payload))
         print('Test property', self.properties.myproperty)
+        self.debug("Trying to debug")
 
     def finalize(self):
         pass

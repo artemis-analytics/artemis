@@ -37,9 +37,11 @@ class Steering(AlgoBase):
         Prepares payload for algorithms
         Steers algorithm execution
         '''
+        self.info('{}: Execute'.format(self.name))
+        
         for key in self._menu:
             algos = self._menu[key]
-            print(key)
+            self.debug('{}: {}'.format(self.name, key))
             for algo in algos:
                 if isinstance(algo, str):
                     print(algo)

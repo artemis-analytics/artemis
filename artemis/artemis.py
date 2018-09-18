@@ -14,6 +14,7 @@ owns the stores needed by the user algorithms
     objects
 """
 # Python libraries
+import logging
 import sys
 import importlib
 import json
@@ -30,7 +31,6 @@ from artemis.core.steering import Steering
 # Data generators
 from artemis.generators.generators import GenCsvLike
 
-Logger.init()
 
 class Artemis():
     
@@ -104,20 +104,43 @@ class Artemis():
                 'after': 'proc_error'}
             ]
 
-    def __init__(self, name):
+    def __init__(self, name, **kwargs):
         self.jobname = name
         self.hbook = dict()
         self.steer = None
-        self.properties = None
         self._menu = None
         self._meta_dict = None
+        
+        ############################################################################
+        # Properties 
+        self.properties = Properties()
+        for key in kwargs:
+            self.properties.add_property(key, kwargs[key])
+        ############################################################################
+
+        ############################################################################
+        # Logging
+        self.__logger = logging.getLogger('artemis')
+     
+        # Check kwargs for loglevel, which overrides root logger level setting
+        # Duplicate code in AlgoBase
+        if 'loglevel' in kwargs:
+            numeric_level = getattr(logging, self.properties.loglevel.upper(), None)
+            if not isinstance(numeric_level, int):
+                raise ValueError('Invalid log level: %s' % loglevel)
+            self._setLogLevel(numeric_level)
+        else:
+            # Set the effective level from the root logger
+            self._setLogLevel(logging.getLogger().getEffectiveLevel())
+        ############################################################################
         
         # Data generator class instance
         self.generator = GenCsvLike()
         
         # Data Handler is just the generator function which returns a generator
         self.data_handler = self.generator.generate  
-
+        
+        ############################################################################
         # Initialize the State Machine
         # Artmetis' Soul
         self.meta_filename = None
@@ -126,7 +149,8 @@ class Artemis():
                                transitions=Artemis.transitions,
                                #send_event=True,
                                initial='quiescent')
-
+        ############################################################################
+        
         # Temporary placeholders to managing event loop
         self.num_chunks = 0
         self._chunkcntr = 0
@@ -151,12 +175,15 @@ class Artemis():
     def menu(self, config):
         self._menu = config
 
+    
+    def _setLogLevel(self, loglevel):
+        logging.getLogger('transitions').setLevel(loglevel)
+        self.__logger.setLevel(loglevel)
+
     def control(self):
         '''
         Stateful Job processing via pytransitions
         '''
-
-        Logger.info(self.state)
         self.launch()
         self.configure()
         self.initialize()

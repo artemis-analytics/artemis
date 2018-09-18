@@ -49,6 +49,15 @@ def _log_level_string_to_int(log_level_string):
 
     return log_level_int
 
+# Another way to set log level via command line options
+# --log=INFO
+# getattr(logging, loglevel.upper())
+# or user can pass INFO or info
+# numeric_level = getattr(logging, loglevel.upper(), None)
+# if not isinstance(numeric_level, int):
+#     raise ValueError('Invalid log level: %s' % loglevel)
+# logging.basicConfig(level=numerical_level, ...)
+
 
 class Logger():
     FMT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

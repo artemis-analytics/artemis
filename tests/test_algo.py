@@ -15,8 +15,9 @@ from artemis.algorithms.dummyalgo import DummyAlgo1
 import logging
 import sys 
 
-logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-logging.debug('Logging configured in package init')
+#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
+#logging.debug('Logging configured in package init')
 
 
 class AlgoTestCase(unittest.TestCase):
@@ -38,6 +39,7 @@ class AlgoTestCase(unittest.TestCase):
         self.testalgo.info('test info logger')
         # access logger through mangled attribute name
         self.testalgo._DummyAlgo1__logger.info('test info logger, again')
+        self.testalgo._DummyAlgo1__logger.debug('test debug logger')
 
 
 if __name__ == '__main__':

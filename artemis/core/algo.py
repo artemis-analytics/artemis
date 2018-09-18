@@ -45,6 +45,7 @@ class AbcAlgoBase(type):
         logger_name = '.'.join([c.__name__ for c in cls.mro()[-2::-1]])
 
         setattr(cls, logger_attribute_name, logging.getLogger(logger_name))
+        
 
 
 class AlgoBase(metaclass=AbcAlgoBase):
@@ -55,6 +56,8 @@ class AlgoBase(metaclass=AbcAlgoBase):
         self.__logger
         Derived class use the classmethods for info, debug, warn, error
         All formatting, loglevel checks, etc... can be done through the classmethods
+
+        Can we use staticmethods in artemis to make uniform formatting of info, debug, warn, error?
         '''
         self.__logger.info('Initialize Base')
         # name will be mangled to _AlgoBase__name
@@ -62,13 +65,27 @@ class AlgoBase(metaclass=AbcAlgoBase):
         self.properties = Properties()
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
-    
+        
+        # Check kwargs for loglevel, which overrides root logger level setting
+        if 'loglevel' in kwargs:
+            numeric_level = getattr(logging, self.properties.loglevel.upper(), None)
+            if not isinstance(numeric_level, int):
+                raise ValueError('Invalid log level: %s' % loglevel)
+            self.setLogLevel(numeric_level)
+        else:
+            # Set the effective level from the root logger
+            self.setLogLevel(logging.getLogger().getEffectiveLevel())
+        
     def __init_subclass__(cls, **kwargs):
         '''
         See PEP 487
         Essentially acts as a class method decorator
         '''
         super().__init_subclass__(**kwargs)
+    
+    @classmethod
+    def setLogLevel(cls, level):
+        getattr(cls, '_' + cls.__name__ + '__logger').setLevel(level)
     
     @classmethod
     def info(cls, msg):
