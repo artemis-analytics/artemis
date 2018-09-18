@@ -12,6 +12,11 @@
 import unittest
 
 from artemis.algorithms.dummyalgo import DummyAlgo1
+import logging
+import sys 
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+logging.debug('Logging configured in package init')
 
 
 class AlgoTestCase(unittest.TestCase):
@@ -28,6 +33,11 @@ class AlgoTestCase(unittest.TestCase):
     
     def test_algo(self):
         self.testalgo.execute('payload')
+    
+    def test_logger(self):
+        self.testalgo.info('test info logger')
+        # access logger through mangled attribute name
+        self.testalgo._DummyAlgo1__logger.info('test info logger, again')
 
 
 if __name__ == '__main__':

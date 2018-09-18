@@ -12,12 +12,18 @@ Testing algorithms
 import sys
 
 from artemis.core.algo import AlgoBase
-from artemis.logger import Logger
+#from artemis.logger import Logger
+
 
 class DummyAlgo1(AlgoBase):
    
     def __init__(self, name, **kwargs):
+        self.__logger.info('Initialize Child')
+
         super().__init__(name, **kwargs)
+        print('Child class dict')
+        print(self.__dict__)
+        self.info('{}: Initialized DummyAlgo1'.format(self.name))
     
     def initialize(self):
         pass
@@ -26,7 +32,9 @@ class DummyAlgo1(AlgoBase):
         pass
 
     def execute(self, payload):
-        Logger.info('Run: {} '.format(self.name))
+        print(self.__logger)
+        print(self._DummyAlgo1__logger)
+        self.__logger.info('Run: {} '.format(self.name))
         print('Input ', sys.getsizeof(payload))
         print('Test property', self.properties.myproperty)
 
