@@ -10,33 +10,40 @@
 Testing algorithms
 """
 import sys
+import logging
+from pprint import pformat
 
 from artemis.core.algo import AlgoBase
-#from artemis.logger import Logger
 
 
 class DummyAlgo1(AlgoBase):
    
     def __init__(self, name, **kwargs):
         self.__logger.info('Initialize Child')
-
         super().__init__(name, **kwargs)
-        print('Child class dict')
-        print(self.__dict__)
-        self.info('{}: Initialized DummyAlgo1'.format(self.name))
+        self.__logger.debug(pformat(self.__dict__))
+        self.info('%s: Initialized DummyAlgo1' % self.name)
     
     def initialize(self):
-        pass
+        self.__logger.info(self.__logger)
+        self.__logger.info(self._DummyAlgo1__logger)
+        self.__logger.info('%s: property %s' % (self.name, self.properties.myproperty))
 
     def book(self):
         pass
 
     def execute(self, payload):
-        print(self.__logger)
-        print(self._DummyAlgo1__logger)
-        self.__logger.info('Run: {} '.format(self.name))
-        print('Input ', sys.getsizeof(payload))
-        print('Test property', self.properties.myproperty)
+        if(logging.getLogger().isEnabledFor(logging.DEBUG) or
+                self.__logger.isEnabledFor(logging.DEBUG)):
+
+            # Prevent excessive formating calls when not required
+            # Note that we can indepdently change the logging level 
+            # for algo loggers and root logger
+            # Use string interpolation to prevent excessive format calls
+            self.__logger.debug('%s: execute ' % self.name)
+            # Check logging level if formatting requiered
+            self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
+        
         self.debug("Trying to debug")
 
     def finalize(self):

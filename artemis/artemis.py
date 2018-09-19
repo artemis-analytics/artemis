@@ -15,6 +15,7 @@ owns the stores needed by the user algorithms
 """
 # Python libraries
 import logging
+from pprint import pprint, pformat
 import sys
 import importlib
 import json
@@ -24,7 +25,6 @@ from collections import OrderedDict
 from transitions import Machine
 
 # Framework
-from artemis.logger import Logger
 from artemis.core.properties import Properties
 from artemis.core.steering import Steering
 
@@ -81,10 +81,10 @@ class Artemis():
                 'source': 'book',
                 'dest': 'run',
                 'after': '_run'},
-            #{'trigger': 'finalize',
-            #    'source': 'run',
-            #    'dest': 'finalization',
-            #    'after': '_finalize'},
+            # {'trigger': 'finalize',
+            #     'source': 'run',
+            #     'dest': 'finalization',
+            #     'after': '_finalize'},
             {'trigger': 'request_data',
                 'source': 'run',
                 'dest': 'execution',
@@ -127,7 +127,7 @@ class Artemis():
         if 'loglevel' in kwargs:
             numeric_level = getattr(logging, self.properties.loglevel.upper(), None)
             if not isinstance(numeric_level, int):
-                raise ValueError('Invalid log level: %s' % loglevel)
+                raise ValueError('Invalid log level: %s' % self.properties.loglevel)
             self._setLogLevel(numeric_level)
         else:
             # Set the effective level from the root logger
@@ -174,7 +174,6 @@ class Artemis():
     @menu.setter
     def menu(self, config):
         self._menu = config
-
     
     def _setLogLevel(self, loglevel):
         logging.getLogger('transitions').setLevel(loglevel)
@@ -193,52 +192,50 @@ class Artemis():
         self.run_job()
         self.no_data()
         self.error()
-        Logger.info('Ending test')
 
     def _launch(self):
-        Logger.info("Artemis is ready")
+        self.__logger.info('Artemis is ready')
 
     def _configure(self):
         '''
         Configure global job dependencies
         such as DB connections
         '''
-        print("Configure")
-        status = None
-        print(status)
+        self.__logger.info('Configure')
         self.hbook = dict() 
-        print("Hbook reference count: ", sys.getrefcount(self.hbook))
+        self.__logger.info("Hbook reference count: %i",
+                           sys.getrefcount(self.hbook))
         self.steer = Steering('steer')
-        self.properties = Properties()
-        self.num_chunks = 10
+
+        # Temporary hard-coded values to get something running
+        self.num_chunks = 2
         self.max_requests = 2
         self.processed = 0
-        # status = StatusCode.SUCCESS
-        # print(status.name)
-        # return StatusCode.SUCCESS
         return True
 
     def _initialize(self):
+        self.__logger.info("{}: Initialize".format('artemis'))
         self.steer.initialize(self)
     
     def _lock(self):
         '''
         Lock all properties before initialize
         '''
+        self.__logger.info("{}: Lock".format('artemis'))
         self.properties.lock = True
         self.steer.properties.lock = True
         for key in self._menu:
             algos = self._menu[key]
             for algo in algos:
                 if isinstance(algo, str):
-                    print(algo)
+                    self.__logger.debug("{}: Lock {}".format('artemis',algo))
                 else:
                     algo.properties.lock = True
     
     def _book(self):
+        self.__logger.info("{}: Book".format('artemis'))
         self.hbook["job_counts"] = "counts"
         self.steer.book()
-
    
     def _set_meta_environment(self, meta_filename):
         self.meta_filename = meta_filename
@@ -266,15 +263,18 @@ class Artemis():
                 if isinstance(algo, str):
                     continue
                 self._meta_dict['menu'][key][algo.name] = OrderedDict()
-                self._meta_dict['menu'][key][algo.name]['class'] = algo.__class__.__name__
-                self._meta_dict['menu'][key][algo.name]['module'] = algo.__module__
-                
+                self._meta_dict['menu'][key][algo.name]['class'] = \
+                    algo.__class__.__name__
+                self._meta_dict['menu'][key][algo.name]['module'] = \
+                    algo.__module__
                 props = algo.properties.properties
-                self._meta_dict['menu'][key][algo.name]['properties'] = OrderedDict()
+                self._meta_dict['menu'][key][algo.name]['properties'] = \
+                    OrderedDict()
                 for item in props:
                     #TODO: Retain the type information of the value
-                    self._meta_dict['menu'][key][algo.name]['properties'][item] = props[item]
-        print(self._meta_dict)
+                    self._meta_dict['menu'][key][algo.name]['properties'][item] = \
+                        props[item]
+        self.__logger.debug(pformat(self._meta_dict))
     
     def _to_json(self, meta_filename):
         try:
@@ -294,20 +294,20 @@ class Artemis():
         if data:
             self.from_dict(data)
         else:
-            print("Problem with config file")
+            self.__logger.error("parse_from_json: Problem with config file")
 
     def from_dict(self, config):
         '''
         Conversion from job to a configuration
         '''
         if 'job' not in config:
-            print('Error, job properties not stored')
+            self.__logger.error('from_dict: job properties not stored')
             return False
         if 'steer' not in config:
-            print('Error, steer properties not stored')
+            self.__logger.error('from_dict: steer properties not stored')
             return False
         if 'menu' not in config:
-            print('Error, menu not stored')
+            self.__logger.error('from_dict: menu not stored')
             return False
         for p in config['job']:
             self.properties.add_property(p, config['job'][p])
@@ -330,12 +330,13 @@ class Artemis():
                           config['menu'][item][algo]['module'])
                     return False
                 class_ = getattr(module, config['menu'][item][algo]['class'])
-                print(algo, config['menu'][item][algo]['properties'])
+                self.__logger.debug("from_dict: {}".format(algo)) 
+                self.__logger.debug(pformat(config['menu'][item][algo]['properties']))
                 instance = class_(algo, 
                                   **config['menu'][item][algo]['properties']
                                   )
                 algos.append(instance)
-                print(instance)
+                self.__logger.debug("from_dict: instance {}".format(instance))
             menu[item] = tuple(algos)    
         self.menu = menu
         return True
@@ -344,12 +345,13 @@ class Artemis():
         '''
         Event Loop
         '''
-        print('Testing count after run_job ' + str(self._requestcntr))
+        self.__logger.info("{}: Run".format('artemis'))
+        self.__logger.debug('{} Testing count after run_job {}'.format('artemis',str(self._requestcntr)))
         while (self._requestcntr < self.max_requests):
             self.request_data()
-            print('Testing count after get_data ' + str(self._requestcntr))
+            self.__logger.debug('{} Testing count after get_data {}'.format('artemis',str(self._requestcntr)))
             self.execute()
-            print('Testing count after process_data ' + str(self._requestcntr))
+            self.__logger.debug('{} Testing count after process_data {}'.format('artemis',str(self._requestcntr)))
 
     def _finalize(self):
         print("Hbook refernce count: ", sys.getrefcount(self.hbook))
@@ -368,29 +370,31 @@ class Artemis():
         self.data = self.data_handler()
     
     def _request_datum(self):
-        msg = "On datum {0} and request {1}"
-        msg.format(self._chunkcntr, self._requestcntr)
-        print(self._chunkcntr, self._requestcntr)
+        self.__logger.debug('{}: request_datum: chunk: {} requests: {}'.format(
+                            'artemis', self._chunkcntr, self._requestcntr))
         try:
             self.payload = next(self.data)   # Request the next chunk to process
             if self.payload is None:
-                print("Error, generator returned but object is None")    
+                self.__logger.error("request_datum:generator returned but object is None")    
+                                    
         except:
-            print("Data handler empty, make request")
+            self.__logger.debug("request_datum: Data handler empty, make request")
             return False 
         else:
             self._chunkcntr += 1
             return True
 
     def _execute(self):
-        print(self.state)
+        if(self.__logger.isEnabledFor(logging.DEBUG)):
+            self.__logger.debug('Execute: State {}'.format('artemis', self.state))
         # TODO data request should send total payload size
-        print("Processing event size ", sys.getsizeof(self.data))
+        self.__logger.debug("Processing event size %2.1f", sys.getsizeof(self.data))
         while self._request_datum():
             self.steer.execute(self.payload)
             self.processed += sys.getsizeof(self.payload)
         # TODO should check total payload matches processed payload    
-        print('Processed ', self.processed)
+        if(self.__logger.isEnabledFor(logging.DEBUG)):
+            self.__logger.debug('Processed %2.1f', self.processed)
 
     def run_out(self):
         print(self.state)

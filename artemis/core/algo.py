@@ -11,10 +11,10 @@ Algorithms
 """
 
 import sys
-from abc import ABC, abstractproperty, abstractmethod
-from artemis.core.properties import Properties
-from artemis.logger import Logger
 import logging
+
+from artemis.core.properties import Properties
+
 
 # TODO Create an interface class to AlgoBase to expose the run, finalize methods to framework
 # Interface IAlgoBase class to expose the methods to the framework (apparently, I should not write a framework, see Fluent Python ... I am bored but probably getting paid)
@@ -68,9 +68,10 @@ class AlgoBase(metaclass=AbcAlgoBase):
         
         # Check kwargs for loglevel, which overrides root logger level setting
         if 'loglevel' in kwargs:
-            numeric_level = getattr(logging, self.properties.loglevel.upper(), None)
+            numeric_level = getattr(logging, 
+                                    self.properties.loglevel.upper(), None)
             if not isinstance(numeric_level, int):
-                raise ValueError('Invalid log level: %s' % loglevel)
+                raise ValueError('Invalid log level: %s' % self.properties.loglevel)
             self.setLogLevel(numeric_level)
         else:
             # Set the effective level from the root logger
