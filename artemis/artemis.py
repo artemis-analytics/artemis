@@ -106,6 +106,7 @@ class Artemis():
 
     def __init__(self, name, **kwargs):
         self.jobname = name
+        self.__loglevel = logging.INFO
         self.hbook = dict()
         self.steer = None
         self._menu = None
@@ -120,7 +121,7 @@ class Artemis():
 
         ############################################################################
         # Logging
-        self.__logger = logging.getLogger('artemis')
+        self.__logger = logging.getLogger(__name__)
      
         # Check kwargs for loglevel, which overrides root logger level setting
         # Duplicate code in AlgoBase
@@ -128,10 +129,12 @@ class Artemis():
             numeric_level = getattr(logging, self.properties.loglevel.upper(), None)
             if not isinstance(numeric_level, int):
                 raise ValueError('Invalid log level: %s' % self.properties.loglevel)
-            self._setLogLevel(numeric_level)
+            self.loglevel = numeric_level
         else:
             # Set the effective level from the root logger
-            self._setLogLevel(logging.getLogger().getEffectiveLevel())
+            self.loglevel = logging.getLogger().getEffectiveLevel()
+        
+        self._setLogLevel()
         ############################################################################
         
         # Data generator class instance
@@ -175,9 +178,17 @@ class Artemis():
     def menu(self, config):
         self._menu = config
     
-    def _setLogLevel(self, loglevel):
-        logging.getLogger('transitions').setLevel(loglevel)
-        self.__logger.setLevel(loglevel)
+    @property
+    def loglevel(self):
+        return self.__loglevel
+
+    @loglevel.setter
+    def loglevel(self, level):
+        self.__loglevel = level
+
+    def _setLogLevel(self):
+        logging.getLogger('transitions').setLevel(self.loglevel)
+        self.__logger.setLevel(self.loglevel)
 
     def control(self):
         '''
@@ -205,7 +216,11 @@ class Artemis():
         self.hbook = dict() 
         self.__logger.info("Hbook reference count: %i",
                            sys.getrefcount(self.hbook))
-        self.steer = Steering('steer')
+        self.steer = Steering('steer', loglevel=self.loglevel)
+        
+        # TODO
+        # For framework level classes, use module __name__ for logger
+        # getChild from artemis.artemis logger and set log level?
 
         # Temporary hard-coded values to get something running
         self.num_chunks = 2

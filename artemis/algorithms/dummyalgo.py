@@ -19,15 +19,15 @@ from artemis.core.algo import AlgoBase
 class DummyAlgo1(AlgoBase):
    
     def __init__(self, name, **kwargs):
-        self.__logger.info('Initialize Child')
         super().__init__(name, **kwargs)
         self.__logger.debug(pformat(self.__dict__))
-        self.info('%s: Initialized DummyAlgo1' % self.name)
+        self.__logger.info('%s: __init__ DummyAlgo1' % self.name)
     
     def initialize(self):
         self.__logger.info(self.__logger)
         self.__logger.info(self._DummyAlgo1__logger)
         self.__logger.info('%s: property %s' % (self.name, self.properties.myproperty))
+        self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
 
     def book(self):
         pass

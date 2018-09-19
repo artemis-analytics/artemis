@@ -23,10 +23,10 @@ class AlgoTestCase(unittest.TestCase):
     class TestAlgo(AlgoBase):
        
         def __init__(self, name, **kwargs):
-            self.__logger.info('Initialize Child')
             super().__init__(name, **kwargs)
+            self.__logger.debug(pformat(kwargs))
             self.__logger.debug(pformat(self.__dict__))
-            self.info('%s: Initialized DummyAlgo1' % self.name)
+            self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
         
         def initialize(self):
             self.__logger.info(self.__logger)
@@ -67,7 +67,6 @@ class AlgoTestCase(unittest.TestCase):
         self.testalgo.execute('payload')
     
     def test_logger(self):
-        self.testalgo.info('test info logger')
         # access logger through mangled attribute name
         self.testalgo._TestAlgo__logger.info('test info logger, again')
         self.testalgo._TestAlgo__logger.debug('test debug logger')
