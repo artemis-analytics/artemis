@@ -103,10 +103,13 @@ class Artemis():
                 'source': '*', 'dest': 'error', 
                 'after': 'proc_error'}
             ]
+    # Logging class attribute
+    __logger = logging.getLogger('artemis')
+    __loglevel = logging.INFO
 
     def __init__(self, name, **kwargs):
         self.jobname = name
-        self.__loglevel = logging.INFO
+        
         self.hbook = dict()
         self.steer = None
         self._menu = None
@@ -121,7 +124,7 @@ class Artemis():
 
         ############################################################################
         # Logging
-        self.__logger = logging.getLogger(__name__)
+        
      
         # Check kwargs for loglevel, which overrides root logger level setting
         # Duplicate code in AlgoBase

@@ -17,14 +17,17 @@ https://stackoverflow.com/questions/11557241/python-sorting-a-dependency-list
 Or toposort in PyPi
 https://bitbucket.org/ericvsmith/toposort
 """
-
+import logging
+from pprint import pformat
 from toposort import toposort, toposort_flatten
 from collections import OrderedDict, deque
 from functools import reduce as _reduce
 
+from artemis.core.algo import logged
 from .tree import Tree, Node
 
 
+@logged
 class Sequence():
     '''
     inputELs = list of input ELement names
@@ -36,15 +39,15 @@ class Sequence():
 
     Sequence object should be an iterable, immutable tuple of length 3
     '''
-    
     def __init__(self, parents, algos, element):
-
+        
         self._parents = []  # of type list
         #TODO: enforce tuple, length 1 tuples may not be defined correctly due to trailing ,
         self._algos = algos  # of type tuple 
         self._element = element  # expect string
         
-        print(type(parents))
+        self.__logger.info('%s: parent type %s' % (__class__.__name__,type(parents)))
+        self.__logger.debug('%s: parent type %s' % (__class__.__name__,type(parents)))
         if not isinstance(parents, list):
             raise TypeError("Sequence input must be list")
         for item in parents:
@@ -53,6 +56,7 @@ class Sequence():
             elif isinstance(item, Chain):
                 self._parents.append(item.leaf)
             else:
+                self.__logger.error('%s: Input element is not str or Chain' % __class__.__name__)
                 raise TypeError("Input element is not str or Chain")
         
         self._sequence = (self.parents, self.algos, self.element)
@@ -95,6 +99,7 @@ class Sequence():
     def __getitem__(self, position):
         return self._sequence[position]
 
+@logged
 class Chain():
     '''
     List of sequences (or a chain of actions (sequences) which must occur in an order))
@@ -105,7 +110,6 @@ class Chain():
     Note: Chain could originate from previous chain, or multiple chain
     allowing for predefined chains to used by others
     '''
-
     def __init__(self, item, root=["initial"]):
         # Item in a complete dag, represents a complete business process that can be easily scheduled from simply the item
         self._item = item  # type: str
@@ -114,6 +118,7 @@ class Chain():
         self._sequences = []  # type: List[Sequence]
 
         if not isinstance(root, list):
+            self.__logger.error('%s: Chain input must be list' % __class__.__name__)
             raise TypeError("Chain input must be list")
         for item in root:
             if isinstance(item, str):
@@ -121,6 +126,7 @@ class Chain():
             elif isinstance(item, Chain):
                 self._root.append(item.leaf)
             else:
+                self.__logger.error('%s: Input element is not str or Chain' % __class__.__name__)
                 raise TypeError("Input element is not str or Chain")
         
     def __repr__(self):
@@ -181,13 +187,13 @@ class Chain():
         # Obtain the roots and confirm
         root = _reduce(set.union, deptree.values()) - set(deptree.keys())
         if len(root - set(self._root)) != 0:
-            print("Error, extra item in tree")
+            self.__logger("%s: Error, extra item in tree" % __class__.__name__)
             return False
         
         # Toposort tree, ensure single leaf
         deptree_sorted = list(toposort(deptree))
         if(len(deptree_sorted[-1]) != 1):
-            print("Error, chain does not terminate to single leaf")
+            self.__logger("%s: Error, chain does not terminate to single leaf" % __class__.__name__)
             return False
         self._leaf = list(deptree_sorted[-1])[0]
         
@@ -211,10 +217,10 @@ class Chain():
         
         self._sequences = list(ordered_sequences)
         for i, seq in enumerate(self._sequences):
-            print("Sequence {0}".format(i))
-            print(seq)
+            self.__logger.debug("%s: Sequence %i %s" % (__class__.__name__, i, seq))
         return is_valid
 
+@logged
 class Menu():
     '''
     List of Chains which describe the various processing 
@@ -234,7 +240,6 @@ class Menu():
     Dictionary of sequences
     OutputElement: (tuple of sequences) 
     '''
-
     def __init__(self, name):
         self._name = name
         self._chains = []
@@ -265,7 +270,8 @@ class Menu():
         if chain.build() is True:
             self._chains.append(chain)
         else:
-            print("Error in validating chain ", chain.item)
+            self.__logger.error("%s: Error in validating chain %s" % 
+                                (__class__.__name__, chain.item))
 
     def generate(self):
         '''
@@ -282,9 +288,9 @@ class Menu():
         
         root = list(_reduce(set.union, deptree.values()) - set(deptree.keys()))
         if(len(root) != 1):
-            print("Root node has multiple inputs")
+            self.__logger.error("%s: Root node has multiple inputs" % __class__.__name__)
         elif root[0] != "initial":
-            print("Root node not set to initial")
+            self.__logger.error("%s: Root node not set to initial" % __class__.__name__)
         else:
             self._root = "initial"
         
@@ -294,7 +300,11 @@ class Menu():
                 self._sequence[element] = ("iorequest",)
             else:
                 self._sequence[element] = algomap[element]
-        print(self._sequence)
+        
+        if(logging.getLogger().isEnabledFor(logging.DEBUG) or
+                self.__logger.isEnabledFor(logging.DEBUG)):
+            self.__logger.debug("%s: generate %s " % 
+                                (__class__.__name__, pformat(self._sequence)))
         
         #This build the tree with the Tree and Node classes.
         #This adds each node to the tree from the ordered dictionary created from the toposort tree.
@@ -304,20 +314,26 @@ class Menu():
                 self._seq_tree.add_node(self._seq_tree.root)
             else:
                 self._seq_tree.add_node(Node(key))
-        print(self._seq_tree.nodes)
+        if(logging.getLogger().isEnabledFor(logging.DEBUG) or
+                self.__logger.isEnabledFor(logging.DEBUG)):
+            self.__logger.debug("%s: Nodes: %s" % 
+                          (__class__.__name__,pformat(self._seq_tree.nodes)))
         
         #This goes through the chains to set the children and parents properly.
         for chain in self.chains:
             for seq in chain.sequences:
-                print('Node: ' + seq.element + ' and parents: ' + str(seq.parents))
+                self.__logger.debug('%s Node: %s Parents: %s' % 
+                        (__class__.__name__, seq.element, seq.parents))
                 self._seq_tree.nodes[seq.element].parents = seq.parents
                 for parent in seq.parents:
                     self._seq_tree.nodes[parent].children.append(seq.element)
-        print(type(self._seq_tree.nodes['initial'].parents))
+        self.__logger.debug('%s Initial node parent type: %s' % 
+                            (__class__.__name__, type(self._seq_tree.nodes['initial'].parents)))
         for node in self._seq_tree.nodes.values():
             my_parents = node.parents
             my_children = node.children
-            print('Node: ' + node.key +  ', the parents: ' + str(my_parents) + ' and children: ' + str(my_children))
+            self.__logger.debug('%s: Node: %s Parents: %s Childern: %s' % 
+                (__class__.__name__, node.key, my_parents, my_children))
 
 class ChainDef():
     '''
