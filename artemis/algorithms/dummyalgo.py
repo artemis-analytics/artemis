@@ -44,7 +44,7 @@ class DummyAlgo1(AlgoBase):
             # Check logging level if formatting requiered
             self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
         
-        self.debug("Trying to debug")
+        self.__logger.debug("Trying to debug")
 
     def finalize(self):
         pass

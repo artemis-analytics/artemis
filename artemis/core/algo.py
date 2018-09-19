@@ -45,7 +45,6 @@ class AbcAlgoBase(type):
         logger_name = '.'.join([c.__name__ for c in cls.mro()[-2::-1]])
 
         setattr(cls, logger_attribute_name, logging.getLogger(logger_name))
-        
 
 
 class AlgoBase(metaclass=AbcAlgoBase):
@@ -146,32 +145,5 @@ class AlgoBase(metaclass=AbcAlgoBase):
         report timings, counters, etc..
         '''
         pass 
-
-
-class TestAlgo(AlgoBase):
-   
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
-    
-    def initialize(self):
-        pass
-
-    def book(self):
-        pass
-
-    def execute(self, payload):
-        print('Run ', self.name)
-        print('Input ', sys.getsizeof(payload))
-        print('Test property', self.properties.myproperty)
-
-    def finalize(self):
-        pass
-
-
-if __name__ == '__main__':
-
-    testalgo = TestAlgo('test')
-    testalgo.__run__('payload')
-
 
 

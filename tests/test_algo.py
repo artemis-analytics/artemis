@@ -11,19 +11,50 @@
 """
 import unittest
 
-from artemis.algorithms.dummyalgo import DummyAlgo1
+from artemis.core.algo import AlgoBase
 import logging
+from pprint import pformat
 import sys 
 
-#logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 logging.getLogger().setLevel(logging.DEBUG)
-#logging.debug('Logging configured in package init')
-
 
 class AlgoTestCase(unittest.TestCase):
     
+    class TestAlgo(AlgoBase):
+       
+        def __init__(self, name, **kwargs):
+            self.__logger.info('Initialize Child')
+            super().__init__(name, **kwargs)
+            self.__logger.debug(pformat(self.__dict__))
+            self.info('%s: Initialized DummyAlgo1' % self.name)
+        
+        def initialize(self):
+            self.__logger.info(self.__logger)
+            self.__logger.info(self._TestAlgo__logger)
+            self.__logger.info('%s: property %s' % (self.name, self.properties.myproperty))
+
+        def book(self):
+            pass
+
+        def execute(self, payload):
+            if(logging.getLogger().isEnabledFor(logging.DEBUG) or
+                    self.__logger.isEnabledFor(logging.DEBUG)):
+
+                # Prevent excessive formating calls when not required
+                # Note that we can indepdently change the logging level 
+                # for algo loggers and root logger
+                # Use string interpolation to prevent excessive format calls
+                self.__logger.debug('%s: execute ' % self.name)
+                # Check logging level if formatting requiered
+                self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
+            
+            self.__logger.debug("Trying to debug")
+
+        def finalize(self):
+            pass
+    
     def setUp(self):
-        self.testalgo = DummyAlgo1("dummyalgo", myproperty='ptest')
+        self.testalgo = self.TestAlgo("testalgo", myproperty='ptest', loglevel='INFO')
         print(self.testalgo.__dict__)
         self.testalgo.initialize()
         print(self.testalgo.__dict__)
@@ -38,8 +69,8 @@ class AlgoTestCase(unittest.TestCase):
     def test_logger(self):
         self.testalgo.info('test info logger')
         # access logger through mangled attribute name
-        self.testalgo._DummyAlgo1__logger.info('test info logger, again')
-        self.testalgo._DummyAlgo1__logger.debug('test debug logger')
+        self.testalgo._TestAlgo__logger.info('test info logger, again')
+        self.testalgo._TestAlgo__logger.debug('test debug logger')
 
 
 if __name__ == '__main__':
