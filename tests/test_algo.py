@@ -12,6 +12,7 @@
 import unittest
 
 from artemis.core.algo import AlgoBase
+from artemis.core.algo import logged
 import logging
 from pprint import pformat
 import sys 
@@ -19,13 +20,13 @@ import sys
 logging.getLogger().setLevel(logging.DEBUG)
 
 class AlgoTestCase(unittest.TestCase):
-    
     class TestAlgo(AlgoBase):
        
         def __init__(self, name, **kwargs):
             super().__init__(name, **kwargs)
             self.__logger.debug(pformat(kwargs))
             self.__logger.debug(pformat(self.__dict__))
+            self.__logger.debug(pformat(self.__class__.__dict__))
             self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
         
         def initialize(self):
@@ -54,9 +55,13 @@ class AlgoTestCase(unittest.TestCase):
             pass
     
     def setUp(self):
-        self.testalgo = self.TestAlgo("testalgo", myproperty='ptest', loglevel='INFO')
+        self.testalgo = self.TestAlgo("testalgo", myproperty='ptest', loglevel='DEBUG')
+        print("Name", self.testalgo.name)
+        self.testalgo2 = self.TestAlgo("testalgo2", myproperty='ptest', loglevel='DEBUG')
+        print("Name", self.testalgo2.name)
         print(self.testalgo.__dict__)
         self.testalgo.initialize()
+        print("Name", self.testalgo.name)
         print(self.testalgo.__dict__)
         print(self.testalgo.properties.myproperty)
     
