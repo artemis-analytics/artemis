@@ -4,7 +4,46 @@ class Element:
     Only important field is "key".
     """
     def __init__(self, key):
-        self.key = key
+        self._key = key
+        self._locked = False
+        self._data = None
+
+    @property
+    def key(self):
+        return self._key
+
+    @key.setter
+    def key(self, value):
+        if self.locked:
+            pass
+        else:
+            self._key = value
+
+    @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, status):
+        if self.locked:
+            pass
+        else:
+            self._locked = status
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        if self.locked:
+            pass
+        else:
+            self._data = value
+
+    def lock(self):
+        self.locked = True
+
 
 class Node:
     """Stable container to hold Element objects and operate on them."""
@@ -13,7 +52,7 @@ class Node:
         self.parents = parents
         self.children = [] 
         self.key = key
-        self.payload = None
+        self.payload = []
 
     def remove_from_parents(self):
         """Removes self from the lists of children of self's parents."""
@@ -27,9 +66,13 @@ class Node:
         """Allows pretty printing of Nodes."""
         return self.key
 
+    def add_payload(self, element):
+        self.payload.append(element)
+
 class Tree:
     """Structure of Nodes. Metadata/job organisation."""
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.root = None
         self.leaves = [] #Holds a list of keys of nodes that are leaves.
         self.nodes = {} #Holds the actual nodes referenced by their keys.
@@ -49,6 +92,7 @@ class Tree:
         for key, node in self.nodes.items():
             if len(node.children) == 0:
                 self.leaves.append(key)
+
     def update_parents(self):
         for node in self.nodes.values():
             for parent in node.parents:
