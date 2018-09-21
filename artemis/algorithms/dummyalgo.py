@@ -45,6 +45,7 @@ class DummyAlgo1(AlgoBase):
             self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
         
         self.__logger.debug("Trying to debug")
+        self.logger.info("using the logger property to get the hidden attribute")
 
     def finalize(self):
         pass

@@ -26,19 +26,7 @@ from artemis.core.properties import Properties
 # job.objectstore
 # Inherited classes for user-defined methods MyAlgo
 
-def logged(obj):
-    '''
-    Taken from autologging.py
-    Create a decorator to add logging to a class
-    '''
-    
-    # Default use module name for logger
-    # If AlgoBase use mro to set name
-    logger_name = obj.__module__
-    logger_attribute_name = '_' + obj.__name__ + '__logger'
-    setattr(obj, logger_attribute_name, logging.getLogger(logger_name))
-    
-    return obj
+
 
 class AbcAlgoBase(type):
     '''
@@ -56,7 +44,12 @@ class AbcAlgoBase(type):
 
         # Logger name derived accounting for inheritance for the bonus marks
         logger_name = '.'.join([c.__name__ for c in cls.mro()[-2::-1]])
-
+        
+        def fget(cls): return getattr(cls, logger_attribute_name) 
+        
+        # add the getter property to cls
+        setattr(cls, 'logger', property(fget))
+        # add the logger to cls
         setattr(cls, logger_attribute_name, logging.getLogger(logger_name))
 
 class AlgoBase(metaclass=AbcAlgoBase):

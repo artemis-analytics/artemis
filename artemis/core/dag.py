@@ -23,7 +23,7 @@ from toposort import toposort, toposort_flatten
 from collections import OrderedDict, deque
 from functools import reduce as _reduce
 
-from artemis.core.algo import logged
+from artemis.decorators import logged
 from .tree import Tree, Node
 
 

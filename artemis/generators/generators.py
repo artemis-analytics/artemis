@@ -17,7 +17,7 @@ import io
 import sys
 import logging
 
-from artemis.core.algo import logged
+from artemis.decorators import logged
 
 @logged
 class GenCsvLike:

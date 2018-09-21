@@ -25,6 +25,9 @@ from collections import OrderedDict
 from transitions import Machine
 
 # Framework
+from artemis import FMT
+from artemis import DEFAULT_LEVEL
+
 from artemis.core.properties import Properties
 from artemis.core.steering import Steering
 
@@ -105,7 +108,7 @@ class Artemis():
             ]
     # Logging class attribute
     __logger = logging.getLogger('artemis')
-    __loglevel = logging.INFO
+    __loglevel = DEFAULT_LEVEL
 
     def __init__(self, name, **kwargs):
         self.jobname = name
@@ -138,6 +141,7 @@ class Artemis():
             self.loglevel = logging.getLogger().getEffectiveLevel()
         
         self._setLogLevel()
+        self._addLogFileHandler()
         ############################################################################
         
         # Data generator class instance
@@ -192,6 +196,14 @@ class Artemis():
     def _setLogLevel(self):
         logging.getLogger('transitions').setLevel(self.loglevel)
         self.__logger.setLevel(self.loglevel)
+    
+    def _addLogFileHandler(self):
+        logging_fname = self.jobname + '.log'
+        fh = logging.FileHandler(logging_fname, 'w')
+        fh.setFormatter(logging.Formatter(FMT))
+        fh.setLevel(self.loglevel)
+        logging.getLogger().addHandler(fh)
+
 
     def control(self):
         '''

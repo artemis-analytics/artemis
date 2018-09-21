@@ -12,7 +12,6 @@
 import unittest
 
 from artemis.core.algo import AlgoBase
-from artemis.core.algo import logged
 import logging
 from pprint import pformat
 import sys 
@@ -75,6 +74,7 @@ class AlgoTestCase(unittest.TestCase):
         # access logger through mangled attribute name
         self.testalgo._TestAlgo__logger.info('test info logger, again')
         self.testalgo._TestAlgo__logger.debug('test debug logger')
+        self.testalgo.logger.info("Use logger getter property")
 
 
 if __name__ == '__main__':
