@@ -20,8 +20,11 @@ class DummyAlgo1(AlgoBase):
    
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.__logger.debug(pformat(self.__dict__))
         self.__logger.info('%s: __init__ DummyAlgo1' % self.name)
+        self.__logger.debug('%s: __init__ DummyAlgo1' % self.name)
+        self.__logger.warning('%s: __init__ DummyAlgo1 ' % self.name)
+        self.__logger.debug(pformat(self.__dict__))
+        print('%s: __init__ DummyAlgo1' % self.name)
     
     def initialize(self):
         self.__logger.info(self.__logger)

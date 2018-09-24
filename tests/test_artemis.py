@@ -19,7 +19,7 @@ from artemis.artemis import Artemis
 class ArtemisTestCase(unittest.TestCase):
 
     def setUp(self):
-        testalgo = DummyAlgo1('dummy', myproperty='ptest')
+        testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='DEBUG')
         
         #logging.getLogger('artemis.core.dag').setLevel(logging.DEBUG)
         

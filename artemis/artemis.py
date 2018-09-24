@@ -25,8 +25,7 @@ from collections import OrderedDict
 from transitions import Machine
 
 # Framework
-from artemis import FMT
-from artemis import DEFAULT_LEVEL
+from artemis.logger import Logger
 
 from artemis.core.properties import Properties
 from artemis.core.steering import Steering
@@ -35,6 +34,7 @@ from artemis.core.steering import Steering
 from artemis.generators.generators import GenCsvLike
 
 
+@Logger.logged
 class Artemis():
     
     # Global state,
@@ -106,12 +106,11 @@ class Artemis():
                 'source': '*', 'dest': 'error', 
                 'after': 'proc_error'}
             ]
-    # Logging class attribute
-    __logger = logging.getLogger('artemis')
-    __loglevel = DEFAULT_LEVEL
 
     def __init__(self, name, **kwargs):
         self.jobname = name
+        if 'jobname' not in kwargs:
+            kwargs['jobname'] = name
         
         self.hbook = dict()
         self.steer = None
@@ -127,21 +126,7 @@ class Artemis():
 
         ############################################################################
         # Logging
-        
-     
-        # Check kwargs for loglevel, which overrides root logger level setting
-        # Duplicate code in AlgoBase
-        if 'loglevel' in kwargs:
-            numeric_level = getattr(logging, self.properties.loglevel.upper(), None)
-            if not isinstance(numeric_level, int):
-                raise ValueError('Invalid log level: %s' % self.properties.loglevel)
-            self.loglevel = numeric_level
-        else:
-            # Set the effective level from the root logger
-            self.loglevel = logging.getLogger().getEffectiveLevel()
-        
-        self._setLogLevel()
-        self._addLogFileHandler()
+        Logger.configure(self, **kwargs) 
         ############################################################################
         
         # Data generator class instance
@@ -185,26 +170,6 @@ class Artemis():
     def menu(self, config):
         self._menu = config
     
-    @property
-    def loglevel(self):
-        return self.__loglevel
-
-    @loglevel.setter
-    def loglevel(self, level):
-        self.__loglevel = level
-
-    def _setLogLevel(self):
-        logging.getLogger('transitions').setLevel(self.loglevel)
-        self.__logger.setLevel(self.loglevel)
-    
-    def _addLogFileHandler(self):
-        logging_fname = self.jobname + '.log'
-        fh = logging.FileHandler(logging_fname, 'w')
-        fh.setFormatter(logging.Formatter(FMT))
-        fh.setLevel(self.loglevel)
-        logging.getLogger().addHandler(fh)
-
-
     def control(self):
         '''
         Stateful Job processing via pytransitions
@@ -220,7 +185,7 @@ class Artemis():
         self.error()
 
     def _launch(self):
-        self.__logger.info('Artemis is ready')
+        self.logger.info('Artemis is ready')
 
     def _configure(self):
         '''
@@ -231,7 +196,7 @@ class Artemis():
         self.hbook = dict() 
         self.__logger.info("Hbook reference count: %i",
                            sys.getrefcount(self.hbook))
-        self.steer = Steering('steer', loglevel=self.loglevel)
+        self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         
         # TODO
         # For framework level classes, use module __name__ for logger
@@ -258,7 +223,7 @@ class Artemis():
             algos = self._menu[key]
             for algo in algos:
                 if isinstance(algo, str):
-                    self.__logger.debug("{}: Lock {}".format('artemis',algo))
+                    self.__logger.debug("{}: Lock {}".format('artemis', algo))
                 else:
                     algo.properties.lock = True
     
@@ -362,6 +327,13 @@ class Artemis():
                 class_ = getattr(module, config['menu'][item][algo]['class'])
                 self.__logger.debug("from_dict: {}".format(algo)) 
                 self.__logger.debug(pformat(config['menu'][item][algo]['properties']))
+
+                # Update the logging level of the algorithms if loglevel not set
+                # This ensures that the user-defined algos get the artemis level logging
+                if 'loglevel' not in config['menu'][item][algo]['properties']:
+                    config['menu'][item][algo]['properties']['loglevel'] = \
+                            Logger.CONFIGURED_LEVEL
+
                 instance = class_(algo, 
                                   **config['menu'][item][algo]['properties']
                                   )

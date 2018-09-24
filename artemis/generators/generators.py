@@ -15,11 +15,10 @@ from array import array
 import csv
 import io
 import sys
-import logging
 
-from artemis.decorators import logged
+from artemis.logger import Logger
 
-@logged
+@Logger.logged
 class GenCsvLike:
     
     '''

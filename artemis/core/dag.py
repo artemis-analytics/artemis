@@ -23,11 +23,11 @@ from toposort import toposort, toposort_flatten
 from collections import OrderedDict, deque
 from functools import reduce as _reduce
 
-from artemis.decorators import logged
+from artemis.logger import Logger
 from .tree import Tree, Node
 
 
-@logged
+@Logger.logged
 class Sequence():
     '''
     inputELs = list of input ELement names
@@ -99,7 +99,7 @@ class Sequence():
     def __getitem__(self, position):
         return self._sequence[position]
 
-@logged
+@Logger.logged
 class Chain():
     '''
     List of sequences (or a chain of actions (sequences) which must occur in an order))
@@ -220,7 +220,7 @@ class Chain():
             self.__logger.debug("%s: Sequence %i %s" % (__class__.__name__, i, seq))
         return is_valid
 
-@logged
+@Logger.logged
 class Menu():
     '''
     List of Chains which describe the various processing 
