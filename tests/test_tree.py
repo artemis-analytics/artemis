@@ -1,3 +1,12 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
+# Copyright © 2018 Dominic Parent <dominic.parent@canada.ca>
+#
+# Distributed under terms of the  license.
+
+
 import unittest
 from collections import OrderedDict, namedtuple
 
@@ -33,6 +42,10 @@ class TreeTestCase(unittest.TestCase):
         self.assertIsNone(self.test_tree.root, msg='Value present in root.')
         self.assertEqual(len(self.test_tree.leaves), 0, msg='Length of leaves is not zero.')
         self.assertEqual(len(self.test_tree.nodes), 0, msg='Length of nodes is not zero.')
+
+        #Test to assert Tree singleton.
+        self.test_tree2 = Tree('My_test_tree2')
+        self.assertIs(self.test_tree, self.test_tree2, msg='Trees are not singletons.')
 
         #Test to verify that test_node is empty.
         self.test_node = None
