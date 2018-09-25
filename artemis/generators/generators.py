@@ -16,13 +16,15 @@ import csv
 import io
 import sys
 
+from artemis.logger import Logger
 
+@Logger.logged
 class GenCsvLike:
     
     '''
     Creates data in CSV format and sends bytes.
     '''
-
+    #__logger = logging.getLogger(__name__)
     def gen_chunk(self, ncolumn, unit, size):
         
         # Create a chunk of data of ncolumns, of size <size> in <unit>.
@@ -75,20 +77,24 @@ class GenCsvLike:
         chunk = bytes(output.getvalue(), encoding='utf_8')  
         return chunk
     
-    def generate(self):   
-        print("Producing Data")
+    def generate(self):  
+        print('Generate')
+        self.__logger.info("%s: Producing Data" % (__class__.__name__))
+        self.__logger.debug("%s: Producing Data" % (__class__.__name__))
         i = 0
         mysum = 0
         mysumsize = 0
         while i < 10:
             getdata = self.gen_chunk(20, 'm', 10)
-            print(type(getdata))  # Should be bytes.
+            self.__logger.debug('%s: type data: %s' % (__class__.__name__,type(getdata)))  # Should be bytes.
             mysumsize += sys.getsizeof(getdata)
             mysum += len(getdata)
             i += 1
             yield getdata
         
         # Helped to figure out the math for an average float size.
-        print('Average of total: ' + str(mysum/i)) 
+        self.__logger.debug('%s: Average of total: %2.1f' %
+                            (_class__.__name__, mysum/i)) 
         # Same as previous.
-        print('Average of size: ' + str(mysumsize/i))  
+        self.__logger.debug('%s: Average of size: %2.1f' %
+                            (__class__.__name__, mysumsize/i))  

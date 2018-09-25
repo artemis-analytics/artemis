@@ -10,6 +10,7 @@
 
 """
 import unittest
+import logging
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
@@ -18,8 +19,10 @@ from artemis.artemis import Artemis
 class ArtemisTestCase(unittest.TestCase):
 
     def setUp(self):
-        testalgo = DummyAlgo1('dummy', myproperty='ptest')
-
+        testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='DEBUG')
+        
+        #logging.getLogger('artemis.core.dag').setLevel(logging.DEBUG)
+        
         seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
         seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
         seq3 = Sequence(["seq1", "seq2"], (testalgo,), "seq3")
@@ -51,5 +54,14 @@ class ArtemisTestCase(unittest.TestCase):
     def test_control(self):
         print("Testing the Artemis Prototype")
         bow = Artemis("arrow")
-        bow.menu = self.testmenu.ordered_sequence
-        bow.control()
+        #bow.menu = self.testmenu.ordered_sequence
+        #bow.control()
+    
+    def test_logging(self):
+        boww = Artemis("boww", loglevel='DEBUG')
+        boww.menu = self.testmenu.ordered_sequence
+        boww.control()
+
+if __name__ == '__main__':
+    unittest.main()
+       
