@@ -158,8 +158,8 @@ stack that is vertically integrated, providing public APIs for each component:
 where the latter front-end API is really up to the users who are developing Arrow powered
 data science systems.
 
-![Arrow Shared](arrow-shared.png)
-![Arrow Copy](arrow-copy.png)
+![Arrow Shared](docs/arrow-shared.png)
+![Arrow Copy](docs/arrow-copy.png)
 
 ## Artemis Prototype
 
@@ -201,7 +201,7 @@ such that the *Chains* are managed by a *Steering* algorithm (which also inherit
 Artemis manages the data processing *Event Loop*, provides data to the algorithms, and handles data serialization
 and job finalization.
 
-![Artemis Control Flow](ArtemisControlFlow.png)
+![Artemis Control Flow](docs/ArtemisControlFlow.png)
 
 ### State Machine
 

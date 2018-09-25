@@ -221,7 +221,7 @@ class Artemis():
         self.properties.lock = True
         self.steer.properties.lock = True
         for key in self._menu:
-            algos = self._menu[key]
+            algos = self._menu[key].algos
             for algo in algos:
                 if isinstance(algo, str):
                     self.__logger.debug("{}: Lock {}".format('artemis', algo))
@@ -254,7 +254,7 @@ class Artemis():
         self._meta_dict['menu'] = OrderedDict()
         for key in self._menu:
             self._meta_dict['menu'][key] = OrderedDict()
-            algos = self._menu[key]
+            algos = self._menu[key].algos
             for algo in algos:
                 if isinstance(algo, str):
                     continue

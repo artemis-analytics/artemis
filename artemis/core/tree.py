@@ -4,49 +4,59 @@ class Element:
     Only important field is "key".
     """
     def __init__(self, key):
-        self.key = key
+        self._key = key
+        self._locked = False
+        self._data = None
+
+    @property
+    def key(self):
+        return self._key
+
+    @key.setter
+    def key(self, value):
+        if self.locked:
+            pass
+        else:
+            self._key = value
+
+    @property
+    def locked(self):
+        return self._locked
+
+    @locked.setter
+    def locked(self, status):
+        if self.locked:
+            pass
+        else:
+            self._locked = status
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        if self.locked:
+            pass
+        else:
+            self._data = value
+
+    def lock(self):
+        self.locked = True
+
 
 class Node:
     """Stable container to hold Element objects and operate on them."""
-    def __init__(self, key):
+    def __init__(self, key, parents):
 
-        self.parents = []
-        self.children = []
+        self.parents = parents
+        self.children = [] 
         self.key = key
-        self.payload = None
-        '''
-        Old way, add payload parameter if you want to use. Should be element.
-        self.payload = payload
-        '''
-
-    def with_parents(key, payload, parents):
-        mynode = Node(key,payload)
-        mynode.parents = parents
-        for parent in mynode.parents:
-            parent.children.append(mynode)
-        return mynode
-
-    def add_to_parents(self):
-        #TOFIX THIS IS COMPLETELY BORKED. FYI.
-        """Adds self to the lists of children of self's parents."""
-        for parent in self.parents.values():
-            parent.children.append(self)
+        self.payload = []
 
     def remove_from_parents(self):
         """Removes self from the lists of children of self's parents."""
-        for parent in self.parents:
-            if self.key in parent.children:
-                del parent.children[self]
-    
-    def update_leaves(self, tree): #Move this to Tree?
-        """Updates the list of leaves in the node's tree."""
-        for parent in self.parents:
-            if parent.key in tree.leaves:
-                del tree.leaves[parent.key]
-        tree.leaves[self.key] = self
-
-    def remove_from_leaves(self, tree): #Move this to Tree?
-        tree.leaves.remove(self)
+        pass
 
     def __str__(self):
         """Allows pretty printing of Nodes."""
@@ -56,27 +66,34 @@ class Node:
         """Allows pretty printing of Nodes."""
         return self.key
 
+    def add_payload(self, element):
+        self.payload.append(element)
+
 class Tree:
     """Structure of Nodes. Metadata/job organisation."""
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.root = None
-        self.leaves = {}
-        self.nodes = {}
-
-        '''
-        Old way, add root parameter, should be node.
-        self.root =  root
-        self.leaves = {root.key : self.root}
-        self.nodes = {root.key : self.root}
-        '''
+        self.leaves = [] #Holds a list of keys of nodes that are leaves.
+        self.nodes = {} #Holds the actual nodes referenced by their keys.
 
     def merge_trees(self, source_tree, target_element_key):
-        target_node = self.get_node_by_key(target_element_key)
-        target_node.remove_from_leaves(self)
-        self.leaves.append(source_tree.leaves)
+        pass
 
     def get_node_by_key(self, key):
         return self.nodes[key]
 
     def add_node(self, node):
         self.nodes[node.key] = node
+    
+    def update_leaves(self):
+        """Updates the list of leaves in the node's tree."""
+        self.leaves = []
+        for key, node in self.nodes.items():
+            if len(node.children) == 0:
+                self.leaves.append(key)
+
+    def update_parents(self):
+        for node in self.nodes.values():
+            for parent in node.parents:
+                self.nodes[parent].children.append(node.key)

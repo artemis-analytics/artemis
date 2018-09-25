@@ -20,7 +20,7 @@ https://bitbucket.org/ericvsmith/toposort
 import logging
 from pprint import pformat
 from toposort import toposort, toposort_flatten
-from collections import OrderedDict, deque
+from collections import OrderedDict, deque, namedtuple
 from functools import reduce as _reduce
 
 from artemis.logger import Logger
@@ -244,7 +244,6 @@ class Menu():
         self._name = name
         self._chains = []
         self._sequence = OrderedDict()  # Should be the menu data structure, an iterable actually with lookup to get algos
-        self._seq_tree = Tree()
     
     @property
     def chains(self):
@@ -262,10 +261,6 @@ class Menu():
     def ordered_sequence(self, elements):
         self._sequences = elements
 
-    @property
-    def seq_tree(self):
-        return self._seq_tree
-
     def add(self, chain):
         if chain.build() is True:
             self._chains.append(chain)
@@ -279,6 +274,7 @@ class Menu():
         Get root --> expect to be initial
         Get leaves --> Can be multiple
         '''
+        Seq_prop = namedtuple('Seq_prop', 'algos parents')
         deptree = {}    # Build the tree
         algomap = {}
         for chain in self._chains:
@@ -297,44 +293,11 @@ class Menu():
         tree = toposort_flatten(deptree)
         for element in tree:
             if element == "initial":
-                self._sequence[element] = ("iorequest",)
+                self._sequence[element] = Seq_prop("iorequest",[])
             else:
-                self._sequence[element] = algomap[element]
+                self._sequence[element] = Seq_prop(algomap[element], deptree[element])
+        print(self._sequence)
         
-        if(logging.getLogger().isEnabledFor(logging.DEBUG) or
-                self.__logger.isEnabledFor(logging.DEBUG)):
-            self.__logger.debug("%s: generate %s " % 
-                                (__class__.__name__, pformat(self._sequence)))
-        
-        #This build the tree with the Tree and Node classes.
-        #This adds each node to the tree from the ordered dictionary created from the toposort tree.
-        for key in self._sequence.keys():
-            if key == 'initial':
-                self._seq_tree.root = Node(key)
-                self._seq_tree.add_node(self._seq_tree.root)
-            else:
-                self._seq_tree.add_node(Node(key))
-        if(logging.getLogger().isEnabledFor(logging.DEBUG) or
-                self.__logger.isEnabledFor(logging.DEBUG)):
-            self.__logger.debug("%s: Nodes: %s" % 
-                          (__class__.__name__,pformat(self._seq_tree.nodes)))
-        
-        #This goes through the chains to set the children and parents properly.
-        for chain in self.chains:
-            for seq in chain.sequences:
-                self.__logger.debug('%s Node: %s Parents: %s' % 
-                        (__class__.__name__, seq.element, seq.parents))
-                self._seq_tree.nodes[seq.element].parents = seq.parents
-                for parent in seq.parents:
-                    self._seq_tree.nodes[parent].children.append(seq.element)
-        self.__logger.debug('%s Initial node parent type: %s' % 
-                            (__class__.__name__, type(self._seq_tree.nodes['initial'].parents)))
-        for node in self._seq_tree.nodes.values():
-            my_parents = node.parents
-            my_children = node.children
-            self.__logger.debug('%s: Node: %s Parents: %s Childern: %s' % 
-                (__class__.__name__, node.key, my_parents, my_children))
-
 class ChainDef():
     '''
     User defined class for generating the actual chain
