@@ -19,7 +19,7 @@ class Steering(AlgoBase):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ Steering' % self.name)           
         self.__logger.debug('%s: __init__ Steering' % self.name)            
-        self.__logger.warn('%s: __init__ Steering' % self.name)            
+        self.__logger.warning('%s: __init__ Steering' % self.name)            
 
     def initialize(self, job):
         self.hbook = job.hbook

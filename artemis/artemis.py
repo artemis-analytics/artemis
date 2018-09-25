@@ -74,7 +74,7 @@ class Artemis():
                 'source': 'lock',
                 'dest': 'meta',
                 'prepare': ['_to_dict'],
-                'before': '_set_meta_environment',
+                # 'before': '_set_meta_environment',
                 'after': '_to_json'},
             {'trigger': 'book_job',
                 'source': 'meta',
@@ -111,7 +111,8 @@ class Artemis():
         self.jobname = name
         if 'jobname' not in kwargs:
             kwargs['jobname'] = name
-        
+        self.meta_filename = self.jobname + '_meta.json'
+
         self.hbook = dict()
         self.steer = None
         self._menu = None
@@ -138,7 +139,7 @@ class Artemis():
         ############################################################################
         # Initialize the State Machine
         # Artmetis' Soul
-        self.meta_filename = None
+        
         self.machine = Machine(model=self,
                                states=Artemis.states,
                                transitions=Artemis.transitions,
@@ -178,7 +179,7 @@ class Artemis():
         self.configure()
         self.initialize()
         self.lock_properties()
-        self.metastore(meta_filename='artemiscfg.json')
+        self.metastore()
         self.book_job()
         self.run_job()
         self.no_data()
@@ -237,7 +238,7 @@ class Artemis():
         #print(event.kwargs)
         #self.meta_filename = event.kwargs.get('meta_filename', None)
         
-    def _to_dict(self, meta_filename):
+    def _to_dict(self):
         '''
         Dictionary of job configuration
         '''
@@ -271,9 +272,9 @@ class Artemis():
                         props[item]
         self.__logger.debug(pformat(self._meta_dict))
     
-    def _to_json(self, meta_filename):
+    def _to_json(self):
         try:
-            with open(meta_filename, 'x') as ofile:
+            with open(self.meta_filename, 'x') as ofile:
                 json.dump(self._meta_dict, ofile, indent=4)
         except IOError as e:
             print('I/O Error({0}: {1})'.format(e.errno, e.strerror))
