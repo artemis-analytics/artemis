@@ -11,8 +11,10 @@ Algorithms
 """
 
 import sys
-from abc import ABC, abstractproperty, abstractmethod
+import logging
+from artemis.logger import Logger
 from artemis.core.properties import Properties
+
 
 # TODO Create an interface class to AlgoBase to expose the run, finalize methods to framework
 # Interface IAlgoBase class to expose the methods to the framework (apparently, I should not write a framework, see Fluent Python ... I am bored but probably getting paid)
@@ -25,14 +27,61 @@ from artemis.core.properties import Properties
 # Inherited classes for user-defined methods MyAlgo
 
 
-class AlgoBase():
-    
+
+class AbcAlgoBase(type):
+    '''
+    https://stackoverflow.com/questions/29069655/python-logging-with-a-common-logger-class-mixin-and-class-inheritance
+
+    Logger for the Base class and each derived class.
+    Not for instances though
+    To identify logging from different configurations pass the instance name (attribute)
+    '''
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+         
+        # Explicit name mangling
+        logger_attribute_name = '_' + cls.__name__ + '__logger'
+
+        # Logger name derived accounting for inheritance for the bonus marks
+        logger_name = '.'.join([c.__name__ for c in cls.mro()[-2::-1]])
+        
+        def fget(cls): return getattr(cls, logger_attribute_name) 
+        
+        # add the getter property to cls
+        setattr(cls, 'logger', property(fget))
+        # add the logger to cls
+        setattr(cls, logger_attribute_name, logging.getLogger(logger_name))
+
+class AlgoBase(metaclass=AbcAlgoBase):
+     
     def __init__(self, name, **kwargs):
+        '''
+        Access the Base logger directly through
+        self.__logger
+        Derived class use the classmethods for info, debug, warn, error
+        All formatting, loglevel checks, etc... can be done through the classmethods
+
+        Can we use staticmethods in artemis to make uniform formatting of info, debug, warn, error?
+        '''
+        # Configure logging
+        Logger.configure(self, **kwargs)
+        
+        self.__logger.info('__init__ AlgoBase')
+        print('__init__ AlgoBase')
+        # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
-
+        
+        
+    def __init_subclass__(cls, **kwargs):
+        '''
+        See PEP 487
+        Essentially acts as a class method decorator
+        '''
+        super().__init_subclass__(**kwargs)
+    
     @property
     def name(self):
         return self.__name
@@ -44,7 +93,7 @@ class AlgoBase():
     @hbook.setter
     def hbook(self, hbook):
         self._hbook = hbook
-
+    
     def lock(self):
         '''
         Lock all properties for algorithm
@@ -75,30 +124,5 @@ class AlgoBase():
         report timings, counters, etc..
         '''
         pass 
-
-class TestAlgo(AlgoBase):
-   
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
-    
-    def initialize(self):
-        pass
-
-    def book(self):
-        pass
-
-    def execute(self, payload):
-        print('Run ', self.name)
-        print('Input ', sys.getsizeof(payload))
-        print('Test property', self.properties.myproperty)
-
-    def finalize(self):
-        pass
-
-if __name__ == '__main__':
-
-    testalgo = TestAlgo('test')
-    testalgo.__run__('payload')
-
 
 

@@ -2,81 +2,82 @@ import unittest
 from collections import OrderedDict, namedtuple
 
 from artemis.core.tree import Tree, Node, Element
-from artemis.core.algo import AlgoBase, TestAlgo
+from artemis.core.algo import AlgoBase
+from artemis.algorithms.dummyalgo import DummyAlgo1
 
-class TreeTestCase(unittest.TestCase):
+class TreeDummyCase(unittest.TestCase):
 
     def setUp(self):
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
-        self.sequence['test0'] = (Seq_prop(TestAlgo('test0'), []))
-        self.sequence['test1'] = (Seq_prop(TestAlgo('test1'), ['test0']))
-        self.sequence['test2'] = (Seq_prop(TestAlgo('test2'), ['test0']))
-        self.sequence['test3'] = (Seq_prop(TestAlgo('test3'), ['test0']))
-        self.sequence['test4'] = (Seq_prop(TestAlgo('test4'), ['test1','test2','test3']))
-        self.sequence['test5'] = (Seq_prop(TestAlgo('test5'), ['test1','test4']))
-        self.sequence['test6'] = (Seq_prop(TestAlgo('test6'), ['test2']))
-        self.sequence['test7'] = (Seq_prop(TestAlgo('test7'), ['test6']))
-        self.sequence['test8'] = (Seq_prop(TestAlgo('test8'), ['test7']))
-        self.sequence['test9'] = (Seq_prop(TestAlgo('test9'), ['test8']))
-        self.sequence['test10'] = (Seq_prop(TestAlgo('test10'), ['test0', 'test2', 'test7']))
-        self.sequence['test11'] = (Seq_prop(TestAlgo('test11'), ['test10']))
-        self.sequence['test12'] = (Seq_prop(TestAlgo('test12'), ['test11']))
+        self.sequence['test0'] = (Seq_prop(DummyAlgo1('test0'), []))
+        self.sequence['test1'] = (Seq_prop(DummyAlgo1('test1'), ['test0']))
+        self.sequence['test2'] = (Seq_prop(DummyAlgo1('test2'), ['test0']))
+        self.sequence['test3'] = (Seq_prop(DummyAlgo1('test3'), ['test0']))
+        self.sequence['test4'] = (Seq_prop(DummyAlgo1('test4'), ['test1','test2','test3']))
+        self.sequence['test5'] = (Seq_prop(DummyAlgo1('test5'), ['test1','test4']))
+        self.sequence['test6'] = (Seq_prop(DummyAlgo1('test6'), ['test2']))
+        self.sequence['test7'] = (Seq_prop(DummyAlgo1('test7'), ['test6']))
+        self.sequence['test8'] = (Seq_prop(DummyAlgo1('test8'), ['test7']))
+        self.sequence['test9'] = (Seq_prop(DummyAlgo1('test9'), ['test8']))
+        self.sequence['test10'] = (Seq_prop(DummyAlgo1('test10'), ['test0', 'test2', 'test7']))
+        self.sequence['test11'] = (Seq_prop(DummyAlgo1('test11'), ['test10']))
+        self.sequence['test12'] = (Seq_prop(DummyAlgo1('test12'), ['test11']))
 
     def tearDown(self):
         pass
 
     def test_control(self):
-        #Test to create Tree.
+        #Dummy to create Tree.
         self.test_tree = Tree('My_test_tree')
         self.assertEqual(self.test_tree.name, 'My_test_tree', msg='Tree name was not set properly.')
         self.assertIsNone(self.test_tree.root, msg='Value present in root.')
         self.assertEqual(len(self.test_tree.leaves), 0, msg='Length of leaves is not zero.')
         self.assertEqual(len(self.test_tree.nodes), 0, msg='Length of nodes is not zero.')
 
-        #Test to verify that test_node is empty.
+        #Dummy to verify that test_node is empty.
         self.test_node = None
         self.assertIsNone(self.test_node, msg='Node is not empty.')
 
-        #Test to create a node with specific properties.
+        #Dummy to create a node with specific properties.
         self.test_node = Node('test0', self.sequence['test0'].parents)
         self.assertEqual(self.test_node.key, 'test0', msg='Key is not set properly.')
         self.assertEqual(self.test_node.parents, [], msg='Parents is not set properly.')
         self.assertEqual(self.test_node.children, [], msg='Children is not set properly.')
         self.assertEqual(len(self.test_node.payload), 0, msg='Payload is not empty.')
         
-        #Test to have a Node assigned to the root of the Tree.
+        #Dummy to have a Node assigned to the root of the Tree.
         self.test_tree.root = self.test_node
         self.assertEqual(self.test_tree.root.key, self.test_node.key, msg='Root assign key is broken.')
         self.assertEqual(self.test_tree.root.children, self.test_node.children, msg='Root assign children is broken.')
         self.assertEqual(self.test_tree.root.parents, self.test_node.parents, msg='Root assign parent is broken.')
         self.assertEqual(self.test_tree.root.payload, self.test_node.payload, msg='Root assign payload is broken.')
 
-        #Test regarding adding leaves.
+        #Dummy regarding adding leaves.
         self.assertEqual(len(self.test_tree.nodes), 0, msg='Nodes list in tree contains node and should not.')
         self.assertEqual(len(self.test_tree.leaves), 0, msg='Leaves list should be empty.')
         self.test_tree.update_parents()
         self.test_tree.update_leaves()
         self.assertEqual(len(self.test_tree.leaves), 0, msg='Leaves list should be empty.')
 
-        #Test adding the root to the list of nodes.
+        #Dummy adding the root to the list of nodes.
         self.test_tree.add_node(self.test_node)
         self.assertEqual(len(self.test_tree.nodes), 1, msg='Nodes should be length 1.')
         self.assertEqual(self.test_tree.nodes['test0'].key, self.test_tree.root.key, msg='Nodes should have the same key property.')
 
-        #Test updating the nodes' parents and the tree's leaves.
+        #Dummy updating the nodes' parents and the tree's leaves.
         self.test_tree.update_parents()
         self.test_tree.update_leaves()
         self.assertEqual(self.test_tree.nodes[self.test_tree.leaves[0]], self.test_node, msg='Leaf does not equal stand alone node.')
         self.assertEqual(self.test_tree.nodes[self.test_tree.leaves[0]], self.test_tree.root, msg='Leaf does not equal tree root.')
 
-        #Test to add multiple nodes without updating leaves.
+        #Dummy to add multiple nodes without updating leaves.
         self.test_tree.add_node(Node('test1', self.sequence['test1'].parents))
         self.test_tree.add_node(Node('test2', self.sequence['test2'].parents))
         self.test_tree.add_node(Node('test3', self.sequence['test3'].parents))
         self.assertEqual(len(self.test_tree.nodes), 4, msg='Nodes should be length 4.')
 
-        #Test to update leaves with multiple leaves.
+        #Dummy to update leaves with multiple leaves.
         self.assertEqual(len(self.test_tree.leaves), 1, msg='Leaves should still be length 1.')
         self.test_tree.update_parents()
         self.test_tree.update_leaves()

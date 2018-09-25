@@ -17,11 +17,17 @@ https://stackoverflow.com/questions/11557241/python-sorting-a-dependency-list
 Or toposort in PyPi
 https://bitbucket.org/ericvsmith/toposort
 """
-
+import logging
+from pprint import pformat
 from toposort import toposort, toposort_flatten
 from collections import OrderedDict, deque, namedtuple
 from functools import reduce as _reduce
 
+from artemis.logger import Logger
+from .tree import Tree, Node
+
+
+@Logger.logged
 class Sequence():
     '''
     inputELs = list of input ELement names
@@ -33,15 +39,15 @@ class Sequence():
 
     Sequence object should be an iterable, immutable tuple of length 3
     '''
-    
     def __init__(self, parents, algos, element):
-
+        
         self._parents = []  # of type list
         #TODO: enforce tuple, length 1 tuples may not be defined correctly due to trailing ,
         self._algos = algos  # of type tuple 
         self._element = element  # expect string
         
-        print(type(parents))
+        self.__logger.info('%s: parent type %s' % (__class__.__name__,type(parents)))
+        self.__logger.debug('%s: parent type %s' % (__class__.__name__,type(parents)))
         if not isinstance(parents, list):
             raise TypeError("Sequence input must be list")
         for item in parents:
@@ -50,6 +56,7 @@ class Sequence():
             elif isinstance(item, Chain):
                 self._parents.append(item.leaf)
             else:
+                self.__logger.error('%s: Input element is not str or Chain' % __class__.__name__)
                 raise TypeError("Input element is not str or Chain")
         
         self._sequence = (self.parents, self.algos, self.element)
@@ -92,6 +99,7 @@ class Sequence():
     def __getitem__(self, position):
         return self._sequence[position]
 
+@Logger.logged
 class Chain():
     '''
     List of sequences (or a chain of actions (sequences) which must occur in an order))
@@ -102,7 +110,6 @@ class Chain():
     Note: Chain could originate from previous chain, or multiple chain
     allowing for predefined chains to used by others
     '''
-
     def __init__(self, item, root=["initial"]):
         # Item in a complete dag, represents a complete business process that can be easily scheduled from simply the item
         self._item = item  # type: str
@@ -111,6 +118,7 @@ class Chain():
         self._sequences = []  # type: List[Sequence]
 
         if not isinstance(root, list):
+            self.__logger.error('%s: Chain input must be list' % __class__.__name__)
             raise TypeError("Chain input must be list")
         for item in root:
             if isinstance(item, str):
@@ -118,6 +126,7 @@ class Chain():
             elif isinstance(item, Chain):
                 self._root.append(item.leaf)
             else:
+                self.__logger.error('%s: Input element is not str or Chain' % __class__.__name__)
                 raise TypeError("Input element is not str or Chain")
         
     def __repr__(self):
@@ -178,13 +187,13 @@ class Chain():
         # Obtain the roots and confirm
         root = _reduce(set.union, deptree.values()) - set(deptree.keys())
         if len(root - set(self._root)) != 0:
-            print("Error, extra item in tree")
+            self.__logger("%s: Error, extra item in tree" % __class__.__name__)
             return False
         
         # Toposort tree, ensure single leaf
         deptree_sorted = list(toposort(deptree))
         if(len(deptree_sorted[-1]) != 1):
-            print("Error, chain does not terminate to single leaf")
+            self.__logger("%s: Error, chain does not terminate to single leaf" % __class__.__name__)
             return False
         self._leaf = list(deptree_sorted[-1])[0]
         
@@ -208,10 +217,10 @@ class Chain():
         
         self._sequences = list(ordered_sequences)
         for i, seq in enumerate(self._sequences):
-            print("Sequence {0}".format(i))
-            print(seq)
+            self.__logger.debug("%s: Sequence %i %s" % (__class__.__name__, i, seq))
         return is_valid
 
+@Logger.logged
 class Menu():
     '''
     List of Chains which describe the various processing 
@@ -231,7 +240,6 @@ class Menu():
     Dictionary of sequences
     OutputElement: (tuple of sequences) 
     '''
-
     def __init__(self, name):
         self._name = name
         self._chains = []
@@ -257,7 +265,8 @@ class Menu():
         if chain.build() is True:
             self._chains.append(chain)
         else:
-            print("Error in validating chain ", chain.item)
+            self.__logger.error("%s: Error in validating chain %s" % 
+                                (__class__.__name__, chain.item))
 
     def generate(self):
         '''
@@ -275,9 +284,9 @@ class Menu():
         
         root = list(_reduce(set.union, deptree.values()) - set(deptree.keys()))
         if(len(root) != 1):
-            print("Root node has multiple inputs")
+            self.__logger.error("%s: Root node has multiple inputs" % __class__.__name__)
         elif root[0] != "initial":
-            print("Root node not set to initial")
+            self.__logger.error("%s: Root node not set to initial" % __class__.__name__)
         else:
             self._root = "initial"
         
@@ -312,87 +321,3 @@ class ChainDef():
         return chain
 
 
-def test_basic():
-    # First run the dummy example, then run our use of Sequence, Chain, Menu
-    sequence1 = (["initial"], ("alg1", "alg2"), "seq1")
-    sequence2 = (["initial"], ("alg1", "alg2"), "seq2")
-    sequence3 = (["seq1", "seq2"], ("alg1", "alg2"), "seq3")
-    sequence4 = (["seq3"], ("alg1", "alg2"), "seq4")
-
-    dummydag1 = [sequence1, sequence2, sequence3, sequence4]
-
-    #Chain1 = dummydag1
-
-    sequence5 = (["initial"], ("alg1", "alg2"), "seq5")
-    sequence6 = (["seq5"], ("alg1", "alg2"), "seq6")
-    sequence7 = (["seq5", "seq3"], ("alg1"), "seq7")
-    dummydag2 = [sequence7, sequence6, sequence5]
-
-    #Chain2 = dummydag2
-
-    #sequenceX = ([Chain1, Chain2], ("algs"), "outputEL")
-
-    dags = [dummydag1, dummydag2]
-
-    elements_unsorted = {}
-    # Actually have only 1 dag from initial
-    # Each subdag is just independent from other subdag from initial
-    # Need to get all subdags 
-    for dag in dags:
-        # Loop over list of sequences in a dag
-        for seq in dag:
-            elements_unsorted[seq[2]] = set(seq[0])
-
-    print(elements_unsorted)
-    print(list(toposort(elements_unsorted)))
-    print(toposort_flatten(elements_unsorted))
-
-def test_sequence():
-    pass
-
-if __name__ == "__main__":
-
-    # Testing with actual classes
-    seq1 = Sequence(["initial"], ("alg1", "alg2"), "seq1")
-    seq2 = Sequence(["initial"], ("alg1", "alg2"), "seq2")
-    seq3 = Sequence(["seq1", "seq2"], ("alg3",), "seq3")
-    seq4 = Sequence(["seq3"], ("alg4",), "seq4")
- 
-    print("===========Sequence===============")
-    print(seq1)
-    print("===========Sequence===============")
-    dummyChain1 = Chain("dummy1")
-    dummyChain1.add(seq1)
-    dummyChain1.add(seq4)
-    dummyChain1.add(seq3)
-    dummyChain1.add(seq2)
-    #print(dummyChain1._graph)
-    #dummyChain1._validate()
-    #for seq in dummyChain1.sequences:
-    #    print(seq[0],seq[1],seq[2])
-    #dummyChain1._validate_chain()
-    dummyChain1.build()
-
-    seq5 = Sequence(["initial"], ("alg1", "alg2"), "seq5")
-    seq6 = Sequence(["seq5"], ("alg1", "alg2"), "seq6")
-    seq7 = Sequence(["seq6"], ("alg1",), "seq7")
-
-    dummyChain2 = Chain("dummy2")
-    dummyChain2.add(seq5)
-    dummyChain2.add(seq6)
-    dummyChain2.add(seq7)
-
-    #dummyChain2._validate()
-    dummyChain2.build()
-
-    seqX = Sequence([dummyChain1, dummyChain2], ("algX",), "seqX")
-    print(seqX)
-    dummyChainX = Chain("dummyX", [dummyChain1, dummyChain2])
-    dummyChainX.add(seqX)
-
-
-    testmenu = Menu("test")
-    testmenu.add(dummyChain1)
-    testmenu.add(dummyChain2)
-    testmenu.add(dummyChainX)
-    testmenu.generate()
