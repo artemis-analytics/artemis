@@ -243,14 +243,13 @@ class Artemis():
         Dictionary of job configuration
         '''
         self._meta_dict = OrderedDict()
-        self._meta_dict['job'] = OrderedDict()
-        props = self.properties.properties
-        for item in props:
-            self._meta_dict['job'][item] = props[item]
-        props = self.steer.properties.properties
-        self._meta_dict['steer'] = OrderedDict()
-        for item in props:
-            self._meta_dict['steer'][item] = props[item]
+        self._meta_dict['job'] = self.properties.to_dict() 
+        
+        # TODO
+        # Make consistent the dictionary creation 
+        # for Steer via the AlgoBase::to_dict
+        self._meta_dict['steer'] = self.steer.properties.to_dict() 
+        
         self._meta_dict['menu'] = OrderedDict()
         for key in self._menu:
             self._meta_dict['menu'][key] = OrderedDict()
