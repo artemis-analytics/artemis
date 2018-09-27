@@ -258,18 +258,7 @@ class Artemis():
             for algo in algos:
                 if isinstance(algo, str):
                     continue
-                self._meta_dict['menu'][key][algo.name] = OrderedDict()
-                self._meta_dict['menu'][key][algo.name]['class'] = \
-                    algo.__class__.__name__
-                self._meta_dict['menu'][key][algo.name]['module'] = \
-                    algo.__module__
-                props = algo.properties.properties
-                self._meta_dict['menu'][key][algo.name]['properties'] = \
-                    OrderedDict()
-                for item in props:
-                    #TODO: Retain the type information of the value
-                    self._meta_dict['menu'][key][algo.name]['properties'][item] = \
-                        props[item]
+                self._meta_dict['menu'][key][algo.name] = algo.to_dict()
         self.__logger.debug(pformat(self._meta_dict))
     
     def _to_json(self):
