@@ -12,6 +12,8 @@ Algorithms
 
 import sys
 import logging
+from collections import OrderedDict
+
 from artemis.logger import Logger
 from artemis.core.properties import Properties
 
@@ -94,6 +96,24 @@ class AlgoBase(metaclass=AbcAlgoBase):
     def hbook(self, hbook):
         self._hbook = hbook
     
+    def to_dict(self):
+        '''
+        Create json-serialize class 
+        to create the algorithm from all properties
+        
+        name - instance name as found in menu
+        module - where the class algo resides
+        class - concrete class name
+        properties - all the user-defined properties
+        '''
+        _dict = OrderedDict()
+        _dict['name'] = self.name
+        _dict['class'] = self.__class__.__name__
+        _dict['module'] = self.__module__
+        _dict['properties'] = self.properties.to_dict()
+
+        return _dict
+
     def lock(self):
         '''
         Lock all properties for algorithm

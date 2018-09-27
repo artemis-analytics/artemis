@@ -10,6 +10,7 @@
 Property classes
 """
 
+from collections import OrderedDict
 
 class Properties():
     '''
@@ -30,7 +31,18 @@ class Properties():
         setattr(self.__class__, name, property(fget, fset))
         # add corresponding local variable
         setattr(self, '_' + name, value)
+    
+    def to_dict(self):
+        '''
+        Ordered dictionary of all user-defined properties
+        '''
+        _dict = OrderedDict()
+        for key in self.properties:
+            _dict[key] = self.properties[key]
+        
+        return _dict
 
+    
     def _set_property(self, name, value):
         if not self.lock:
             setattr(self, '_' + name, value)
