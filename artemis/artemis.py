@@ -243,14 +243,13 @@ class Artemis():
         Dictionary of job configuration
         '''
         self._meta_dict = OrderedDict()
-        self._meta_dict['job'] = OrderedDict()
-        props = self.properties.properties
-        for item in props:
-            self._meta_dict['job'][item] = props[item]
-        props = self.steer.properties.properties
-        self._meta_dict['steer'] = OrderedDict()
-        for item in props:
-            self._meta_dict['steer'][item] = props[item]
+        self._meta_dict['job'] = self.properties.to_dict() 
+        
+        # TODO
+        # Make consistent the dictionary creation 
+        # for Steer via the AlgoBase::to_dict
+        self._meta_dict['steer'] = self.steer.properties.to_dict() 
+        
         self._meta_dict['menu'] = OrderedDict()
         for key in self._menu:
             self._meta_dict['menu'][key] = OrderedDict()
@@ -258,18 +257,7 @@ class Artemis():
             for algo in algos:
                 if isinstance(algo, str):
                     continue
-                self._meta_dict['menu'][key][algo.name] = OrderedDict()
-                self._meta_dict['menu'][key][algo.name]['class'] = \
-                    algo.__class__.__name__
-                self._meta_dict['menu'][key][algo.name]['module'] = \
-                    algo.__module__
-                props = algo.properties.properties
-                self._meta_dict['menu'][key][algo.name]['properties'] = \
-                    OrderedDict()
-                for item in props:
-                    #TODO: Retain the type information of the value
-                    self._meta_dict['menu'][key][algo.name]['properties'][item] = \
-                        props[item]
+                self._meta_dict['menu'][key][algo.name] = algo.to_dict()
         self.__logger.debug(pformat(self._meta_dict))
     
     def _to_json(self):

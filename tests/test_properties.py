@@ -10,6 +10,7 @@
 Dynamic property creation testing suite
 """
 import unittest
+import json
 
 from artemis.core.properties import Properties
 
@@ -40,6 +41,13 @@ class PropertyTestCase(unittest.TestCase):
         
         print(self.mydummy2.__dict__)
         assert(self.mydummy2.properties.a_property == 'dynamic')
+    
+    def test_dict(self):
+        _props = self.mydummy2.properties.to_dict()
+        print(_props)
+        #json.dumps(_props, indent=4)
+
+
 
 
 

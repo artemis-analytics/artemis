@@ -76,6 +76,9 @@ class AlgoTestCase(unittest.TestCase):
         self.testalgo._TestAlgo__logger.debug('test debug logger')
         self.testalgo.logger.info("Use logger getter property")
 
+    def test_dict(self):
+       print(pformat(self.testalgo.to_dict())) 
+
 
 if __name__ == '__main__':
     unittest.main()
