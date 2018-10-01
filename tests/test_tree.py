@@ -11,27 +11,25 @@ import unittest
 from collections import OrderedDict, namedtuple
 
 from artemis.core.tree import Tree, Node, Element
-from artemis.core.algo import AlgoBase
-from artemis.algorithms.dummyalgo import DummyAlgo1
 
 class TreeDummyCase(unittest.TestCase):
 
     def setUp(self):
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
-        self.sequence['test0'] = (Seq_prop(DummyAlgo1('test0'), []))
-        self.sequence['test1'] = (Seq_prop(DummyAlgo1('test1'), ['test0']))
-        self.sequence['test2'] = (Seq_prop(DummyAlgo1('test2'), ['test0']))
-        self.sequence['test3'] = (Seq_prop(DummyAlgo1('test3'), ['test0']))
-        self.sequence['test4'] = (Seq_prop(DummyAlgo1('test4'), ['test1','test2','test3']))
-        self.sequence['test5'] = (Seq_prop(DummyAlgo1('test5'), ['test1','test4']))
-        self.sequence['test6'] = (Seq_prop(DummyAlgo1('test6'), ['test2']))
-        self.sequence['test7'] = (Seq_prop(DummyAlgo1('test7'), ['test6']))
-        self.sequence['test8'] = (Seq_prop(DummyAlgo1('test8'), ['test7']))
-        self.sequence['test9'] = (Seq_prop(DummyAlgo1('test9'), ['test8']))
-        self.sequence['test10'] = (Seq_prop(DummyAlgo1('test10'), ['test0', 'test2', 'test7']))
-        self.sequence['test11'] = (Seq_prop(DummyAlgo1('test11'), ['test10']))
-        self.sequence['test12'] = (Seq_prop(DummyAlgo1('test12'), ['test11']))
+        self.sequence['test0'] = (Seq_prop('algotest0', []))
+        self.sequence['test1'] = (Seq_prop('algotest1', ['test0']))
+        self.sequence['test2'] = (Seq_prop('algotest2', ['test0']))
+        self.sequence['test3'] = (Seq_prop('algotest3', ['test0']))
+        self.sequence['test4'] = (Seq_prop('algotest4', ['test1','test2','test3']))
+        self.sequence['test5'] = (Seq_prop('algotest5', ['test1','test4']))
+        self.sequence['test6'] = (Seq_prop('algotest6', ['test2']))
+        self.sequence['test7'] = (Seq_prop('algotest7', ['test6']))
+        self.sequence['test8'] = (Seq_prop('algotest8', ['test7']))
+        self.sequence['test9'] = (Seq_prop('algotest9', ['test8']))
+        self.sequence['test10'] = (Seq_prop('algotest10', ['test0', 'test2', 'test7']))
+        self.sequence['test11'] = (Seq_prop('algotest11', ['test10']))
+        self.sequence['test12'] = (Seq_prop('algotest12', ['test11']))
 
     def tearDown(self):
         pass
