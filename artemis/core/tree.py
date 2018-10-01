@@ -1,3 +1,13 @@
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
+# Copyright © 2018 Dominic Parent <dominic.parent@canada.ca>
+#
+# Distributed under terms of the  license.
+
+from .singleton import Singleton
+
 class Element:
     """
     Element class to generically contain whatever we want to put in the tree.
@@ -69,7 +79,7 @@ class Node:
     def add_payload(self, element):
         self.payload.append(element)
 
-class Tree:
+class Tree(metaclass=Singleton):
     """Structure of Nodes. Metadata/job organisation."""
     def __init__(self, name):
         self.name = name
