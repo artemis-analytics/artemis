@@ -2,6 +2,7 @@
 Version: Draft
  
 # Executive Summary
+
 * Experiment agreement regarding the investigation. This experiment investigates: 
     * The application of the Apache Arrow in-memory tabular data format for processing Administrative Data.
 * The results of experiment will provide: 
@@ -18,30 +19,37 @@ experimental data processing systems.
 # Table of Contents
 
 # 1.	Introduction
-This document is an agreement between investigators and stakeholders on the timeline, scope and feasibility of the experiment. The agreement is sectioned as follows:
+This document is an agreement between investigators and stakeholders on the timeline, scope and feasibility of the experiment. 
+The agreement is sectioned as follows:
+
 * Problem Background summarizes the problem and the context of this experiment. It further defines potential outcomes.  
 * Investigators, Stakeholders and Partners states the parties involved in this experiment 
 * Experiment Overview outlines the technology under consideration, specifies the feasibility criteria and the experiment outputs. 
+
 The project is supported by the Administrative Data Division (ADD).
 
 Any additional information on this document can be outlined here…
+
 # 2.	Investigators, Stakeholders and Partners
+
 ## 2.1 Investigators 
-| Role | Name | Group | Responsibility| 
-| ---- | ---- | ----- | ------------- |
-| Principal Investigator | Ryan White | Administrative Data Division | Lead in the design of the solution under test <br\> Lead in the design of the test criteria <br\> Lead the execution of experiment and sprints <br\> Coordinates investigation between key investigators <br\> Lead in documentation of experiment output |
-| Investigator | Dominic Parent| Administrative Data Division | Aid in the design of test criteria <br\> Aid in the test of the solution <br\> Execution of the experiment <br\> Conduct investigation <br\> Document results |
+
+|         Role           |     Name    |     Group     |     Responsibility    | 
+| ---------------------- | ----------- | ------------- | --------------------- |
+| Principal Investigator | Ryan White | Administrative Data Division | Lead in the design of the solution under test. <br\> Lead in the design of the test criteria. <br\> Lead the execution of experiment and sprints. <br\> Coordinates investigation between key investigators. <br\> Lead in documentation of experiment output |
+| Investigator | Dominic Parent| Administrative Data Division | Aid in the design of test criteria. <br\> Aid in the test of the solution. <br\> Execution of the experiment. <br\> Conduct investigation. <br\> Document results. |
 
 ## 2.2 Partners
-| Role | Name | Group | Responsibility| 
-| ---- | ---- | ----- | ------------- |
-| External Partner | Apache Arrow Project Developers | Apache Arrow Project | Provides support to the experiment|
-| Internal Partner | Jos&eacute;e Cellard | Administrative Data Division | Provides requirements on existing business processes, data flow, and data production requirements |
 
+|         Role           |     Name    |     Group     |     Responsibility    | 
+| ---------------------- | ----------- | ------------- | --------------------- |
+| External Partner | Apache Arrow Project Developers | Apache Arrow Project | Provides support to the experiment.|
+| Internal Partner | Jos&eacute;e Cellard | Administrative Data Division | Provides requirements on existing business processes, data flow, and data production requirements. |
 
 ## 2.3 Stakeholders 
-| Role | Name | Group | 
-| ---- | ---- | ----- | 
+
+|         Role           |     Name    |     Group     |
+| ---------------------- | ----------- | ------------- | 
 | Executive Stakeholder, Sponsor | H&eacute;l&egrave;ne B&eacute;rard| Administrative Data Division|
 | Other Stakeholder(s) | Crystal Sewards| Administrative Data Division |
 | Stakeholder |	Marc Philippe St-Amour | Digital Innovation |
@@ -59,8 +67,10 @@ perspective while also accesible for analysts.
 Analytical workloads for administrative data sources will follow a pattern of write once, read many times. 
 Analysts will iterate many times on a master data set to produce subsets of data tailored to the analysis and
 business needs. Analytical queries will have common data access patterns, for example: 
+
 * reading subsets of columns for large number of rows at a time 
 * accessing elements in adjacent columns in succession. 
+
 The workload and access patterns can benefit from column oriented table structures over traditional 
 row-oriented access patterns which are more commonly found in traditional databases.
 
@@ -80,7 +90,7 @@ Tabular data organized in a column-oriented format is both
 computational and I/O performant and simplifies production of derived data sets through simple, high-level filters.
 
 
-## Administrative Data Common Workflow
+## 3.1 Administrative Data Common Workflow
 
 The primary role of ADD is two-fold, data acquisition and data stewardship. Data acquisition refers to 
 the contractual agreement with external organizations
@@ -94,7 +104,7 @@ A brief overview of the general processing workflow is described below.
 * Validation of the expected number of records for a given data set.
 * Profiling of the data sets and the production of frequency tables.
   
-## Requirements for Adminstrative Data Processing
+## 3.2 Requirements for Adminstrative Data Processing
 
 **Performance** The typical performance indicator is the turnaround time required to run
 the entire processing chain when new requirements or data are introduced. 
@@ -122,7 +132,8 @@ into the datasets.
 
 ## 4.1 Technology Summary 
 
-### Open data standards
+### 4.1.1 Open data standards
+
 Open standards allow for systems to directly communicate with each other.
 Direct communication using standard protocols and data formats simplifies system architecture,
 reduces ecosystem fragmentation, improves interoperability across processes, and eliminates dependency on proprietary systems.
@@ -130,6 +141,7 @@ Most importantly, common data formats facilitate code reuse, sharing, effective 
 and data exchange, resulting in algorithms and libraries which are supported by a large open community.  
 
 Several examples of data standards in computing today:
+
 * Human-readable semi-structured: XML, JSON
 * Structure data query lanaguage: SQL has various flavors (MySQL, PostgreSQL, etc...)
 * Binary data (with metadata), several from the scientific community
@@ -140,6 +152,7 @@ Several examples of data standards in computing today:
 * Binary blobs via RPC protocols
     * Apache Avro
     * Protocol buffers (Google)
+
 The scientific community developed many common libraries in-use by data scientists
 today in Fortran, such as linear algebra routines. The scientific programming ecosystem
 in python effectively united around the ndarray, which is the NumPy multidimensional
@@ -174,7 +187,7 @@ including Python, C++ with Go in progress.
 **Standard** – Apache Arrow is backed by key developers from major open-source projects.
 
 Arrow defines language agnostic column-oriented data structures for array data which include 
-(see the Columnar Format 1.0 Milestone on Arrow Confluence https://cwiki.apache.org/confluence/display/ARROW/Columnar+Format+1.0+Milestone):
+(see the Columnar Format 1.0 Milestone on Arrow Confluence). 
 
 * Fixed-length primitive types: numbers, booleans, date and times, fixed size binary, decimals, and other values that fit into a given number
 * Variable-length primitive types: binary, string
@@ -184,6 +197,7 @@ Arrow defines language agnostic column-oriented data structures for array data w
 The Arrow column-oriented in-memory format provides serialization/deserialization and supports persistency to various
 column-oriented backend storage systems and formats. The choice for column-oriented format is based
 on the benefits achieved for performance reasons.
+
 * Common access patterns that benefit from column-oriented data access
     * Access elements in adjacent columns in succession.
     * Efficient access to specific columns.
@@ -202,7 +216,7 @@ stack that is vertically integrated, providing public APIs for each component:
 where the latter front-end API is really up to the users who are developing Arrow powered
 data science systems.
 
-### Artemis Prototype
+### 4.1.2 Artemis Prototype
 
 **Artemis** is a generic administrative data processing framework powered by Apache Arrow. 
 The Artemis prototype is a python data processing system with the following development goals: 
@@ -258,12 +272,12 @@ Touch points will review ongoing test results. The details of the touch points o
 ## 4.3 Feasibility Criteria
 The feasibility criteria specifies the areas of investigation which the experiment will demonstrate.  
 
-| Capability | Measure |
-| ---------- | ------- | 
-| Modular data processing system  | Meta-data driven processing <br\> Input / Output and serialization <br\> Algorithmic development with common data interface <br\> Ability to support various algorithms |
-| Open Data format standardization | Data converted and validated in a standard tabular data format <br\> Algorithms to validate the original data and converted data | 
-| Distributed processing | Data can be processed independently on partitions (datums) of files |
-| Result Retrieval | Converted, tabular, serialized data <br\> Dataset schema (meta-data) <br\> Log files <br\> Job meta-data <br\> Histogram dataset | 
+|         Capability     |     Measure    |
+| ---------------------- | -------------- | 
+| Modular data processing system  | Meta-data driven processing. <br\> Input / Output and serialization. <br\> Common data interface. <br\> Support various algorithms. |
+| Open Data format standardization | Validation of converted data. | 
+| Distributed processing | Data can be processed independently on data partitions. |
+| Result Retrieval | Converted, tabular, serialized data. <br\> Dataset schema (meta-data). <br\> Log files. <br\> Job meta-data. <br\> Histogram dataset. | 
 
 
 
@@ -284,16 +298,21 @@ cross-language, interoperable data processing and analysis systems.
 * **Artemis** version 0.1 application release.
 
 ## Works Cited
-Apache Arrow, https://apache.arrow.org
+
+* Apache Arrow, https://apache.arrow.org
+* Apache Arrow Confluence, https://cwiki.apache.org/confluence/display/ARROW/Columnar+Format+1.0+Milestone)
 
 ## Appendix A - Experiment Charter Guidelines
 
 The following guide helps with understanding the Experiment Charter
 
 The Spirit of Experimentation 
+
 * Experimentation is a de-risk mechanism to explore new techniques and moonshot ideas without impact to the operation of the business. 
 * Goal of experimentation is to fail early (e.g. tackle the toughest feasibility issues first)
+
 Investigators, Stakeholders and Partners
+
 * The principal investigator is responsible for the results of this experiment. The other named investigators will aid the principal investigator and perform evaluations of the solution. Roles for each investigator can be further defined if needed. 
 * Stakeholders are persons that have an interest in the results in the experiment (e.g. business, technical).
 * Partners may be internal or external members that aid in the implementation of the experiment 
@@ -301,6 +320,7 @@ Investigators, Stakeholders and Partners
 
 Duration and Experiment Process 
 Each iteration (or sprint) should be structured as follows:
+
 1. Design and Create
     * Record the design and procedure to set up
     * Record the identified test cases, the defined metric (feasibility criteria test case), and the means to measure
