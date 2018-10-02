@@ -11,10 +11,12 @@ import unittest
 from collections import OrderedDict, namedtuple
 
 from artemis.core.tree import Tree, Node, Element
+from artemis.core.singleton import Singleton
 
 class TreeDummyCase(unittest.TestCase):
 
     def setUp(self):
+        Singleton.reset(Tree)
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
         self.sequence['test0'] = (Seq_prop('algotest0', []))
@@ -32,7 +34,7 @@ class TreeDummyCase(unittest.TestCase):
         self.sequence['test12'] = (Seq_prop('algotest12', ['test11']))
 
     def tearDown(self):
-        pass
+        Singleton.reset(Tree)
 
     def test_control(self):
         #Dummy to create Tree.

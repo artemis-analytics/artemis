@@ -25,8 +25,6 @@ from functools import reduce as _reduce
 
 from artemis.logger import Logger
 from .tree import Tree, Node
-from .singleton import Singleton
-
 
 @Logger.logged
 class Sequence():
@@ -222,7 +220,7 @@ class Chain():
         return is_valid
 
 @Logger.logged
-class Menu(metaclass=Singleton):
+class Menu():
     '''
     List of Chains which describe the various processing 
     for the given inputs
@@ -298,6 +296,31 @@ class Menu(metaclass=Singleton):
             else:
                 self._sequence[element] = Seq_prop(algomap[element], deptree[element])
         print(self._sequence)
+
+    def to_graph(self):    
+        '''
+        Generates ordered dictionary of node and algorithms
+        Execution graph for Steering
+        '''
+    
+    def to_tree(self):
+        '''
+        Generates the dictionary of children and parents
+        '''
+
+    def to_algodict(self):
+        '''
+        Generates the algorithm properties
+        '''
+
+    def to_dict(self):
+        menucfg = OrderedDict()
+        menucfg['graph'] = to_graph()
+        menucfg['tree'] = to_tree()
+        menucfg['algos'] = to_algodict()
+
+        # parse to a json file
+        
         
 class ChainDef():
     '''
