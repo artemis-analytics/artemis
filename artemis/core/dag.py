@@ -302,16 +302,32 @@ class Menu():
         Generates ordered dictionary of node and algorithms
         Execution graph for Steering
         '''
+        graph_dict = OrderedDict()
+        for key in self._sequence:
+            graph_dict[key] = self._sequence[key].algos
+        return graph_dict
     
     def to_tree(self):
         '''
         Generates the dictionary of children and parents
         '''
+        tree_dict = OrderedDict()
+        for key in self._sequence:
+            tree_dict[key] = self._sequence[key].parents
+        return tree_dict
 
     def to_algodict(self):
         '''
         Generates the algorithm properties
         '''
+        algo_dict = OrderedDict()
+        for key in self._sequence:
+            for algo in self._sequence[key].algos:
+                if isinstance(algo, str):
+                    pass
+                else:
+                    algo_dict[algo.name] = algo.to_dict()
+        return algo_dict
 
     def to_dict(self):
         menucfg = OrderedDict()

@@ -60,6 +60,9 @@ class ArtemisTestCase(unittest.TestCase):
     def test_logging(self):
         boww = Artemis("boww", loglevel='DEBUG')
         boww.menu = self.testmenu.ordered_sequence
+        print(self.testmenu.to_graph())
+        print(self.testmenu.to_tree())
+        print(self.testmenu.to_algodict())
         boww.control()
 
 if __name__ == '__main__':
