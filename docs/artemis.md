@@ -17,9 +17,8 @@ engine, and front-end API.
 
 ## Introduction
 
-The use of non-traditional administrative data for Official Statistics has a several notable features:
+The use of administrative data for Official Statistics has a several notable features:
 
-* Data is closest to the true and timely state of population demographics.
 * Preservation of the raw state of the data is required to extract the relevant and accurate statistics.
 * Data access patterns differ from traditional survey data.
 
@@ -80,7 +79,7 @@ into the datasets.
 
 ### Data standardization
 
-Open standards allow for systems to directly communicate with each other.
+Open standards enable systems, processes and libraries to communicate with each other.
 Direct communication using standard protocols and data formats simplifies system architecture,
 reduces ecosystem fragmentation, improves interoperability across processes, and eliminates dependency on proprietary systems.
 Most importantly, common data formats facilitate code reuse, sharing, effective collaboration 
@@ -97,7 +96,6 @@ Several examples of data standards in computing today:
 * Binary blobs via RPC protocols
     * Apache Avro
     * Protocol buffers (Google)
-(COMMENT: The following three paragraphs are an excellent explanation that should work for people in a wide variety of fields.)
 The scientific community developed many common libraries in-use by data scientists
 today in Fortran, such as linear algebra routines. The scientific programming ecosystem
 in python effectively united around the ndarray, which is the NumPy multidimensional
