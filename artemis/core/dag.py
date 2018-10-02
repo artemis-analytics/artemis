@@ -25,8 +25,6 @@ from functools import reduce as _reduce
 
 from artemis.logger import Logger
 from .tree import Tree, Node
-from .singleton import Singleton
-
 
 @Logger.logged
 class Sequence():
@@ -222,7 +220,7 @@ class Chain():
         return is_valid
 
 @Logger.logged
-class Menu(metaclass=Singleton):
+class Menu():
     '''
     List of Chains which describe the various processing 
     for the given inputs
