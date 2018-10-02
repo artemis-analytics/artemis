@@ -298,6 +298,31 @@ class Menu(metaclass=Singleton):
             else:
                 self._sequence[element] = Seq_prop(algomap[element], deptree[element])
         print(self._sequence)
+
+    def to_graph(self):    
+        '''
+        Generates ordered dictionary of node and algorithms
+        Execution graph for Steering
+        '''
+    
+    def to_tree(self):
+        '''
+        Generates the dictionary of children and parents
+        '''
+
+    def to_algodict(self):
+        '''
+        Generates the algorithm properties
+        '''
+
+    def to_dict(self):
+        menucfg = OrderedDict()
+        menucfg['graph'] = to_graph()
+        menucfg['tree'] = to_tree()
+        menucfg['algos'] = to_algodict()
+
+        # parse to a json file
+        
         
 class ChainDef():
     '''
