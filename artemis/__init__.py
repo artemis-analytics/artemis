@@ -6,8 +6,9 @@ from artemis.logger import Logger
 #                    format=Logger.FMT, 
 #                    level=Logger.DEFAULT_LEVEL)
 #logging.debug("Logging configured in package init")
+
 sh = logging.StreamHandler(sys.stdout)
 sh.setFormatter(logging.Formatter(Logger.FMT))
-sh.setLevel(Logger.DEFAULT_LEVEL)
+sh.setLevel(logging.DEBUG)
 logging.getLogger().addHandler(sh)
 

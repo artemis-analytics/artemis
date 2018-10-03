@@ -58,7 +58,7 @@ class ArtemisTestCase(unittest.TestCase):
         #bow.control()
     
     def test_logging(self):
-        boww = Artemis("boww", loglevel='DEBUG')
+        boww = Artemis("boww", loglevel='INFO')
         boww.menu = self.testmenu.ordered_sequence
         print(self.testmenu.to_graph())
         print(self.testmenu.to_tree())
