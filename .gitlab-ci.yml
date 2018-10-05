@@ -43,8 +43,21 @@ variables:
   PROJECT_NAME: stcdatascience/artemis
 
 stages:
+  - review  
   - test
   - document  
+
+
+review:
+  stage: review
+  image: ryanmwhitephd/alpine-scipy:73bdef0
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - pip install flake8
+    - flake8 artemis/  
+  only:
+    - branches
 
 test:
   stage: test

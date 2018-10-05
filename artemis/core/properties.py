@@ -27,11 +27,13 @@ class Properties():
         # Retain dictionary of properties
         self.properties[name] = value
         # Local fget and fset functions
-        fget = lambda self: self._get_property(name)
-        fset = lambda self, value: self._set_property(name, value)
+        # lambdas defined directly in property below
+        # fixes flake8 errors
 
         # add the property to self
-        setattr(self.__class__, name, property(fget, fset))
+        setattr(self.__class__, name,
+                property(lambda self: self._get_property(name),
+                         lambda self, value: self._set_property(name, value)))
         # add corresponding local variable
         setattr(self, '_' + name, value)
 

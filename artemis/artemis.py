@@ -189,7 +189,7 @@ class Artemis():
             self.__logger.error("Menu dictionary is null")
             raise NullDataError('Null menu')
         elif(logging.getLogger().isEnabledFor(logging.DEBUG) or
-                self.__logger.isEnabledFor(logging.DEBUG)):
+             self.__logger.isEnabledFor(logging.DEBUG)):
             self.__logger.debug(pformat(self.menu))
 
         # Fill the JobProperties
