@@ -15,19 +15,21 @@ owns the stores needed by the user algorithms
 """
 # Python libraries
 import logging
-from pprint import pprint, pformat
+from pprint import pformat
 import sys
 import importlib
 import json
 from collections import OrderedDict
 
 # Externals
-from transitions import Machine
 
 # Framework
 from artemis.logger import Logger
+from artemis.exceptions import NullDataError
 
+# Core
 from artemis.core.properties import Properties
+from artemis.core.properties import JobProperties
 from artemis.core.steering import Steering
 
 # Data generators
@@ -36,117 +38,49 @@ from artemis.generators.generators import GenCsvLike
 
 @Logger.logged
 class Artemis():
-    
-    # Global state,
-    states = ['quiescent',
-              'start',
-              'stop',
-              'configuration',
-              'initialization',
-              'lock',
-              'meta',
-              'book',
-              'run',
-              'execution',
-              'end',
-              'abort',
-              'error',
-              'finalization']
-    
-    transitions = [
-            {'trigger': 'launch',
-                'source': 'quiescent',
-                'dest': 'start',
-                'after': '_launch'},
-            {'trigger': 'configure',
-                'source': 'start',
-                'dest': 'configuration',
-                'after': '_configure'},
-            {'trigger': 'initialize',
-                'source': 'configuration',
-                'dest': 'initialization',
-                'after': '_initialize'},
-            {'trigger': 'lock_properties',
-                'source': 'initialization',
-                'dest': 'lock',
-                'after': '_lock'},
-            {'trigger': 'metastore',
-                'source': 'lock',
-                'dest': 'meta',
-                'prepare': ['_to_dict'],
-                # 'before': '_set_meta_environment',
-                'after': '_to_json'},
-            {'trigger': 'book_job',
-                'source': 'meta',
-                'dest': 'book',
-                'after': '_book'},
-            {'trigger': 'run_job',
-                'source': 'book',
-                'dest': 'run',
-                'after': '_run'},
-            # {'trigger': 'finalize',
-            #     'source': 'run',
-            #     'dest': 'finalization',
-            #     'after': '_finalize'},
-            {'trigger': 'request_data',
-                'source': 'run',
-                'dest': 'execution',
-                'after': '_request_data',
-                'conditions': '_check_requests'},
-            {'trigger': 'execute',
-                'source': 'execution',
-                'dest': 'run',
-                'after': ['_execute', '_requests_count']},
-            {'trigger': 'no_data',
-                'source': 'run',
-                'dest': 'end',
-                'after': 'run_out'},
-            # Can we have a Trigger that is also a Sate?
-            {'trigger': 'error', 
-                'source': '*', 'dest': 'error', 
-                'after': 'proc_error'}
-            ]
 
     def __init__(self, name, **kwargs):
+
+        # Set defaults if not configured
         self.jobname = name
+
+        # Set jobname to name of artemis instance
+        # Update kwargs
         if 'jobname' not in kwargs:
             kwargs['jobname'] = name
+
+        # Set menu configuration file to default testmenu.json
+        # Update kwargs
+        if 'menu' not in kwargs:
+            kwargs['menu'] = 'testmenu.json'
+
+        # Set the output global job configuration file
         self.meta_filename = self.jobname + '_meta.json'
 
         self.hbook = dict()
         self.steer = None
         self._menu = None
         self._meta_dict = None
-        
-        ############################################################################
-        # Properties 
+
+        #######################################################################
+        # Properties
         self.properties = Properties()
+        self.jobops = JobProperties()
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
-        ############################################################################
+        #######################################################################
 
-        ############################################################################
+        #######################################################################
         # Logging
-        Logger.configure(self, **kwargs) 
-        ############################################################################
-        
+        Logger.configure(self, **kwargs)
+        #######################################################################
+
         # Data generator class instance
         self.generator = GenCsvLike()
-        
+
         # Data Handler is just the generator function which returns a generator
-        self.data_handler = self.generator.generate  
-        
-        ############################################################################
-        # Initialize the State Machine
-        # Artmetis' Soul
-        
-        self.machine = Machine(model=self,
-                               states=Artemis.states,
-                               transitions=Artemis.transitions,
-                               #send_event=True,
-                               initial='quiescent')
-        ############################################################################
-        
+        self.data_handler = self.generator.generate
+
         # Temporary placeholders to managing event loop
         self.num_chunks = 0
         self._chunkcntr = 0
@@ -162,28 +96,66 @@ class Artemis():
     @jobname.setter
     def jobname(self, value):
         self._jobname = value
-    
+
     @property
     def menu(self):
+        '''
+        Menu is a collection of dictionaries
+        Execution graph according to output node
+        Parent-children node relationships
+        Properties of algorithms
+        '''
         return self._menu
 
     @menu.setter
     def menu(self, config):
         self._menu = config
-    
+
     def control(self):
         '''
         Stateful Job processing via pytransitions
         '''
-        self.launch()
-        self.configure()
-        self.initialize()
-        self.lock_properties()
-        self.metastore()
-        self.book_job()
-        self.run_job()
-        self.no_data()
-        self.error()
+        self._launch()
+
+        # Configure Artemis job
+        try:
+            self._configure()
+        except Exception as e:
+            self.logger.error('Caught error in configure')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
+
+        # Initialize all algorithms
+        try:
+            self._initialize()
+        except Exception as e:
+            self.logger.error('Caught error in initialize')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
+
+        # TODO
+        # Add exception handling
+        self._lock()
+        # TODO
+        # Add exception handling
+        self._to_dict()
+        try:
+            self._to_json()
+        except Exception as e:
+            self.logger.error('Caught error in initialize')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
+
+        # TODO
+        # Add exception handling
+        self._run()
+
+        # TODO
+        # Add exception handling
+        self._finalize()
 
     def _launch(self):
         self.logger.info('Artemis is ready')
@@ -194,11 +166,38 @@ class Artemis():
         such as DB connections
         '''
         self.__logger.info('Configure')
-        self.hbook = dict() 
+        self.hbook = dict()
         self.__logger.info("Hbook reference count: %i",
                            sys.getrefcount(self.hbook))
+
+        # Obtain the menu configuration
+        try:
+            with open(self.properties.menu, 'r') as ifile:
+                self.menu = json.load(ifile, object_pairs_hook=OrderedDict)
+        except IOError as e:
+            self.__logger.error("Cannot open file: %s", self.properties.menu)
+            self.__logger.error('I/O({0}: {1})'.format(e.errno, e.strerror))
+            # Propagate the expection up to Artemis::control()
+            raise
+        except Exception as e:
+            self.__logger.error("Unknow expection")
+            self.__logger.error("Reason: %s" % e)
+            # Propagate the expection up to Artemis::control()
+            raise
+
+        if not self.menu:
+            self.__logger.error("Menu dictionary is null")
+            raise NullDataError('Null menu')
+        elif(logging.getLogger().isEnabledFor(logging.DEBUG) or
+                self.__logger.isEnabledFor(logging.DEBUG)):
+            self.__logger.debug(pformat(self.menu))
+
+        # Fill the JobProperties
+        self.jobops.data['job'] = self.properties.to_dict()
+        self.jobops.data['menu'] = self.menu
+
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
-        
+
         # TODO
         # For framework level classes, use module __name__ for logger
         # getChild from artemis.artemis logger and set log level?
@@ -211,67 +210,62 @@ class Artemis():
 
     def _initialize(self):
         self.__logger.info("{}: Initialize".format('artemis'))
-        self.steer.initialize(self)
-    
+        try:
+            self.steer.initialize()
+        except Exception:
+            self.__logger.error('Cannot initialize Steering')
+            raise
+        self.jobops.data['steer'] = self.steer.to_dict()
+
     def _lock(self):
         '''
         Lock all properties before initialize
         '''
+        # TODO
+        # Exceptions?
         self.__logger.info("{}: Lock".format('artemis'))
         self.properties.lock = True
-        self.steer.properties.lock = True
-        for key in self._menu:
-            algos = self._menu[key].algos
-            for algo in algos:
-                if isinstance(algo, str):
-                    self.__logger.debug("{}: Lock {}".format('artemis', algo))
-                else:
-                    algo.properties.lock = True
-    
+        self.steer.lock()
+
     def _book(self):
         self.__logger.info("{}: Book".format('artemis'))
         self.hbook["job_counts"] = "counts"
         self.steer.book()
-   
+
     def _set_meta_environment(self, meta_filename):
         self.meta_filename = meta_filename
-        #print(event.kwargs)
-        #self.meta_filename = event.kwargs.get('meta_filename', None)
-        
+        # print(event.kwargs)
+        # self.meta_filename = event.kwargs.get('meta_filename', None)
+
     def _to_dict(self):
         '''
         Dictionary of job configuration
         '''
-        self._meta_dict = OrderedDict()
-        self._meta_dict['job'] = self.properties.to_dict() 
-        
         # TODO
-        # Make consistent the dictionary creation 
-        # for Steer via the AlgoBase::to_dict
-        self._meta_dict['steer'] = self.steer.properties.to_dict() 
-        
-        self._meta_dict['menu'] = OrderedDict()
-        for key in self._menu:
-            self._meta_dict['menu'][key] = OrderedDict()
-            algos = self._menu[key].algos
-            for algo in algos:
-                if isinstance(algo, str):
-                    continue
-                self._meta_dict['menu'][key][algo.name] = algo.to_dict()
+        # Exceptions?
+        self._meta_dict = OrderedDict()
+        self._meta_dict['job'] = self.properties.to_dict()
+        # Menu is already stored as OrderedDict
+        self._meta_dict['menu'] = self.menu
+        self._meta_dict['steer'] = self.steer.to_dict()
+
         self.__logger.debug(pformat(self._meta_dict))
-    
+
     def _to_json(self):
         try:
             with open(self.meta_filename, 'x') as ofile:
                 json.dump(self._meta_dict, ofile, indent=4)
         except IOError as e:
-            print('I/O Error({0}: {1})'.format(e.errno, e.strerror))
-            return False
-        except:
-            print('Unexpected error:', sys.exc_info()[0])
-            return False
-        return True
-    
+            self.__logger.error('I/O Error({0}: {1})'.
+                                format(e.errno, e.strerror))
+            raise
+        except TypeError:
+            self.__logger.error('TypeError: %s', pformat(self._meta_dict))
+            raise
+        except Exception:
+            self.__logger.error('Unknown error')
+            raise
+
     def parse_from_json(self, filename):
         with open(filename, 'r') as ifile:
             data = json.load(ifile, object_pairs_hook=OrderedDict)
@@ -310,88 +304,87 @@ class Artemis():
                             config['menu'][item][algo]['module']
                             )
                 except ImportError:
-                    print('Unable to load module ', 
+                    print('Unable to load module ',
                           config['menu'][item][algo]['module'])
                     return False
                 class_ = getattr(module, config['menu'][item][algo]['class'])
-                self.__logger.debug("from_dict: {}".format(algo)) 
-                self.__logger.debug(pformat(config['menu'][item][algo]['properties']))
+                self.__logger.debug("from_dict: %s" % (algo))
+                self.__logger.debug(pformat(
+                                    config['menu'][item][algo]['properties']
+                                    ))
 
-                # Update the logging level of the algorithms if loglevel not set
-                # This ensures that the user-defined algos get the artemis level logging
+                # Update algorithm logging level
                 if 'loglevel' not in config['menu'][item][algo]['properties']:
                     config['menu'][item][algo]['properties']['loglevel'] = \
                             Logger.CONFIGURED_LEVEL
 
-                instance = class_(algo, 
+                instance = class_(algo,
                                   **config['menu'][item][algo]['properties']
                                   )
                 algos.append(instance)
                 self.__logger.debug("from_dict: instance {}".format(instance))
-            menu[item] = tuple(algos)    
+            menu[item] = tuple(algos)
         self.menu = menu
         return True
-    
+
     def _run(self):
         '''
         Event Loop
         '''
-        self.__logger.info("{}: Run".format('artemis'))
-        self.__logger.debug('{} Testing count after run_job {}'.format('artemis',str(self._requestcntr)))
+        self.__logger.info("artemis: Run")
+        self.__logger.debug('artemis: Count at run call %s' %
+                            str(self._requestcntr))
         while (self._requestcntr < self.max_requests):
-            self.request_data()
-            self.__logger.debug('{} Testing count after get_data {}'.format('artemis',str(self._requestcntr)))
-            self.execute()
-            self.__logger.debug('{} Testing count after process_data {}'.format('artemis',str(self._requestcntr)))
+            self._request_data()
+            self.__logger.debug('Count after get_data %s' %
+                                str(self._requestcntr))
+            self._execute()
+            self.__logger.debug('Count after process_data %s' %
+                                str(self._requestcntr))
 
     def _finalize(self):
         print("Hbook refernce count: ", sys.getrefcount(self.hbook))
         print(self.hbook)
-    
+
     def _check_requests(self):
-        print('Remaining data check. Status coming up.')
+        self.__logger.info('Remaining data check. Status coming up.')
         return self._requestcntr < self.max_requests
 
     def _requests_count(self):
-        print(self.state)
         self._requestcntr += 1
 
     def _request_data(self):
-        print(self.state)
         self.data = self.data_handler()
-    
+        self._requests_count()
+
     def _request_datum(self):
         self.__logger.debug('{}: request_datum: chunk: {} requests: {}'.format(
                             'artemis', self._chunkcntr, self._requestcntr))
         try:
-            self.payload = next(self.data)   # Request the next chunk to process
+            # Request the next chunk to process
+            self.payload = next(self.data)
             if self.payload is None:
-                self.__logger.error("request_datum:generator returned but object is None")    
-                                    
-        except:
-            self.__logger.debug("request_datum: Data handler empty, make request")
-            return False 
+                self.__logger.error("generator is Null")
+                raise NullDataError('empty payload')
+        except Exception:
+            self.__logger.debug("Data handler empty, make request")
+            return False
         else:
             self._chunkcntr += 1
             return True
 
     def _execute(self):
-        if(self.__logger.isEnabledFor(logging.DEBUG)):
-            self.__logger.debug('Execute: State {}'.format('artemis', self.state))
         # TODO data request should send total payload size
-        self.__logger.debug("Processing event size %2.1f", sys.getsizeof(self.data))
+        self.__logger.debug("Payload size %2.1f" % sys.getsizeof(self.data))
+        # TODO
+        # Exception handling for Steering
         while self._request_datum():
             self.steer.execute(self.payload)
             self.processed += sys.getsizeof(self.payload)
-        # TODO should check total payload matches processed payload    
+        # TODO should check total payload matches processed payload
         if(self.__logger.isEnabledFor(logging.DEBUG)):
-            self.__logger.debug('Processed %2.1f', self.processed)
+            self.__logger.debug('Processed %2.1f' % self.processed)
 
-    def run_out(self):
-        print(self.state)
-        pass
-
-    def proc_error(self):
-        print(self.state)
-
-
+    def abort(self, *args, **kwargs):
+        self.__logger.error("Artemis has been triggered to Abort")
+        self.__logger.error("Reason %s" % args[0])

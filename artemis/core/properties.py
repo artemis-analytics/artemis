@@ -12,6 +12,9 @@ Property classes
 
 from collections import OrderedDict
 
+from artemis.core.singleton import Singleton
+
+
 class Properties():
     '''
     Dynamically create getter/setter for user-defined properties
@@ -26,12 +29,12 @@ class Properties():
         # Local fget and fset functions
         fget = lambda self: self._get_property(name)
         fset = lambda self, value: self._set_property(name, value)
-        
+
         # add the property to self
         setattr(self.__class__, name, property(fget, fset))
         # add corresponding local variable
         setattr(self, '_' + name, value)
-    
+
     def to_dict(self):
         '''
         Ordered dictionary of all user-defined properties
@@ -39,10 +42,8 @@ class Properties():
         _dict = OrderedDict()
         for key in self.properties:
             _dict[key] = self.properties[key]
-        
         return _dict
 
-    
     def _set_property(self, name, value):
         if not self.lock:
             setattr(self, '_' + name, value)
@@ -52,3 +53,12 @@ class Properties():
 
     def _get_property(self, name):
         return getattr(self, '_' + name)
+
+
+class JobProperties(metaclass=Singleton):
+    '''
+    Wrapper class as Singleton type
+    Holds JobProperties for use throughout framework
+    '''
+    def __init__(self):
+        self.data = OrderedDict()

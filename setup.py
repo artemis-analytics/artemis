@@ -7,6 +7,5 @@ setup(name='artemis',
       packages=find_packages(),
       install_requires=[
             "toposort>=1.5",
-            "transitions>=0.6.8"
             ],
       description="Stateful processing framework for administrative data powered by Apache Arrow")

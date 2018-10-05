@@ -8,6 +8,7 @@
 
 from .singleton import Singleton
 
+
 class Element:
     """
     Element class to generically contain whatever we want to put in the tree.
@@ -60,7 +61,7 @@ class Node:
     def __init__(self, key, parents):
 
         self.parents = parents
-        self.children = [] 
+        self.children = []
         self.key = key
         self.payload = []
 
@@ -79,13 +80,14 @@ class Node:
     def add_payload(self, element):
         self.payload.append(element)
 
+
 class Tree(metaclass=Singleton):
     """Structure of Nodes. Metadata/job organisation."""
     def __init__(self, name):
         self.name = name
         self.root = None
-        self.leaves = [] #Holds a list of keys of nodes that are leaves.
-        self.nodes = {} #Holds the actual nodes referenced by their keys.
+        self.leaves = []  # Holds a list of keys of nodes that are leaves.
+        self.nodes = {}  # Holds the actual nodes referenced by their keys.
 
     def merge_trees(self, source_tree, target_element_key):
         pass
@@ -95,7 +97,7 @@ class Tree(metaclass=Singleton):
 
     def add_node(self, node):
         self.nodes[node.key] = node
-    
+
     def update_leaves(self):
         """Updates the list of leaves in the node's tree."""
         self.leaves = []

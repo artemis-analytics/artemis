@@ -10,18 +10,16 @@
 
 """
 import unittest
-import logging
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.artemis import Artemis
 
+
 class ArtemisTestCase(unittest.TestCase):
 
     def setUp(self):
-        testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='DEBUG')
-        
-        #logging.getLogger('artemis.core.dag').setLevel(logging.DEBUG)
+        testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
         
         seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
         seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
@@ -47,23 +45,16 @@ class ArtemisTestCase(unittest.TestCase):
         self.testmenu.add(dummyChain1)
         self.testmenu.add(dummyChain2)
         self.testmenu.generate()
+        self.testmenu.to_json('testmenu.json')
 
     def tearDown(self):
         pass
 
     def test_control(self):
         print("Testing the Artemis Prototype")
-        bow = Artemis("arrow")
-        #bow.menu = self.testmenu.ordered_sequence
-        #bow.control()
-    
-    def test_logging(self):
-        boww = Artemis("boww", loglevel='INFO')
-        boww.menu = self.testmenu.ordered_sequence
-        print(self.testmenu.to_graph())
-        print(self.testmenu.to_tree())
-        print(self.testmenu.to_algodict())
-        boww.control()
+        bow = Artemis("arrow", loglevel='INFO')
+        bow.control()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -106,6 +106,7 @@ class DagTestCase(unittest.TestCase):
         testmenu.add(dummyChain2)
         testmenu.add(dummyChainX)
         testmenu.generate()
+        testmenu.to_json('testmenu.json')
 
 
 
