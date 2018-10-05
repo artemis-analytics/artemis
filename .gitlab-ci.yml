@@ -53,7 +53,7 @@ test:
     DOCKER_DRIVER: overlay2
   script:
     - python setup.py install
-    - python -m unittest tests/test_artemis.py
+    - python -m unittest
   only:
     - branches
 
