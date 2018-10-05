@@ -7,5 +7,13 @@
 # Distributed under terms of the  license.
 
 """
-Various decorator methods
+Custom exceptions for Artemis
 """
+
+
+class NullDataError(Exception):
+    pass
+
+
+class MissingDataError(Exception):
+    pass
