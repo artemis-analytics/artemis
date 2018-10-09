@@ -1,5 +1,5 @@
 # Experiment Charter: Artemis Prototype Project
-Version: Draft
+Version: 1.0.0
  
 # Executive Summary
 
@@ -61,7 +61,7 @@ The use of administrative data for Official Statistics has a several notable fea
 * Preservation of the raw state of the data is required to extract the relevant and accurate statistics.
 * Data access patterns differ from traditional survey data.
 
-The challenge facing NSAs is how to ingest, store and process adminstrative data while 
+The challenge facing National Statisical Agencies (NSAs) is how to ingest, store and process adminstrative data while 
 preserving the raw state of the data in a format that is both efficient from a data production 
 perspective while also accesible for analysts. 
 Analytical workloads for administrative data sources will follow a pattern of write once, read many times. 
