@@ -61,10 +61,23 @@ review:
 
 test:
   stage: test
-  image: ryanmwhitephd/alpine-scipy:73bdef0
+  image: centos/python-36-centos7:latest
   variables:
     DOCKER_DRIVER: overlay2
   script:
+      # - yum -y install epel-release
+      # - yum -y install python36
+      # - yum -y install python36-devel
+      # - yum -y install python36-setuptools
+      # - easy_install-3.6 pip
+    - which python
+    - python -m pip --version  
+    - pip install setuptools 
+    - pip install numpy
+    - pip install pandas
+    - pip install scipy
+    - pip install cython
+    - pip install pyarrow  
     - python setup.py install
     - python -m unittest
   only:
