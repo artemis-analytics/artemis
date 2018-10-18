@@ -27,6 +27,9 @@ class PropertyTestCase(unittest.TestCase):
                 self.properties.add_property(key, kwargs[key])
      
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         
         self.mydummy = self.DummyClass()
         self.mydummy2 = self.DummyClass(a_property='dynamic')

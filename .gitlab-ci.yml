@@ -74,10 +74,11 @@ test:
     - python -m pip --version  
     - pip install setuptools 
     - pip install numpy
-    - pip install pandas
+    - pip install pandas  #  required by pyarrow
     - pip install scipy
     - pip install cython
-    - pip install pyarrow  
+    - pip install pyarrow 
+    - pip install packaging #  required by physt
     - python setup.py install
     - python -m unittest
   only:

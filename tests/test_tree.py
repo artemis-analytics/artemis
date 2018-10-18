@@ -16,6 +16,9 @@ from artemis.core.singleton import Singleton
 class TreeDummyCase(unittest.TestCase):
 
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         Singleton.reset(Tree)
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
@@ -36,7 +39,7 @@ class TreeDummyCase(unittest.TestCase):
     def tearDown(self):
         Singleton.reset(Tree)
 
-    def test_control(self):
+    def test_tree(self):
         #Dummy to create Tree.
         self.test_tree = Tree('My_test_tree')
         self.assertEqual(self.test_tree.name, 'My_test_tree', msg='Tree name was not set properly.')

@@ -20,6 +20,9 @@ from artemis.core.dag import Sequence, Chain, Menu
 class DagTestCase(unittest.TestCase):
     
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         logging.getLogger().setLevel(logging.DEBUG)
 
     def tearDown(self):

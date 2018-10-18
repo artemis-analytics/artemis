@@ -25,7 +25,9 @@ logging.getLogger().setLevel(logging.INFO)
 class GeneratorTestCase(unittest.TestCase):
 
     def setUp(self):
-        pass
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
 
     def tearDown(self):
         pass
@@ -98,18 +100,20 @@ class GeneratorTestCase(unittest.TestCase):
     def test_read_csv(self):
         generator = GenCsvLikeArrow()
         data, names, batch = generator.make_random_csv()
-        textio = io.TextIOWrapper(io.BytesIO(data))
+        # textio = io.TextIOWrapper(io.BytesIO(data))
         columns = [[] for _ in range(generator.num_cols)]
-        header = next(csv.reader(textio))
-
-        assert(header == names)
-        assert(names == batch.schema.names)
         
-        for row in csv.reader(textio):
-            for i, item in enumerate(row):
-                if item == 'nan':
-                    item = 'None'
-                columns[i].append(literal_eval(item))
+        with io.TextIOWrapper(io.BytesIO(data)) as textio:
+            header = next(csv.reader(textio))
+
+            assert(header == names)
+            assert(names == batch.schema.names)
+            
+            for row in csv.reader(textio):
+                for i, item in enumerate(row):
+                    if item == 'nan':
+                        item = 'None'
+                    columns[i].append(literal_eval(item))
         
         array = []
         for column in columns:
