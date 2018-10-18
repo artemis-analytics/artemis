@@ -353,6 +353,7 @@ class Artemis():
                 self._super_execute()
                 self.__logger.debug('Count after process_data %s' %
                                     str(self._requestcntr))
+                # TODO: Insert collect/flush for datastore/nodes/tree.
             except Exception:
                 self.__logger.error("Problem executing")
                 raise
