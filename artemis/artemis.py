@@ -20,8 +20,10 @@ import sys
 import importlib
 import json
 from collections import OrderedDict
+import io
 
 # Externals
+import pyarrow as pa
 
 # Framework
 from artemis.logger import Logger
@@ -33,7 +35,10 @@ from artemis.core.properties import JobProperties
 from artemis.core.steering import Steering
 
 # Data generators
-from artemis.generators.generators import GenCsvLike
+from artemis.generators.generators import GenCsvLikeArrow
+
+# IO
+from artemis.io.reader import FileHandler
 
 
 @Logger.logged
@@ -76,16 +81,18 @@ class Artemis():
         #######################################################################
 
         # Data generator class instance
-        self.generator = GenCsvLike()
-
+        # self.generator = GenCsvLike()
+        self.generator = GenCsvLikeArrow(1, 20, 10000)
         # Data Handler is just the generator function which returns a generator
         self.data_handler = self.generator.generate
+
+        self._filehandler = FileHandler()
 
         # Temporary placeholders to managing event loop
         self.num_chunks = 0
         self._chunkcntr = 0
         self.max_requests = 0
-        self._requestcntr = -1
+        self._requestcntr = 0
         self.data = None
         self.payload = None
 
@@ -334,13 +341,21 @@ class Artemis():
         self.__logger.info("artemis: Run")
         self.__logger.debug('artemis: Count at run call %s' %
                             str(self._requestcntr))
+        # while (self._requestcntr < self.max_requests):
+        #     self._request_data()
+        #     self.__logger.debug('Count after get_data %s' %
+        #                         str(self._requestcntr))
+        #     self._execute()
+        #     self.__logger.debug('Count after process_data %s' %
+        #                         str(self._requestcntr))
         while (self._requestcntr < self.max_requests):
-            self._request_data()
-            self.__logger.debug('Count after get_data %s' %
-                                str(self._requestcntr))
-            self._execute()
-            self.__logger.debug('Count after process_data %s' %
-                                str(self._requestcntr))
+            try:
+                self._super_execute()
+                self.__logger.debug('Count after process_data %s' %
+                                    str(self._requestcntr))
+            except Exception:
+                self.__logger.error("Problem executing")
+                raise
 
     def _finalize(self):
         print("Hbook refernce count: ", sys.getrefcount(self.hbook))
@@ -363,6 +378,7 @@ class Artemis():
         try:
             # Request the next chunk to process
             self.payload = next(self.data)
+            self.__logger.info("Received data %s", len(self.payload))
             if self.payload is None:
                 self.__logger.error("generator is Null")
                 raise NullDataError('empty payload')
@@ -375,15 +391,83 @@ class Artemis():
 
     def _execute(self):
         # TODO data request should send total payload size
-        self.__logger.debug("Payload size %2.1f" % sys.getsizeof(self.data))
+        # self.__logger.debug("Payload size %2.1f" % sys.getsizeof(self.data))
         # TODO
         # Exception handling for Steering
         while self._request_datum():
-            self.steer.execute(self.payload)
+            self.__logger.info("Steering payload %s", len(self.payload))
+            try:
+                self.steer.execute(self.payload)
+            except Exception:
+                raise
             self.processed += sys.getsizeof(self.payload)
         # TODO should check total payload matches processed payload
-        if(self.__logger.isEnabledFor(logging.DEBUG)):
+        if(self.__logger.isEnabledFor(logging.INFO)):
             self.__logger.debug('Processed %2.1f' % self.processed)
+
+    def _super_execute(self):
+        try:
+            raw = next(self.data_handler())
+            self._requests_count()
+        except Exception:
+            self.__logger.debug("Data generator completed file batches")
+            raise
+        self.jobops.data['file'] = OrderedDict()
+
+        raw_size = len(raw)
+
+        stream = io.BytesIO(raw)
+
+        file_ = pa.PythonFile(stream, mode='r')
+
+        header, meta, off_head = self._filehandler.strip_header(file_)
+
+        metadict = OrderedDict()
+        metadict['payload'] = raw_size
+        metadict['schema'] = meta
+        self.jobops.data['file']['file_'+str(self._requestcntr)] = metadict
+        # seek past header
+        file_.seek(off_head)
+        blocks = self._filehandler.get_blocks(file_,
+                                              2**16,
+                                              b'\r\n',
+                                              True,
+                                              off_head)
+        self.__logger.info("Blocks")
+        print(blocks)
+        proc_size = off_head
+        for block in blocks:
+            #  length = off_head + block[1]
+            _chunk = bytearray(block[1])  # Mutable, readinto bytearray
+            self._filehandler.readinto_block(file_, _chunk, block[0])
+            # chunk = bytes(header) + bytes(_chunk)
+            chunk = _chunk
+            try:
+                self.steer.execute(chunk)  # Make chunk immutable
+            except Exception:
+                raise
+            self.__logger.info("Chunk size %i, block size %i" %
+                               (len(chunk), block[1]))
+            proc_size += len(_chunk)
+            self.processed += len(chunk)
+
+        self.__logger.info('Payload %i, processed %i' % (raw_size, proc_size))
+        self.__logger.info('Processed %2.1f' % self.processed)
+
+        if proc_size != raw_size:
+            self.__logger.error("Processing payload not complete")
+            raise IOError
+
+        try:
+            file_.close()
+        except Exception:
+            self.__logger.error("Problem closing file")
+            raise
+        try:
+            stream.close()
+        except Exception:
+            self.__logger.error("Problem closing stream")
+            raise
 
     def abort(self, *args, **kwargs):
         self.__logger.error("Artemis has been triggered to Abort")

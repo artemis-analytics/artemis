@@ -8,6 +8,8 @@ setup(name='artemis',
       install_requires=[
             "toposort>=1.5",
             "pyarrow>=0.11.*",
-            "pandas>=0.23.*"
+            "pandas>=0.23.*",
+            "physt>=0.3.43",
+            "histbook>=1.2.3"
             ],
       description="Stateful processing framework for administrative data powered by Apache Arrow")

@@ -29,7 +29,7 @@ from artemis.logger import Logger
 KILOBYTE = 1 << 10
 MEGABYTE = KILOBYTE * KILOBYTE
 
-DEFAULT_NONE_PROB = 0.3
+DEFAULT_NONE_PROB = 0.0
 
 
 def _multiplicate_sequence(base, target_size):
@@ -456,6 +456,7 @@ class GenCsvLike:
                             (self.__class__.__name__, mysumsize/i))
 
 
+@Logger.logged
 class GenCsvLikeArrow():
     '''
     Arrow-like generator
@@ -472,18 +473,26 @@ class GenCsvLikeArrow():
     # 'binary', 'binary10', 'ascii', 'unicode',
     # 'int64 list', 'struct', 'struct from tuples')
 
-    def __init__(self, num_cols=2, num_rows=10, linesep=u'\r\n', seed=42):
+    def __init__(self,
+                 nbatches=1,
+                 num_cols=2,
+                 num_rows=10,
+                 linesep=u'\r\n',
+                 seed=42):
 
+        self.nbatches = nbatches
         self.num_cols = num_cols
         self.num_rows = num_rows
         self.linesep = linesep
         self.seed = seed
         self.header = True
-        self._builtin_generator = BuiltinsGenerator()
+        self._builtin_generator = BuiltinsGenerator(seed)
         self.types = []
         for _ in range(self.num_cols):
             self.types.append(self.pa_types
                               [random.randint(0, len(self.pa_types)-1)])
+        print("WTFWTFWTFWTFWTF!!!!!!!!!!!!!")
+        self.__logger.info("Initialized %s" % self.__class__.__name__)
 
     def generate_col_names(self):
         letters = string.ascii_lowercase
@@ -556,3 +565,28 @@ class GenCsvLikeArrow():
         columns = [pa.array(a) for a in columns]
         expected = pa.RecordBatch.from_arrays(columns, col_names)
         return csv, col_names, expected
+
+    def generate(self):
+        self.__logger.info('Generate')
+        self.__logger.info("%s: Producing Data" % (self.__class__.__name__))
+        self.__logger.debug("%s: Producing Data" % (self.__class__.__name__))
+        print("WTFWTFWTFWTFWTF!!!!!!!!!!!!!")
+        i = 0
+        mysum = 0
+        mysumsize = 0
+        while i < self.nbatches:
+            data, col_names, batch = self.make_mixed_random_csv()
+            # Should be bytes.
+            self.__logger.debug('%s: type data: %s' %
+                                (self.__class__.__name__, type(data)))
+            mysumsize += sys.getsizeof(data)
+            mysum += len(data)
+            i += 1
+            yield data
+
+        # Helped to figure out the math for an average float size.
+        self.__logger.debug('%s: Average of total: %2.1f' %
+                            (self.__class__.__name__, mysum/i))
+        # Same as previous.
+        self.__logger.debug('%s: Average of size: %2.1f' %
+                            (self.__class__.__name__, mysumsize/i))

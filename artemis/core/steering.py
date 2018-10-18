@@ -116,6 +116,11 @@ class Steering(AlgoBase):
                     raise
 
                 algos.append(instance)
+                try:
+                    instance.initialize()
+                except Exception:
+                    self.__logger.error("Cannot initialize algo %s" % algo)
+                    raise
                 self.__logger.debug("from_dict: instance {}".format(instance))
             self._menu[key] = tuple(algos)
 

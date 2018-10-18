@@ -13,6 +13,9 @@ import unittest
 
 from artemis.core.algo import AlgoBase
 import logging
+from artemis.core.singleton import Singleton
+from artemis.core.datastore import ArrowSets
+from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow
 from pprint import pformat
 import sys 
 
@@ -27,6 +30,7 @@ class AlgoTestCase(unittest.TestCase):
             self.__logger.debug(pformat(self.__dict__))
             self.__logger.debug(pformat(self.__class__.__dict__))
             self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
+            self.store = ArrowSets()
         
         def initialize(self):
             self.__logger.info(self.__logger)
@@ -49,6 +53,44 @@ class AlgoTestCase(unittest.TestCase):
                 self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
             
             self.__logger.debug("Trying to debug")
+            my_data = self.store.get_data(payload)
+            my_data2 = []
+            count = 0
+            my_sum = 0
+            avg1 = 0
+            avg2 = 0
+
+            print('my_data: ' + str(my_data))
+
+            for value in my_data:
+                my_sum += value
+                count += 1
+                value += 1
+                my_data2.append(value)
+            avg1 = my_sum/count
+            count = 0
+            my_sum = 0
+
+            print('my_data, redux: ' + str(my_data2))
+
+            for value in my_data2:
+                my_sum += value
+                count += 1
+            avg2 = my_sum/count
+
+            print('Average 1 equals: ' + str(avg1))
+            print('Average 2 equals: ' + str(avg2))
+            print('Average 2 minus average 1 equals: ' + str(avg2 - avg1))
+
+            self.store.add_to_dict('test1', my_data2)
+            self.store.add_to_dict('avg1', avg1)
+            self.store.add_to_dict('avg2', avg2)
+
+            print('Datastore')
+            print(self.store.arrow_dict)
+
+
+
 
         def finalize(self):
             pass
@@ -57,31 +99,41 @@ class AlgoTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
+    
+    def tearDown(self):
+        Singleton.reset(ArrowSets)
+    
+    def test_algo(self):
         self.testalgo = self.TestAlgo("testalgo", myproperty='ptest', loglevel='DEBUG')
         print("Name", self.testalgo.name)
-        self.testalgo2 = self.TestAlgo("testalgo2", myproperty='ptest', loglevel='DEBUG')
-        print("Name", self.testalgo2.name)
         print(self.testalgo.__dict__)
         self.testalgo.initialize()
         print("Name", self.testalgo.name)
         print(self.testalgo.__dict__)
         print(self.testalgo.properties.myproperty)
-    
-    def tearDown(self):
-        pass
-    
-    def test_algo(self):
-        self.testalgo.execute(b'payload')
-    
-    def test_logger(self):
-        # access logger through mangled attribute name
-        self.testalgo._TestAlgo__logger.info('test info logger, again')
-        self.testalgo._TestAlgo__logger.debug('test debug logger')
-        self.testalgo.logger.info("Use logger getter property")
+        store = ArrowSets()
+        store.add_to_dict('test0', [1, 2, 3])
+        
+        self.testalgo.execute('test0')
 
-    def test_dict(self):
-       print(pformat(self.testalgo.to_dict())) 
+    def test_gen_flow(self):
+        generator = GenCsvLike()
+        generator.nchunks = 1
+        ichunk = 0
+        for chunk in generator.generate():
+            print('Test chunk %s' % ichunk)
+            ichunk += 1
+   
+    def chunker(self):
+        nbatches = 1
+        generator = GenCsvLikeArrow()
+        for ibatch in range(nbatches):
+            yield generator.make_random_csv()
 
+    def test_chunker(self):
+        for batch in self.chunker():
+            print('Batch test')
+            print(batch)
 
 if __name__ == '__main__':
     unittest.main()

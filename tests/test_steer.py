@@ -4,6 +4,8 @@ from pprint import pformat
 
 from artemis.core.properties import JobProperties
 from artemis.core.steering import Steering
+from artemis.core.singleton import Singleton
+
 
 class SteeringTestCase(unittest.TestCase):
     
@@ -51,30 +53,32 @@ class SteeringTestCase(unittest.TestCase):
                                 }
                             }
                   )])
-
+    Singleton.reset(JobProperties)
     DATA = OrderedDict()
     DATA['graph'] = graph
     DATA['tree'] = tree
     DATA['algos'] = algos
     print(pformat(DATA))
 
-    jobops = JobProperties()
-    jobops.data['menu'] = DATA
-    jobops.data['job'] = OrderedDict()
-    jobops.data['job']['jobname'] = 'steertest'
 
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         self.steer = Steering('steer')
+        jobops = JobProperties()
+        
+        jobops.data['menu'] = self.DATA
+        jobops.data['job'] = OrderedDict()
+        jobops.data['job']['jobname'] = 'steertest'
 
     def tearDown(self):
         pass
 
     def test_steer(self):
         self.steer.initialize()
-        self.steer.execute("payload")
+        self.steer.execute(b'payload')
 
 
 if __name__ == "__main__":
     unittest.main()
-
-

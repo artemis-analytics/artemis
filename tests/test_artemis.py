@@ -10,16 +10,26 @@
 
 """
 import unittest
+import logging
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
+from artemis.algorithms.csvparseralgo import CsvParserAlgo
 from artemis.artemis import Artemis
+from artemis.core.singleton import Singleton
+from artemis.core.properties import JobProperties
+
+logging.getLogger().setLevel(logging.INFO)
 
 
 class ArtemisTestCase(unittest.TestCase):
 
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
+        csvalgo = CsvParserAlgo('csvparser')
         
         seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
         seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
@@ -41,14 +51,19 @@ class ArtemisTestCase(unittest.TestCase):
         dummyChain2.add(seq6)
         dummyChain2.add(seq7)
 
+        csvChain = Chain("csvchain")
+        seqX = Sequence(["initial"], (csvalgo,), "seqX")
+        csvChain.add(seqX)
+        
         self.testmenu = Menu("test")
         self.testmenu.add(dummyChain1)
         self.testmenu.add(dummyChain2)
+        self.testmenu.add(csvChain)
         self.testmenu.generate()
         self.testmenu.to_json('testmenu.json')
 
     def tearDown(self):
-        pass
+        Singleton.reset(JobProperties) 
 
     def test_control(self):
         print("Testing the Artemis Prototype")
