@@ -369,8 +369,8 @@ class Artemis():
                 raise
 
     def _finalize(self):
-        print("Hbook refernce count: ", sys.getrefcount(self.hbook))
-        print(self.hbook)
+        # print("Hbook refernce count: ", sys.getrefcount(self.hbook))
+        # print(self.hbook)
         self.steer.finalize()
 
     def _check_requests(self):

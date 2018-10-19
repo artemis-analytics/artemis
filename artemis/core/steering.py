@@ -231,11 +231,7 @@ class Steering(AlgoBase):
 
     def finalize(self):
         self.__logger.info("Completed steering")
-        for key in self._menu:
-            for algo in self._menu[key]:
-                if isinstance(algo, str):
-                    pass
-                else:
-                    self.__logger.info("%s timing: %2.1f" % 
-                                       (algo.name, 
-                                        mean(self.__timers[algo.name])))
+        for key in self.__timers:
+            self.__logger.info("%s timing: %2.1f" % 
+                               (key, mean(self.__timers[key])))
+                                
