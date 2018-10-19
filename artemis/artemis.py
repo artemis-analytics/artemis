@@ -33,6 +33,7 @@ from artemis.exceptions import NullDataError
 from artemis.core.properties import Properties
 from artemis.core.properties import JobProperties
 from artemis.core.steering import Steering
+from artemis.core.tree import Tree
 
 # Data generators
 from artemis.generators.generators import GenCsvLikeArrow
@@ -353,7 +354,9 @@ class Artemis():
                 self._super_execute()
                 self.__logger.debug('Count after process_data %s' %
                                     str(self._requestcntr))
-                # TODO: Insert collect/flush for datastore/nodes/tree.
+                # TODO: Insert collect for datastore/nodes/tree.
+                # TODO: Test memory release.
+                Tree().flush()
             except Exception:
                 self.__logger.error("Problem executing")
                 raise
