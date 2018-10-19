@@ -141,6 +141,17 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
+        
+        # Book
+        # Histograms
+        # Timers
+        try:
+            self._book()
+        except Exception as e:
+            self.logger.error("Cannot book")
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
 
         # TODO
         # Add exception handling
@@ -360,6 +371,7 @@ class Artemis():
     def _finalize(self):
         print("Hbook refernce count: ", sys.getrefcount(self.hbook))
         print(self.hbook)
+        self.steer.finalize()
 
     def _check_requests(self):
         self.__logger.info('Remaining data check. Status coming up.')

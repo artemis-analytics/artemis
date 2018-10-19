@@ -14,7 +14,9 @@ import unittest
 from artemis.core.algo import AlgoBase
 import logging
 from pprint import pformat
-import sys 
+import sys
+
+from artemis.decorators import timethis
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -35,7 +37,8 @@ class AlgoTestCase(unittest.TestCase):
 
         def book(self):
             pass
-
+        
+        @timethis
         def execute(self, payload):
             if(logging.getLogger().isEnabledFor(logging.DEBUG) or
                     self.__logger.isEnabledFor(logging.DEBUG)):
@@ -71,7 +74,9 @@ class AlgoTestCase(unittest.TestCase):
         pass
     
     def test_algo(self):
-        self.testalgo.execute(b'payload')
+        print('Timing--------------')
+        print(self.testalgo.execute(b'payload')[-1])
+        print('End-------------')
     
     def test_logger(self):
         # access logger through mangled attribute name
