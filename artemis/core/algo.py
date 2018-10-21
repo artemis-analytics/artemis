@@ -14,7 +14,6 @@ from collections import OrderedDict
 
 from artemis.logger import Logger
 from artemis.core.properties import Properties
-from artemis.decorators import timethis
 
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework
@@ -140,8 +139,7 @@ class AlgoBase(metaclass=AbcAlgoBase):
         Book histograms
         '''
         pass
-    
-    @timethis
+
     def execute(self, payload):
         '''
         Algo always accepts the output Node on a graph

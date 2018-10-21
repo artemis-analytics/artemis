@@ -141,7 +141,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        
+
         # Book
         # Histograms
         # Timers
