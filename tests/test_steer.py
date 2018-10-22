@@ -8,7 +8,7 @@ from artemis.core.singleton import Singleton
 
 
 class SteeringTestCase(unittest.TestCase):
-    
+
     graph = OrderedDict([("initial", [
                 "iorequest"
             ]),
@@ -60,20 +60,20 @@ class SteeringTestCase(unittest.TestCase):
     DATA['algos'] = algos
     print(pformat(DATA))
 
-
     def setUp(self):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
         self.steer = Steering('steer', loglevel="DEBUG")
         jobops = JobProperties()
-        
+
         jobops.data['menu'] = self.DATA
         jobops.data['job'] = OrderedDict()
         jobops.data['job']['jobname'] = 'steertest'
 
     def tearDown(self):
         self.steer.finalize()
+        Singleton.reset(JobProperties)
 
     def test_steer(self):
         self.steer.initialize()

@@ -263,8 +263,18 @@ class FileHandler():
             file_.seek(offset)
         return file_.read(length)
 
+    def create_header(schema):
+        linesep = '\r\n'
+        csv = io.StringIO()
+        csv.write(u",".join(schema))
+        csv.write(linesep)
+
+        # bytes object with unicode encoding
+        csv = csv.getvalue().encode()
+        return bytearray(csv)
+
     @staticmethod
-    def readinto_block(file_, bobj, offset, header=None):
+    def readinto_block(file_, bobj, offset, schema=None):
         '''
         Dask-like block read of data in bytes
         Assumes length of block fixed and preallocated bytearray provided
@@ -272,9 +282,19 @@ class FileHandler():
 
         # Requires inserting header into each block
         '''
-        if offset != file_.tell():
-            file_.seek(offset)
-        return file_.readinto(bobj)
+        if schema is None:
+            if offset != file_.tell():
+                file_.seek(offset)
+            return file_.readinto(bobj)
+        else:
+            block_ = FileHandler.create_header(schema)
+
+            if offset != file_.tell():
+                file_.seek(offset)
+            file_.readinto(bobj)
+            block_.extend(bobj)
+            # return file_.readinto(bobj)
+            return block_
 
     @staticmethod
     def strip_header(file_, delimiter='\r\n', separator=','):

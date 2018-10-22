@@ -20,7 +20,6 @@ class Element:
     def __init__(self, key):
         self._key = key
         self._locked = False
-        self._data = None
         self._store = ArrowSets()
         self._store.book(key)
 
@@ -46,22 +45,17 @@ class Element:
         else:
             self._locked = status
 
-    @property
-    def data(self):
-        return self._data
-
-    @data.setter
-    def data(self, value):
-        if self.locked:
-            pass
-        else:
-            self._data = value
-
     def lock(self):
         self.locked = True
 
     def add_data(self, data):
-        self._store.add_to_dict(self.key, data)
+        if self.locked:
+            print('Cannot add data, element is locked.')
+        else:
+            self._store.add_to_dict(self.key, data)
+
+    def get_data(self):
+        return self._store.get_data(self.key)
 
 
 class Node:
