@@ -118,6 +118,11 @@ class Tree(metaclass=Singleton):
             for parent in node.parents:
                 self.nodes[parent].children.append(node.key)
 
+    def flush(self):
+        for node in self.nodes.values():
+            node.payload = []
+        Singleton.reset(ArrowSets)
+
 
 def main():
     # Create tree and nodes structure for testing.
