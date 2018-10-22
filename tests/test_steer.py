@@ -65,7 +65,7 @@ class SteeringTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        self.steer = Steering('steer')
+        self.steer = Steering('steer', loglevel="DEBUG")
         jobops = JobProperties()
         
         jobops.data['menu'] = self.DATA
@@ -73,10 +73,11 @@ class SteeringTestCase(unittest.TestCase):
         jobops.data['job']['jobname'] = 'steertest'
 
     def tearDown(self):
-        pass
+        self.steer.finalize()
 
     def test_steer(self):
         self.steer.initialize()
+        self.steer.book()
         self.steer.execute(b'payload')
 
 

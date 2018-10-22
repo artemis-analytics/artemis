@@ -9,3 +9,16 @@
 """
 Various decorator methods
 """
+import time
+from functools import wraps
+
+
+def timethis(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        r = func(*args, **kwargs)
+        end = time.perf_counter()
+        mytime = end - start
+        return r, mytime
+    return wrapper

@@ -15,7 +15,6 @@ from collections import OrderedDict
 from artemis.logger import Logger
 from artemis.core.properties import Properties
 
-
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework
 # Interface IAlgoBase class to expose the methods to the framework

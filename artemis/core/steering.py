@@ -12,8 +12,10 @@ Steering
 from collections import OrderedDict
 import importlib
 from pprint import pformat
+from statistics import mean
 
 from artemis.core.properties import JobProperties
+from artemis.decorators import timethis
 
 from .algo import AlgoBase
 from .tree import Tree, Node, Element
@@ -26,6 +28,7 @@ class Steering(AlgoBase):
         self.__logger.info('%s: __init__ Steering' % self.name)
         self.__logger.debug('%s: __init__ Steering' % self.name)
         self.__logger.warning('%s: __init__ Steering' % self.name)
+        self.__timers = dict()
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
@@ -186,8 +189,12 @@ class Steering(AlgoBase):
         return _dict
 
     def book(self):
-        pass
-        # self.hbook[self.name + "_h1"] = "h1"
+        for key in self._menu:
+            for algo in self._menu[key]:
+                if isinstance(algo, str):
+                    self.__logger.debug('Not an algo: %s' % algo)
+                else:
+                    self.__timers[algo.name] = list()
 
     def _element_name(self, key):
         return self._seq_tree.name + \
@@ -210,8 +217,20 @@ class Steering(AlgoBase):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
                     self.__logger.debug('Type: %s' % type(algo))
-                    algo.execute(payload)
-            self._seq_tree.nodes[key].payload.append(
-                    Element(self._element_name(key)))
+                    # Timing decorator / wrapper
+                    _algexe = timethis(algo.execute)
+                    try:
+                        self.__timers[algo.name].append(_algexe(payload)[-1])
+                    except Exception:
+                        raise
+            self._seq_tree.nodes[key].payload.\
+                append(Element(self._element_name(key)))
+
             self.__logger.debug('Element: %s' % self._element_name)
         self._chunk_cntr += 1
+
+    def finalize(self):
+        self.__logger.info("Completed steering")
+        for key in self.__timers:
+            self.__logger.info("%s timing: %2.1f" %
+                               (key, mean(self.__timers[key])))
