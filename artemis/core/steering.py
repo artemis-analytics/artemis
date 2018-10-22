@@ -195,6 +195,7 @@ class Steering(AlgoBase):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
                     self.__timers[algo.name] = list()
+                    algo.book()
 
     def _element_name(self, key):
         return self._seq_tree.name + \
@@ -211,6 +212,18 @@ class Steering(AlgoBase):
         for key in self._menu:
             algos = self._menu[key]
             self.__logger.debug('Menu input element: %s' % key)
+            # TODO -- Continue work regarding gettting parent data, etc.
+            self._seq_tree.nodes[key].payload.\
+                append(Element(self._element_name(key)))
+            self.__logger.debug('Element: %s' % self._element_name)
+            if key == 'initial':
+                self._seq_tree.nodes[key].payload[-1].add_data(payload)
+            else:
+                for parent in self._seq_tree.nodes[key].parents:
+                    self._seq_tree.nodes[key].payload[-1].\
+                        add_data(self._seq_tree.nodes[parent].payload[-1].
+                                 get_data())
+
             for algo in algos:
                 # TODO -- ensure the algos are actually type <class AlgoBase>
                 if isinstance(algo, str):
@@ -220,17 +233,25 @@ class Steering(AlgoBase):
                     # Timing decorator / wrapper
                     _algexe = timethis(algo.execute)
                     try:
-                        self.__timers[algo.name].append(_algexe(payload)[-1])
+                        self.__timers[algo.name].\
+                            append(_algexe(self._seq_tree.nodes[key].
+                                   payload[-1])[-1])
+
                     except Exception:
                         raise
-            self._seq_tree.nodes[key].payload.\
-                append(Element(self._element_name(key)))
 
-            self.__logger.debug('Element: %s' % self._element_name)
         self._chunk_cntr += 1
 
     def finalize(self):
         self.__logger.info("Completed steering")
+        self.__logger.info("Finalize Algos")
+        for key in self._menu:
+            for algo in self._menu[key]:
+                if isinstance(algo, str):
+                    self.__logger.debug('Not an algo: %s' % algo)
+                else:
+                    algo.finalize()
+
         for key in self.__timers:
-            self.__logger.info("%s timing: %2.1f" %
+            self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))

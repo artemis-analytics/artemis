@@ -30,12 +30,12 @@ class ArtemisTestCase(unittest.TestCase):
         print("================================================")
         testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
         csvalgo = CsvParserAlgo('csvparser')
-        
+
         seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
         seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
         seq3 = Sequence(["seq1", "seq2"], (testalgo,), "seq3")
         seq4 = Sequence(["seq3"], (testalgo,), "seq4")
-        
+
         dummyChain1 = Chain("dummy1")
         dummyChain1.add(seq1)
         dummyChain1.add(seq4)
@@ -54,7 +54,7 @@ class ArtemisTestCase(unittest.TestCase):
         csvChain = Chain("csvchain")
         seqX = Sequence(["initial"], (csvalgo,), "seqX")
         csvChain.add(seqX)
-        
+
         self.testmenu = Menu("test")
         self.testmenu.add(dummyChain1)
         self.testmenu.add(dummyChain2)
@@ -63,7 +63,7 @@ class ArtemisTestCase(unittest.TestCase):
         self.testmenu.to_json('testmenu.json')
 
     def tearDown(self):
-        Singleton.reset(JobProperties) 
+        Singleton.reset(JobProperties)
 
     def test_control(self):
         print("Testing the Artemis Prototype")
@@ -73,4 +73,3 @@ class ArtemisTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-       

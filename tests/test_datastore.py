@@ -17,13 +17,14 @@ from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
 from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow
 from pprint import pformat
-import sys 
+import sys
 
 logging.getLogger().setLevel(logging.DEBUG)
 
+
 class AlgoTestCase(unittest.TestCase):
     class TestAlgo(AlgoBase):
-       
+
         def __init__(self, name, **kwargs):
             super().__init__(name, **kwargs)
             self.__logger.debug(pformat(kwargs))
@@ -31,7 +32,7 @@ class AlgoTestCase(unittest.TestCase):
             self.__logger.debug(pformat(self.__class__.__dict__))
             self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
             self.store = ArrowSets()
-        
+
         def initialize(self):
             self.__logger.info(self.__logger)
             self.__logger.info(self._TestAlgo__logger)
@@ -45,13 +46,13 @@ class AlgoTestCase(unittest.TestCase):
                     self.__logger.isEnabledFor(logging.DEBUG)):
 
                 # Prevent excessive formating calls when not required
-                # Note that we can indepdently change the logging level 
+                # Note that we can indepdently change the logging level
                 # for algo loggers and root logger
                 # Use string interpolation to prevent excessive format calls
                 self.__logger.debug('%s: execute ' % self.name)
                 # Check logging level if formatting requiered
                 self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
-            
+
             self.__logger.debug("Trying to debug")
             my_data = self.store.get_data(payload)
             my_data2 = []
@@ -89,20 +90,17 @@ class AlgoTestCase(unittest.TestCase):
             print('Datastore')
             print(self.store.arrow_dict)
 
-
-
-
         def finalize(self):
             pass
-    
+
     def setUp(self):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-    
+
     def tearDown(self):
         Singleton.reset(ArrowSets)
-    
+
     def test_algo(self):
         self.testalgo = self.TestAlgo("testalgo", myproperty='ptest', loglevel='DEBUG')
         print("Name", self.testalgo.name)
@@ -113,7 +111,7 @@ class AlgoTestCase(unittest.TestCase):
         print(self.testalgo.properties.myproperty)
         store = ArrowSets()
         store.add_to_dict('test0', [1, 2, 3])
-        
+
         self.testalgo.execute('test0')
 
     def test_gen_flow(self):
@@ -123,7 +121,7 @@ class AlgoTestCase(unittest.TestCase):
         for chunk in generator.generate():
             print('Test chunk %s' % ichunk)
             ichunk += 1
-   
+
     def chunker(self):
         nbatches = 1
         generator = GenCsvLikeArrow()
@@ -134,6 +132,7 @@ class AlgoTestCase(unittest.TestCase):
         for batch in self.chunker():
             print('Batch test')
             print(batch)
+
 
 if __name__ == '__main__':
     unittest.main()

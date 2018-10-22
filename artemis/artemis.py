@@ -453,11 +453,11 @@ class Artemis():
         print(blocks)
         proc_size = off_head
         for block in blocks:
-            #  length = off_head + block[1]
             _chunk = bytearray(block[1])  # Mutable, readinto bytearray
-            self._filehandler.readinto_block(file_, _chunk, block[0])
-            # chunk = bytes(header) + bytes(_chunk)
-            chunk = _chunk
+            chunk = self._filehandler.readinto_block(file_,
+                                                     _chunk,
+                                                     block[0],
+                                                     meta)
             try:
                 self.steer.execute(chunk)  # Make chunk immutable
             except Exception:

@@ -110,7 +110,6 @@ class TreeDummyCase(unittest.TestCase):
         self.test_element = Element('el_test0')
         self.assertEqual(self.test_element.key, 'el_test0', msg='Element key should be el_test0.')
         self.assertEqual(self.test_element.locked, False, msg='Element should not be locked.')
-        self.assertIsNone(self.test_element.data, msg='Data of element should be empty.')
 
         self.assertEqual(len(self.test_tree.nodes['test0'].payload), 0, msg='Payload should be empty.')
         self.test_tree.nodes['test0'].add_payload(self.test_element)

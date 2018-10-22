@@ -13,12 +13,15 @@ given a bytes object
 from ast import literal_eval
 import csv
 import io
+from statistics import mean
 
 import pyarrow as pa
+from pyarrow.csv import read_csv, ReadOptions
 
 from artemis.core.algo import AlgoBase
 from artemis.io.reader import Reader
 from artemis.core.properties import JobProperties
+from artemis.decorators import timethis
 
 
 class CsvParserAlgo(AlgoBase):
@@ -40,36 +43,23 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
 
     def book(self):
-        pass
+        self.__timers = dict()
+        self.__timers['pyparse'] = list()
+        self.__timers['pyarrowparse'] = list()
 
-    def execute(self, payload):
-
-        # header = ['a', 'b']
-        fileinfo = list(self.jobops.data['file'].items())[-1]
-        self.__logger.info(fileinfo)
-        schema = fileinfo[-1]['schema']
-        self.__logger.info('Expected header %s' % schema)
-        columns = [[] for _ in range(len(schema))]
-        length = 0
+    @timethis
+    def py_parsing(self, schema, columns, length, block):
         try:
-            with io.TextIOWrapper(io.BytesIO(payload)) as file_:
+            with io.TextIOWrapper(io.BytesIO(block)) as file_:
                 reader = csv.reader(file_)
-                # Indent will need to be fixed when you
-                # uncomment this code. Sorry, blame flake8.
-                # try:
-                #    header = next(reader)
-                # except IOError:
-                #    self.__logger.error('Cannot read header from block')
-                #    self.__logger.error(header)
-                #    raise
-
-                # if(schema != header):
-            #    self.__logger.error('Header from block does not match schema')
-                #    self.__logger.error(header)
-                #    raise ValueError
-
+                try:
+                    next(reader)
+                except Exception:
+                    self.__logger.error("Cannot read inserted header")
+                    raise
                 try:
                     for row in reader:
+                        # print(row)
                         length += 1
                         for i, item in enumerate(row):
                             if item == 'nan':
@@ -83,7 +73,6 @@ class CsvParserAlgo(AlgoBase):
                 except Exception:
                     self.__logger.error('Error reading line %i' % length)
                     raise
-
         except IOError:
             raise
         except Exception:
@@ -91,9 +80,60 @@ class CsvParserAlgo(AlgoBase):
 
         array = []
         for column in columns:
-            array.append(pa.array(column))
-        rbatch = pa.RecordBatch.from_arrays(array, schema)
-        self.__logger.info("Arrow schema %s", rbatch.schema)
+            try:
+                array.append(pa.array(column))
+            except Exception:
+                self.__logger.error("Cannot convert list to pyarrow arrow")
+                raise
+        try:
+            rbatch = pa.RecordBatch.from_arrays(array, schema)
+        except Exception:
+            self.__logger.error("Cannot convert arrays to batch")
+            raise
+
+        return rbatch
+
+    @timethis
+    def pyarrow_parsing(self, block):
+        # create pyarrow buffer from raw bytes
+        buf_ = pa.py_buffer(block)
+        try:
+            table = read_csv(buf_, ReadOptions())
+        except Exception:
+            self.__logger.error("Problem converting csv to table")
+            raise
+
+        return table
+
+    def execute(self, element):
+
+        raw_ = element.get_data()
+        fileinfo = list(self.jobops.data['file'].items())[-1]
+        self.__logger.info(fileinfo)
+        schema = fileinfo[-1]['schema']
+        self.__logger.info('Expected header %s' % schema)
+        columns = [[] for _ in range(len(schema))]
+        length = 0
+
+        try:
+            rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
+            self.__timers['pyparse'].append(time_)
+        except Exception:
+            self.__logger.error("Python parsing fails")
+            raise
+
+        try:
+            table, time_ = self.pyarrow_parsing(raw_)
+            self.__timers['pyarrowparse'].append(time_)
+        except Exception:
+            self.__logger.error("PyArrow parsing fails")
+            raise
+
+        self.__logger.info("Arrow schema: %s time: ", rbatch.schema)
+        self.__logger.info("Arrow schema: %s time: ", table.schema)
 
     def finalize(self):
-        pass
+        self.__logger.info("Completed CsvParsing")
+        for key in self.__timers:
+            self.__logger.info("%s timing: %2.4f" %
+                               (key, mean(self.__timers[key])))
