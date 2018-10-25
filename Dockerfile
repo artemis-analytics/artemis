@@ -1,4 +1,4 @@
-FROM python:3.7
+FROM centos/python-36-centos7:latest
 
 MAINTAINER Dominic Parent <dominic.parent@canada.ca>
 
