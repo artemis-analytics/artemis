@@ -6,6 +6,8 @@ RUN pip install --upgrade pip
 RUN pip install setuptools numpy pandas scipy cython pyarrow packaging protobuf matplotlib
 
 ADD artemis ./artemis
+ADD tests ./tests
 ADD setup.py ./setup.py
 
 RUN python setup.py install
+RUN python -m unittest

@@ -15,7 +15,7 @@ setup(name='artemis',
             "physt>=0.3.43",
             "histbook>=1.2.3",
             "packaging",
-            "protobuff",
+            "protobuf",
             "matplotlib"
             ],
       description="Stateful processing framework for administrative data powered by Apache Arrow")
