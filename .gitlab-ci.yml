@@ -79,6 +79,7 @@ test:
     - pip install cython
     - pip install pyarrow 
     - pip install packaging #  required by physt
+    - pip install protobuf
     - python setup.py install
     - python -m unittest
   only:

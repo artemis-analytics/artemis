@@ -40,6 +40,10 @@ from artemis.generators.generators import GenCsvLikeArrow
 
 # IO
 from artemis.io.reader import FileHandler
+from artemis.core.physt_wrapper import Physt_Wrapper
+
+# Utils
+from artemis.utils.utils import bytes_to_mb, range_positive
 
 
 @Logger.logged
@@ -63,7 +67,6 @@ class Artemis():
         # Set the output global job configuration file
         self.meta_filename = self.jobname + '_meta.json'
 
-        self.hbook = dict()
         self.steer = None
         self._menu = None
         self._meta_dict = None
@@ -183,9 +186,10 @@ class Artemis():
         '''
         Configure global job dependencies
         such as DB connections
+        Create the histogram store
         '''
         self.__logger.info('Configure')
-        self.hbook = dict()
+        self.hbook = Physt_Wrapper()
         self.__logger.info("Hbook reference count: %i",
                            sys.getrefcount(self.hbook))
 
@@ -248,7 +252,11 @@ class Artemis():
 
     def _book(self):
         self.__logger.info("{}: Book".format('artemis'))
-        self.hbook["job_counts"] = "counts"
+        self.hbook.book('artemis', 'counts', range(10))
+        bins = [x for x in range_positive(0., 10., 0.1)]
+        self.hbook.book('artemis', 'payload', bins, 'MB')
+        self.hbook.book('artemis', 'nblocks', range(100), 'n')
+        self.hbook.book('artemis', 'blocksize', bins, 'MB')
         self.steer.book()
 
     def _set_meta_environment(self, meta_filename):
@@ -362,6 +370,7 @@ class Artemis():
         #                         str(self._requestcntr))
         while (self._requestcntr < self.max_requests):
             try:
+                self.hbook.fill('artemis', 'counts', self._requestcntr)
                 self._super_execute()
                 self.__logger.debug('Count after process_data %s' %
                                     str(self._requestcntr))
@@ -374,8 +383,21 @@ class Artemis():
 
     def _finalize(self):
         # print("Hbook refernce count: ", sys.getrefcount(self.hbook))
-        # print(self.hbook)
+        # print(self.hbook)]
+        self.__logger.info("Finalizing Artemis job %s" % self.jobname)
         self.steer.finalize()
+        mu_payload = self.hbook.get_histogram('artemis', 'payload').mean()
+        self.__logger.info("Mean payload %2.1f MB" % mu_payload)
+
+        collections = self.hbook.to_message()
+        colname = self.jobname + '_hist.dat'
+        try:
+            with open(colname, "wb") as f:
+                f.write(collections.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write hbook")
+        except Exception:
+            raise
 
     def _check_requests(self):
         self.__logger.info('Remaining data check. Status coming up.')
@@ -451,9 +473,16 @@ class Artemis():
                                               off_head)
         self.__logger.info("Blocks")
         print(blocks)
+        self.hbook.fill('artemis', 'payload', bytes_to_mb(raw_size))
+        self.hbook.fill('artemis', 'nblocks', len(blocks))
+        self.__logger.info("Size in bytes %2.3f in MB %2.3f" %
+                           (raw_size, bytes_to_mb(raw_size)))
         proc_size = off_head
         for block in blocks:
             _chunk = bytearray(block[1])  # Mutable, readinto bytearray
+            self.hbook.fill('artemis', 'blocksize',
+                            bytes_to_mb(len(_chunk)))
+
             chunk = self._filehandler.readinto_block(file_,
                                                      _chunk,
                                                      block[0],

@@ -22,6 +22,8 @@ from artemis.core.algo import AlgoBase
 from artemis.io.reader import Reader
 from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
+from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.utils.utils import range_positive
 
 
 class CsvParserAlgo(AlgoBase):
@@ -43,9 +45,13 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
 
     def book(self):
+        self.hbook = Physt_Wrapper()
         self.__timers = dict()
         self.__timers['pyparse'] = list()
         self.__timers['pyarrowparse'] = list()
+        bins = [x for x in range_positive(0., 100., 2.)]
+        self.hbook.book(self.name, 'time.pyparse', bins, 'ms')
+        self.hbook.book(self.name, 'time.pyarrowparse', bins, 'ms')
 
     @timethis
     def py_parsing(self, schema, columns, length, block):
@@ -118,6 +124,7 @@ class CsvParserAlgo(AlgoBase):
         try:
             rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
             self.__timers['pyparse'].append(time_)
+            self.hbook.fill(self.name, 'time.pyparse', time_)
         except Exception:
             self.__logger.error("Python parsing fails")
             raise
@@ -125,6 +132,7 @@ class CsvParserAlgo(AlgoBase):
         try:
             table, time_ = self.pyarrow_parsing(raw_)
             self.__timers['pyarrowparse'].append(time_)
+            self.hbook.fill(self.name, 'time.pyarrowparse', time_)
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
@@ -137,3 +145,7 @@ class CsvParserAlgo(AlgoBase):
         for key in self.__timers:
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
+            self.__logger.info("%s timing: %2.4f" %
+                               (key,
+                                self.hbook.get_histogram(self.name,
+                                                         'time.'+key).mean()))
