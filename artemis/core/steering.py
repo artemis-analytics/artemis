@@ -13,10 +13,11 @@ from collections import OrderedDict
 import importlib
 from pprint import pformat
 from statistics import mean
+from artemis.utils.utils import range_positive
 
 from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
-
+from artemis.core.physt_wrapper import Physt_Wrapper
 from .algo import AlgoBase
 from .tree import Tree, Node, Element
 
@@ -189,13 +190,28 @@ class Steering(AlgoBase):
         return _dict
 
     def book(self):
+        self.hbook = Physt_Wrapper()
+        # self.hbook.book(self.name, 'counts', range(100))
+        # self.hbook.book(self.name, 'payload', range(100))
+        # self.hbook.book(self.name, 'nblocks', range(100))
+        # self.hbook.book(self.name, 'block_size', range(100))
         for key in self._menu:
             for algo in self._menu[key]:
                 if isinstance(algo, str):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
                     self.__timers[algo.name] = list()
-                    algo.book()
+                    bins = [x for x in range_positive(0., 100., 2.)]
+                    try:
+                        self.hbook.book(self.name, 'time.'+algo.name,
+                                        bins, 'ms')
+                    except Exception:
+                        self.__logger.error('Cannot book steering')
+                        raise
+                    try:
+                        algo.book()
+                    except Exception:
+                        self.__logger.error('Cannot book %s' % algo.name)
 
     def _element_name(self, key):
         return self._seq_tree.name + \
@@ -233,10 +249,10 @@ class Steering(AlgoBase):
                     # Timing decorator / wrapper
                     _algexe = timethis(algo.execute)
                     try:
-                        self.__timers[algo.name].\
-                            append(_algexe(self._seq_tree.nodes[key].
-                                   payload[-1])[-1])
-
+                        time_ = _algexe(self._seq_tree.nodes[key].
+                                        payload[-1])[-1]
+                        self.__timers[algo.name].append(time_)
+                        self.hbook.fill(self.name, 'time.'+algo.name, time_)
                     except Exception:
                         raise
 
@@ -255,3 +271,7 @@ class Steering(AlgoBase):
         for key in self.__timers:
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
+            self.__logger.info("%s timing: %2.4f" %
+                               (key,
+                                self.hbook.get_histogram(self.name,
+                                                         'time.'+key).mean()))

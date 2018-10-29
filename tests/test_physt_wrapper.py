@@ -13,48 +13,58 @@ import unittest
 from artemis.core.singleton import Singleton
 from artemis.core.physt_wrapper import Physt_Wrapper
 
+
 class HistogramCase(unittest.TestCase):
 
     def setUp(self):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        self.data = numpy.random.normal(-5, 5, 1000000)
+        self.data = numpy.random.normal(-5, 5, 10000)
 
     def tearDown(self):
         Singleton.reset(Physt_Wrapper)
 
     def test_histogram(self):
-        self.data = numpy.random.normal(-5, 5, 1000000)
+        self.data = numpy.random.normal(-5, 5, 10000)
         print('Starting histogram test')
         # Creating book.
         print('Create book')
         my_book = Physt_Wrapper()
         # Booking multiple histograms.
         print('Booking test0')
-        my_book.book('test0')
+        my_book.book('physt', 'test0', range(-5, 5))
         print('Booking test1')
-        my_book.book('test1')
+        my_book.book('physt', 'test1', range(-5, 5))
         print('Booking test2')
-        my_book.book('test2')
+        my_book.book('physt', 'test2', range(-5, 5))
         print('Booking test3')
-        my_book.book('test3')
+        my_book.book('physt', 'test3', range(-5, 5))
+  
         # Filling multiple histograms.
-        print('Fill test0')
-        my_book.fill('test0', self.data, 10)
-        print('Fill test1')
-        my_book.fill('test1', self.data, 20)
-        print('Fill test2')
-        my_book.fill('test2', self.data, 10)
-        print('Fill test3')
-        my_book.fill('test3', self.data, 10)
+        my_book.fill('physt', 'test0', self.data)
+        for val in self.data:
+            # Filling multiple histograms.
+            my_book.fill('physt', 'test1', val)
+            # Filling multiple histograms.
+            my_book.fill('physt', 'test2', val)
+            # Filling multiple histograms.
+            my_book.fill('physt', 'test3', val)
         # Converting to pandas and print.
-        print(my_book.to_pandas('test0'))
-        print(my_book.to_json('test0'))
-        print(my_book.to_pandas('test1'))
-        print(my_book.to_json('test1'))
-        print(my_book.to_pandas('test2'))
-        print(my_book.to_json('test2'))
-        print(my_book.to_pandas('test3'))
-        print(my_book.to_json('test3'))
+        print(my_book.to_pandas('physt', 'test0'))
+        print(my_book.to_json('physt', 'test0'))
+        print(my_book.to_pandas('physt', 'test1'))
+        print(my_book.to_json('physt', 'test1'))
+        print(my_book.to_pandas('physt', 'test2'))
+        print(my_book.to_json('physt', 'test2'))
+        print(my_book.to_pandas('physt', 'test3'))
+        print(my_book.to_json('physt', 'test3'))
+        print(my_book.get_histogram('physt', 'test0').mean())
+        print(my_book.get_histogram('physt', 'test1').mean())
+        print(my_book.get_histogram('physt', 'test2').mean())
+        print(my_book.get_histogram('physt', 'test3').mean())
         print('Test end')
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -19,6 +19,6 @@ def timethis(func):
         start = time.perf_counter()
         r = func(*args, **kwargs)
         end = time.perf_counter()
-        mytime = end - start
+        mytime = (end - start)/1e-3
         return r, mytime
     return wrapper
