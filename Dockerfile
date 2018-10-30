@@ -1,4 +1,4 @@
-FROM registry.k8s.cloud.statcan.ca/stcdatascience/artemis/centos7-py36-arrow:v1
+FROM registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:v1
 
 MAINTAINER Dominic Parent <dominic.parent@canada.ca>
 
