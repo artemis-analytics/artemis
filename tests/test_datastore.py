@@ -124,7 +124,7 @@ class AlgoTestCase(unittest.TestCase):
 
     def chunker(self):
         nbatches = 1
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         for ibatch in range(nbatches):
             yield generator.make_random_csv()
 

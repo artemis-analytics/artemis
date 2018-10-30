@@ -34,6 +34,7 @@ from artemis.core.properties import Properties
 from artemis.core.properties import JobProperties
 from artemis.core.steering import Steering
 from artemis.core.tree import Tree
+from artemis.core.algo import AlgoBase
 
 # Data generators
 from artemis.generators.generators import GenCsvLikeArrow
@@ -71,12 +72,36 @@ class Artemis():
         self._menu = None
         self._meta_dict = None
 
+        self.generator = None
+        self.data_handler = None
+
+        if 'generator' not in kwargs:
+            gencfg = self.jobname + '_gencfg.json'
+            self.generator = GenCsvLikeArrow('generator',
+                                             nbatches=1,
+                                             num_cols=20,
+                                             num_rows=10000)
+            try:
+                with open(gencfg, 'x') as ofile:
+                    json.dump(self.generator.to_dict(), ofile, indent=4)
+            except Exception:
+                self.__logger.error("Cannot dump the generator config")
+
+            self.generator = None
+            kwargs['generator'] = gencfg
+
         #######################################################################
         # Properties
         self.properties = Properties()
         self.jobops = JobProperties()
+
+        _defaults = self._set_defaults()
+        # Override the defaults from the kwargs
         for key in kwargs:
-            self.properties.add_property(key, kwargs[key])
+            _defaults[key] = kwargs[key]
+
+        for key in _defaults:
+            self.properties.add_property(key, _defaults[key])
         #######################################################################
 
         #######################################################################
@@ -84,19 +109,14 @@ class Artemis():
         Logger.configure(self, **kwargs)
         #######################################################################
 
-        # Data generator class instance
-        # self.generator = GenCsvLike()
-        self.generator = GenCsvLikeArrow(1, 20, 10000)
-        # Data Handler is just the generator function which returns a generator
-        self.data_handler = self.generator.generate
-
         self._filehandler = FileHandler()
 
         # Temporary placeholders to managing event loop
-        self.num_chunks = 0
+        self.num_chunks = self.properties.num_chunks
+        self.max_requests = self.properties.max_requests
         self._chunkcntr = 0
-        self.max_requests = 0
         self._requestcntr = 0
+        self.processed = 0
         self.data = None
         self.payload = None
 
@@ -121,6 +141,16 @@ class Artemis():
     @menu.setter
     def menu(self, config):
         self._menu = config
+
+    def _set_defaults(self):
+        # Temporary hard-coded values to get something running
+        defaults = {'num_chunks': 2,
+                    'max_requests': 2,
+                    'blocksize': 2**27,
+                    'delimiter': '\r\n',
+                    'skip_header': False,
+                    'offset_header': None}
+        return defaults
 
     def control(self):
         '''
@@ -192,6 +222,8 @@ class Artemis():
         self.hbook = Physt_Wrapper()
         self.__logger.info("Hbook reference count: %i",
                            sys.getrefcount(self.hbook))
+        self.__logger.info('Job Properties')
+        self.__logger.info('Properties %s', pformat(self.properties.to_dict()))
 
         # Obtain the menu configuration
         try:
@@ -221,15 +253,52 @@ class Artemis():
 
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
 
-        # TODO
-        # For framework level classes, use module __name__ for logger
-        # getChild from artemis.artemis logger and set log level?
+        # Configure the generator
+        try:
+            self._gen_config()
+        except Exception:
+            self.__logger.error("Cannot configure generator")
+            raise
 
-        # Temporary hard-coded values to get something running
-        self.num_chunks = 2
-        self.max_requests = 2
-        self.processed = 0
         return True
+
+    def _gen_config(self):
+        self.__logger.info('Load the generator')
+        try:
+            with open(self.properties.generator, 'r') as ifile:
+                gencfg = json.load(ifile, object_pairs_hook=OrderedDict)
+        except IOError as e:
+            self.__logger.error("Cannot open file: %s",
+                                self.properties.generator)
+            self.__logger.error('I/O({0}: {1})'.format(e.errno, e.strerror))
+            # Propagate the expection up to Artemis::control()
+            raise
+        except Exception as e:
+            self.__logger.error("Unknow expection")
+            self.__logger.error("Reason: %s" % e)
+            # Propagate the expection up to Artemis::control()
+            raise
+        try:
+            self.generator = AlgoBase.load(self.__logger, **gencfg)
+        except Exception:
+            self.__logger.error('Error loading the generator')
+            raise
+        try:
+            self.generator.initialize()
+        except Exception:
+            self.__logger.error("Cannot initialize algo %s" % 'generator')
+            raise
+        self.__logger.debug("from_dict: instance {}".
+                            format(self.generator.to_dict()))
+
+        # Data Handler is just the generator function which returns a generator
+        try:
+            self.data_handler = self.generator.generate
+        except TypeError:
+            self.__logger.error("Cannot set generator")
+            raise
+        # Add the generator to the jobproperties
+        self.jobops.data['generator'] = gencfg
 
     def _initialize(self):
         self.__logger.info("{}: Initialize".format('artemis'))
@@ -385,9 +454,14 @@ class Artemis():
         # print("Hbook refernce count: ", sys.getrefcount(self.hbook))
         # print(self.hbook)]
         self.__logger.info("Finalizing Artemis job %s" % self.jobname)
+        self.jobops.data['results'] = OrderedDict()
         self.steer.finalize()
         mu_payload = self.hbook.get_histogram('artemis', 'payload').mean()
-        self.__logger.info("Mean payload %2.1f MB" % mu_payload)
+        mu_blocksize = self.hbook.get_histogram('artemis', 'blocksize').mean()
+        self.__logger.info("Mean payload %2.2f MB" % mu_payload)
+        self.__logger.info("Mean blocksize %2.2f MB" % mu_blocksize)
+        self.jobops.data['results']['artemis.payload'] = mu_payload
+        self.jobops.data['results']['artemis.blocksize'] = mu_blocksize
 
         collections = self.hbook.to_message()
         colname = self.jobname + '_hist.dat'
@@ -398,6 +472,15 @@ class Artemis():
             self.__logger.error("Cannot write hbook")
         except Exception:
             raise
+
+        self.__logger.info(pformat(self.jobops.data))
+        postname = self.jobname + '_results.json'
+        try:
+            with open(postname, 'x') as ofile:
+                json.dump(self.jobops.data, ofile, indent=4)
+        except IOError as e:
+            self.__logger.error('I/O Error({0}: {1})'.
+                                format(e.errno, e.strerror))
 
     def _check_requests(self):
         self.__logger.info('Remaining data check. Status coming up.')
@@ -466,10 +549,12 @@ class Artemis():
         self.jobops.data['file']['file_'+str(self._requestcntr)] = metadict
         # seek past header
         file_.seek(off_head)
+
         blocks = self._filehandler.get_blocks(file_,
-                                              2**16,
-                                              b'\r\n',
-                                              True,
+                                              self.properties.blocksize,
+                                              bytes(self.properties.delimiter,
+                                                    'utf8'),
+                                              self.properties.skip_header,
                                               off_head)
         self.__logger.info("Blocks")
         print(blocks)

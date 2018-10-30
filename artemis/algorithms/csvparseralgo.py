@@ -34,7 +34,7 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.debug('%s: __init__ CsvParserAlgo' % self.name)
         self.__logger.warning('%s: __init__ CsvParserAlgo' % self.name)
         self.reader = None
-        self.jobproperties = None
+        self.jobops = None
         print('%s: __init__ CsvParserAlgo' % self.name)
 
     def initialize(self):
@@ -143,9 +143,14 @@ class CsvParserAlgo(AlgoBase):
     def finalize(self):
         self.__logger.info("Completed CsvParsing")
         for key in self.__timers:
+            _name = '.'
+            _name = _name.join([self.name, 'time', key])
+            mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
-            self.__logger.info("%s timing: %2.4f" %
-                               (key,
-                                self.hbook.get_histogram(self.name,
-                                                         'time.'+key).mean()))
+            self.__logger.info("%s timing: %2.4f" % (key, mu))
+            try:
+                self.jobops.data['results'][_name] = mu
+            except KeyError:
+                self.__logger.warning('Error in JobProperties')
+                # Do not raise

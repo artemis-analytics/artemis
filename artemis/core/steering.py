@@ -10,11 +10,10 @@
 Steering
 """
 from collections import OrderedDict
-import importlib
 from pprint import pformat
 from statistics import mean
-from artemis.utils.utils import range_positive
 
+from artemis.utils.utils import range_positive
 from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
@@ -76,47 +75,10 @@ class Steering(AlgoBase):
                     algos.append(algo)
                     continue
                 try:
-                    module = importlib.import_module(
-                            graphcfg['algos'][algo]['module']
-                            )
-                except ImportError:
-                    self.__logger.error('Unable to load module ',
-                                        graphcfg['algos'][algo]['module'])
-                    raise
-                except Exception as e:
-                    self.__logger.error("Unknow error loading module: %s" % e)
-                    raise
-                try:
-                    class_ = getattr(module, graphcfg['algos'][algo]['class'])
-                except AttributeError:
-                    self.__logger.error("%s: missing attribute %s" %
-                                        (algo, 'class'))
-                    raise
-                except Exception as e:
-                    self.__logger.error("Reason: %s" % e)
-                    raise
-
-                self.__logger.debug("from_dict: {}".format(algo))
-                self.__logger.debug(pformat(
-                                    graphcfg['algos'][algo]['properties']))
-
-                # Update the logging level of
-                # algorithms if loglevel not set
-                # Ensures user-defined algos get the artemis level logging
-                if 'loglevel' not in graphcfg['algos'][algo]['properties']:
-                    graphcfg['algos'][algo]['properties']['loglevel'] = \
-                            self.__logger.getEffectiveLevel()
-
-                try:
-                    instance = class_(algo,
-                                      **graphcfg['algos'][algo]['properties']
-                                      )
-                except AttributeError:
-                    self.__logger.error("%s: missing attribute %s" %
-                                        (algo, 'properties'))
-                    raise
-                except Exception as e:
-                    self.__logger.error("%s: Cannot initialize %s" % e)
+                    instance = AlgoBase.load(self.__logger,
+                                             **graphcfg['algos'][algo])
+                except Exception:
+                    self.__logger.error('Error loading %s', algo)
                     raise
 
                 algos.append(instance)
@@ -269,9 +231,14 @@ class Steering(AlgoBase):
                     algo.finalize()
 
         for key in self.__timers:
+            _name = '.'
+            _name = _name.join([self.name, 'time', key])
+            mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
-            self.__logger.info("%s timing: %2.4f" %
-                               (key,
-                                self.hbook.get_histogram(self.name,
-                                                         'time.'+key).mean()))
+            self.__logger.info("%s timing: %2.4f" % (key, mu))
+            try:
+                self.jobops.data['results'][_name] = mu
+            except KeyError:
+                self.__logger.warning('Error in JobProperties')
+                # Do not raise, just issue warning

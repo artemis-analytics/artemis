@@ -25,6 +25,7 @@ import numpy as np
 import pyarrow as pa
 
 from artemis.logger import Logger
+from artemis.core.algo import AlgoBase
 
 KILOBYTE = 1 << 10
 MEGABYTE = KILOBYTE * KILOBYTE
@@ -456,8 +457,8 @@ class GenCsvLike:
                             (self.__class__.__name__, mysumsize/i))
 
 
-@Logger.logged
-class GenCsvLikeArrow():
+# @Logger.logged
+class GenCsvLikeArrow(AlgoBase):
     '''
     Arrow-like generator
     see arrow/python/pyarrow/tests/test_csv.py
@@ -473,26 +474,40 @@ class GenCsvLikeArrow():
     # 'binary', 'binary10', 'ascii', 'unicode',
     # 'int64 list', 'struct', 'struct from tuples')
 
-    def __init__(self,
-                 nbatches=1,
-                 num_cols=2,
-                 num_rows=10,
-                 linesep=u'\r\n',
-                 seed=42):
+    def __init__(self, name, **kwargs):
 
-        self.nbatches = nbatches
-        self.num_cols = num_cols
-        self.num_rows = num_rows
-        self.linesep = linesep
-        self.seed = seed
-        self.header = True
-        self._builtin_generator = BuiltinsGenerator(seed)
+        self._defaults = self._set_defaults()
+        # Override the defaults from the kwargs
+        for key in kwargs:
+            self._defaults[key] = kwargs[key]
+
+        # Set the properties with the full configuration
+        super().__init__(name, **self._defaults)
+        print(self.properties.to_dict())
+        self.nbatches = self.properties.nbatches
+        self.num_cols = self.properties.num_cols
+        self.num_rows = self.properties.num_rows
+        self.linesep = self.properties.linesep
+        self.seed = self.properties.seed
+        self.header = self.properties.header
+
+        self._builtin_generator = BuiltinsGenerator(self.seed)
         self.types = []
         for _ in range(self.num_cols):
             self.types.append(self.pa_types
                               [random.randint(0, len(self.pa_types)-1)])
         print("WTFWTFWTFWTFWTF!!!!!!!!!!!!!")
         self.__logger.info("Initialized %s" % self.__class__.__name__)
+        self.__logger.info(self.__class__.__dict__)
+
+    def _set_defaults(self):
+        defaults = {'nbatches': 1,
+                    'num_cols': 2,
+                    'num_rows': 10,
+                    'linesep': u'\r\n',
+                    'seed': 42,
+                    'header': True}
+        return defaults
 
     def generate_col_names(self):
         letters = string.ascii_lowercase
