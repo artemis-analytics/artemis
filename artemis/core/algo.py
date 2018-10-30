@@ -11,6 +11,8 @@ Algorithms
 """
 import logging
 from collections import OrderedDict
+import importlib
+from pprint import pformat
 
 from artemis.logger import Logger
 from artemis.core.properties import Properties
@@ -103,6 +105,54 @@ class AlgoBase(metaclass=AbcAlgoBase):
     @hbook.setter
     def hbook(self, hbook):
         self._hbook = hbook
+
+    @staticmethod
+    def load(logger, **kwargs):
+        '''
+        Returns the class instance from a dictionary
+        '''
+        print("ANOTHER WTF ANOTHER WTF LOAD LOAD LOAD")
+        logger.info('Loading Algo', kwargs['name'])
+        try:
+            module = importlib.import_module(
+                    kwargs['module']
+                    )
+        except ImportError:
+            logger.error('Unable to load module ', kwargs['module'])
+            raise
+        except Exception as e:
+            logger.error("Unknow error loading module: %s" % e)
+            raise
+        try:
+            class_ = getattr(module, kwargs['class'])
+        except AttributeError:
+            logger.error("%s: missing attribute %s" %
+                         (kwargs['name'], kwargs['class']))
+            raise
+        except Exception as e:
+            logger.error("Reason: %s" % e)
+            raise
+
+        logger.debug(pformat(kwargs['properties']))
+
+        # Update the logging level of
+        # algorithms if loglevel not set
+        # Ensures user-defined algos get the artemis level logging
+        if 'loglevel' not in kwargs['properties']:
+            kwargs['properties']['loglevel'] = \
+                    logger.getEffectiveLevel()
+
+        try:
+            instance = class_(kwargs['name'], **kwargs['properties'])
+        except AttributeError:
+            logger.error("%s: missing attribute %s" %
+                         (kwargs['name'], 'properties'))
+            raise
+        except Exception as e:
+            logger.error("%s: Cannot initialize %s" % e)
+            raise
+
+        return instance
 
     def to_dict(self):
         '''

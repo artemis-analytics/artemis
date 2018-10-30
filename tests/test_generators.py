@@ -42,12 +42,12 @@ class GeneratorTestCase(unittest.TestCase):
     
     def chunker(self):
         nbatches = 1
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         for ibatch in range(nbatches):
             yield generator.make_random_csv()
 
     def test_genarrow(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         nbatches = 1
         for batch in range(nbatches):
             print(generator.make_random_csv())
@@ -57,11 +57,11 @@ class GeneratorTestCase(unittest.TestCase):
             print(batch)
 
     def test_batch(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
 
     def test_read_StringIO(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         # data is byte encoded
         data, names, batch = generator.make_random_csv()
         # Get the StringIO object
@@ -73,7 +73,7 @@ class GeneratorTestCase(unittest.TestCase):
             print(row)
     
     def test_read_TextIO(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         # csvlike is byte encoded
         data, names, batch = generator.make_random_csv()
         # Get the Text IO object
@@ -84,7 +84,7 @@ class GeneratorTestCase(unittest.TestCase):
             print(row)
 
     def test_arrowbuf(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
         # Create the pyarrow buffer, zero-copy view 
         # to the csvbytes objet
@@ -98,7 +98,7 @@ class GeneratorTestCase(unittest.TestCase):
         print(table.schema)
 
     def test_read_csv(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
         # textio = io.TextIOWrapper(io.BytesIO(data))
         columns = [[] for _ in range(generator.num_cols)]
@@ -124,7 +124,7 @@ class GeneratorTestCase(unittest.TestCase):
         return rbatch
     
     def test_read_mixed_csv(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_mixed_random_csv()
         textio = io.TextIOWrapper(io.BytesIO(data))
         columns = [[] for _ in range(generator.num_cols)]
@@ -150,7 +150,7 @@ class GeneratorTestCase(unittest.TestCase):
         return rbatch
 
     def test_pyarrow_read_mixed_csv(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_mixed_random_csv()
         assert(names == batch.schema.names)
         buf = pa.py_buffer(data)
@@ -166,7 +166,7 @@ class GeneratorTestCase(unittest.TestCase):
         return table
 
     def test_pyarrow_read_csv(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
         assert(names == batch.schema.names)
         buf = pa.py_buffer(data)

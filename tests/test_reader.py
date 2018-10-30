@@ -34,7 +34,7 @@ class ReaderTestCase(unittest.TestCase):
         pass
     
     def test_header(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
         
         # IO Buffer bytestream
@@ -93,7 +93,7 @@ class ReaderTestCase(unittest.TestCase):
         assert f.tell() == 7  
     
     def test_get_blocks(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
         
         length = len(data)
@@ -123,7 +123,7 @@ class ReaderTestCase(unittest.TestCase):
         # print(lengths)
     
     def test_readinto(self):
-        generator = GenCsvLikeArrow()
+        generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
         
         length = len(data)
@@ -150,7 +150,10 @@ class ReaderTestCase(unittest.TestCase):
         #print(lengths)
     
     def test_readinto_large(self):
-        generator = GenCsvLikeArrow(1, 20, 10000)
+        generator = GenCsvLikeArrow('test',
+                                    nbatches=1, 
+                                    num_cols=20, 
+                                    num_rows=10000)
         data, names, batch = generator.make_random_csv()
         
         length = len(data)
