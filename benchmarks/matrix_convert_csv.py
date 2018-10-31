@@ -98,7 +98,6 @@ class ArtemisTestCase(unittest.TestCase):
                     jp = JobProperties()
                     print(jp.data['results'])
 
-
 if __name__ == '__main__':
     unittest.main()
 
