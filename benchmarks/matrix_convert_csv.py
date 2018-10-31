@@ -13,6 +13,7 @@ Initial benchmarking framework for simulated csv data
 import unittest
 import logging
 import json
+import os
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
@@ -30,6 +31,7 @@ class ArtemisTestCase(unittest.TestCase):
     def setUp(self):
         self.menucfg = 'cnvtcsv_menu.json'
         self.gencfg = 'cnvtcsv_gen.json'
+        self.folder = 'cnvtcsv'
         #self.ncol = [10, 50, 100]
         #self.nrow = [10000, 100000, 500000, 1000000]
         #self.blck = [1*(1024**2), 10*(1024**2), 100*(1024**2), 500*(1024**2) ]
@@ -41,6 +43,12 @@ class ArtemisTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
+
+        try:
+            os.makedirs(self.folder)
+        except Exception:
+            raise
+
         csvalgo = CsvParserAlgo('csvparser')
         csvChain = Chain("csvchain")
         seqX = Sequence(["initial"], (csvalgo,), "seqX")
@@ -50,7 +58,7 @@ class ArtemisTestCase(unittest.TestCase):
         testmenu.add(csvChain)
         testmenu.generate()
         try:
-            testmenu.to_json(self.menucfg)
+            testmenu.to_json(self.folder + '/' + self.menucfg)
         except Exception:
             raise
 
@@ -62,7 +70,7 @@ class ArtemisTestCase(unittest.TestCase):
                                                 num_cols=col,
                                                 num_rows=row)
                     try:
-                        with open((str(col) + '_' + str(row) + '_' + str(blck) + '_' + self.gencfg), 'x') as ofile:
+                        with open((self.folder + '/' + str(col) + '_' + str(row) + '_' + str(blck) + '_' + self.gencfg), 'x') as ofile:
                             json.dump(generator.to_dict(), 
                                       ofile, 
                                       indent=4)
@@ -78,9 +86,9 @@ class ArtemisTestCase(unittest.TestCase):
                 for blck in self.blck:
                     prefix_name = str(col) + '_' + str(row) + '_' + str(blck) + '_'
                     print("Testing the Artemis Prototype")
-                    bow = Artemis((prefix_name + "cnvtcsv"), 
-                                  menu=self.menucfg, 
-                                  generator=(prefix_name + self.gencfg),
+                    bow = Artemis((self.folder + '/' + prefix_name + "cnvtcsv"), 
+                                  menu=self.folder + '/' + self.menucfg, 
+                                  generator=(self.folder + '/' + prefix_name + self.gencfg),
                                   blocksize=blck,
                                   skip_header=True,
                                   loglevel='INFO')
