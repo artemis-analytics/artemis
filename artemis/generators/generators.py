@@ -511,11 +511,11 @@ class GenCsvLikeArrow(AlgoBase):
 
     def generate_col_names(self):
         letters = string.ascii_lowercase
-        for letter in letters:
-            yield letter
+        # for letter in letters:
+        #     yield letter
 
-        for first in letter:
-            for second in letter:
+        for first in letters:
+            for second in letters:
                 yield first + second
 
     def make_random_csv(self):
