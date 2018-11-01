@@ -108,7 +108,6 @@ class HCollections():
             d['Keywords'] = 'PdfPages multipage keywords author title subject'
             d['CreationDate'] = datetime.datetime(2018, 10, 31)
 
-
 if __name__ == '__main__':
     fname = 'arrowproto_info.dat'
 
