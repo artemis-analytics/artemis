@@ -10,6 +10,8 @@
 
 """
 import datetime
+from os import listdir
+from os.path import isfile, join
 
 from physt.io.protobuf import read
 from physt.io.protobuf.histogram_pb2 import HistogramCollection
@@ -104,9 +106,16 @@ class HCollections():
             d['Keywords'] = 'PdfPages multipage keywords author title subject'
             d['CreationDate'] = datetime.datetime(2018, 10, 31)
 
+    def parse_files(directory):
+        onlyfiles = [f for f in listdir(directory) if isfile(join(directory, f))]
+        rest = [k for k in onlyfiles if 'hist.dat' in k]
+
+        for fname in rest:
+            print(fname)
+            collections = HCollections(directory + '/' + fname)
+            collections.create_pages()
+
 
 if __name__ == '__main__':
-    fname = 'arrow_hist.dat'
-
-    collections = HCollections(fname)
-    collections.create_pages()
+    directory = 'cnvtcsv'
+    HCollections.parse_files(directory)
