@@ -55,7 +55,7 @@ review:
     DOCKER_DRIVER: overlay2
   script:
     - pip install flake8
-    - flake8 artemis/  
+    - flake8 --exclude=artemis/io/protobuf artemis/  
   only:
     - branches
 

@@ -16,6 +16,7 @@ from pprint import pformat
 
 from artemis.logger import Logger
 from artemis.core.properties import Properties
+from artemis.io.protobuf.artemis_pb2 import Algo as Algo_pb
 
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework
@@ -112,13 +113,13 @@ class AlgoBase(metaclass=AbcAlgoBase):
         Returns the class instance from a dictionary
         '''
         print("ANOTHER WTF ANOTHER WTF LOAD LOAD LOAD")
-        logger.info('Loading Algo', kwargs['name'])
+        logger.info('Loading Algo %s' % kwargs['name'])
         try:
             module = importlib.import_module(
                     kwargs['module']
                     )
         except ImportError:
-            logger.error('Unable to load module ', kwargs['module'])
+            logger.error('Unable to load module %s' % kwargs['module'])
             raise
         except Exception as e:
             logger.error("Unknow error loading module: %s" % e)
@@ -171,6 +172,57 @@ class AlgoBase(metaclass=AbcAlgoBase):
         _dict['properties'] = self.properties.to_dict()
 
         return _dict
+
+    def to_msg(self):
+        message = Algo_pb()
+        message.name = self.name
+        message.klass = self.__class__.__name__
+        message.module = self.__module__
+        message.properties.CopyFrom(self.properties.to_msg())
+        return message
+
+    @staticmethod
+    def from_msg(logger, msg):
+        logger.info('Loading Algo from msg %s', msg.name)
+        try:
+            module = importlib.import_module(msg.module)
+        except ImportError:
+            logger.error('Unable to load module %s', msg.module)
+            raise
+        except Exception as e:
+            logger.error("Unknow error loading module: %s" % e)
+            raise
+        try:
+            class_ = getattr(module, msg.klass)
+        except AttributeError:
+            logger.error("%s: missing attribute %s" %
+                         (msg.name, msg.klass))
+            raise
+        except Exception as e:
+            logger.error("Reason: %s" % e)
+            raise
+
+        properties = Properties.from_msg(msg.properties)
+        logger.debug(pformat(properties))
+
+        # Update the logging level of
+        # algorithms if loglevel not set
+        # Ensures user-defined algos get the artemis level logging
+        if 'loglevel' not in properties:
+            properties['loglevel'] = \
+                    logger.getEffectiveLevel()
+
+        try:
+            instance = class_(msg.name, **properties)
+        except AttributeError:
+            logger.error("%s: missing attribute %s" %
+                         (msg.name, 'properties'))
+            raise
+        except Exception as e:
+            logger.error("%s: Cannot initialize %s" % e)
+            raise
+
+        return instance
 
     def lock(self):
         '''

@@ -1,0 +1,142 @@
+/* 
+   Artemis metadata model
+   Protocol buffer implementation 
+   Menu
+    Dependency tree and execution graph
+    Algorithms and user-defined properties
+   Job Configuration
+    Input type and configuration
+    Job properties
+   JobInfo
+    In-process metadata information
+    Job state
+    Payload information
+    Block processing information
+    Histograms collections
+    Job Summary
+   
+*/
+
+syntax = "proto3";
+package artemis;
+
+// import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+import "histogram.proto";
+
+message Property {
+    string name = 1;
+    // google.protobuf.Any value = 2; // Accepts any JSON value
+    string type = 2;
+    string value = 3;
+}
+
+message Properties {
+    repeated Property property = 1; 
+}
+
+message Algo {
+    string name = 1;
+    string module = 2;
+    string klass = 3;
+    Properties properties = 4;
+}
+
+message Node {
+    string name = 1;
+    repeated string parents = 2;
+    repeated string algos = 3;
+}
+
+message Tree {
+    repeated Node nodes = 1;
+}
+
+message Menu {
+    Tree tree = 1;
+    repeated Algo algos = 2;
+}
+
+message GeneratorInput {
+    Algo config = 1;
+}
+
+message AtomInput {
+    string name = 1;
+    string repo = 2;
+    string glob = 3;
+}
+
+message Input {
+    GeneratorInput generator = 1;
+    AtomInput atom = 2;
+}
+
+message JobConfig {
+    Input input = 1;
+    Menu menu = 2;
+}
+
+message RawInfo {
+    uint64 size_bytes = 1;
+}
+
+
+message ByteRange {
+    uint64 offset_bytes = 1;
+    uint64 size_bytes = 2; 
+}
+
+message BlockInfo {
+    ByteRange range = 1;
+}
+
+message Block {
+    BlockInfo block = 1;
+}
+
+message Schema {
+    string name = 1;
+    string raw_type = 2;
+    string py_type = 3;
+    string arrow_type = 4;
+}
+
+message SchemaInfo {
+    repeated Schema columns = 1;    
+}
+
+message FileInfo {
+    RawInfo raw = 1;
+    repeated BlockInfo blocks = 2;
+    SchemaInfo schema = 3;
+}
+
+enum JobState {
+    JOB_STARTING = 0;
+    JOB_RUNNING = 1;
+    JOB_FAILURE = 2;
+    JOB_SUCCESS = 3;
+    JOB_ABORT = 4;
+}
+
+message Timer {
+    string name = 1;
+    float time = 2;
+    float std = 3;
+}
+
+message Summary {
+    physt.HistogramCollection collection = 1;
+    uint64 processed_bytes = 2;
+    repeated Timer timers = 3;
+}
+
+message JobInfo {
+    string name = 1;
+    google.protobuf.Timestamp started = 2;
+    google.protobuf.Timestamp finished = 3;
+    repeated FileInfo data = 4;
+    Summary summary = 5;
+    JobState state = 6;
+}

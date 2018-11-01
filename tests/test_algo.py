@@ -12,9 +12,11 @@
 import unittest
 
 from artemis.core.algo import AlgoBase
+from artemis.algorithms.dummyalgo import DummyAlgo1
 import logging
 from pprint import pformat
 import sys
+from google.protobuf import text_format
 
 from artemis.decorators import timethis
 
@@ -85,7 +87,14 @@ class AlgoTestCase(unittest.TestCase):
         self.testalgo.logger.info("Use logger getter property")
 
     def test_dict(self):
-       print(pformat(self.testalgo.to_dict())) 
+       print(pformat(self.testalgo.to_dict()))
+
+    def test_msg(self):
+        dummy = DummyAlgo1('dummy', prop=3.0)
+        msg = dummy.to_msg()
+        print(text_format.MessageToString(msg))        
+        a_algo = AlgoBase.from_msg(self.testalgo.logger, msg)
+        print(a_algo.__dict__)
 
 
 if __name__ == '__main__':

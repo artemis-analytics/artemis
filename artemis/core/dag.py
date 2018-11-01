@@ -25,6 +25,7 @@ from collections import OrderedDict, deque, namedtuple
 from functools import reduce as _reduce
 
 from artemis.logger import Logger
+from artemis.io.protobuf.artemis_pb2 import Menu as Menu_pb
 
 
 @Logger.logged
@@ -348,6 +349,26 @@ class Menu():
             print(self._sequence[key].parents)
             tree_dict[key] = list(self._sequence[key].parents)
         return tree_dict
+
+    def to_msg(self):
+        msg = Menu_pb()
+        algos = []
+        for key in self._sequence:
+            node = msg.tree.nodes.add()
+            node.name = key
+            node.parents.extend(self._sequence[key].parents)
+            for algo in self._sequence[key].algos:
+                try:
+                    node.algos.append(algo.name)
+                    if algo.name not in algos:
+                        algos.append(algo.name)
+                        algo_pb = msg.algos.add()
+                        algo_pb.CopyFrom(algo.to_msg())
+                except AttributeError:
+                    if isinstance(algo, str):
+                        self.__logger.warning("%s: Algo type<str>" % algo)
+                        node.algos.append(algo)
+        return msg
 
     def to_algodict(self):
         '''

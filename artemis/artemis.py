@@ -43,6 +43,10 @@ from artemis.generators.generators import GenCsvLikeArrow
 from artemis.io.reader import FileHandler
 from artemis.core.physt_wrapper import Physt_Wrapper
 
+# Protobuf
+from artemis.io.protobuf.artemis_pb2 import JobConfig as JobConfig_pb
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+
 # Utils
 from artemis.utils.utils import bytes_to_mb, range_positive
 
@@ -54,6 +58,9 @@ class Artemis():
 
         # Set defaults if not configured
         self.jobname = name
+        self.jobinfo = JobInfo_pb()
+        self.jobinfo.name = name
+        self.jobinfo.started.GetCurrentTime()
 
         # Set jobname to name of artemis instance
         # Update kwargs
@@ -251,6 +258,27 @@ class Artemis():
         self.jobops.data['job'] = self.properties.to_dict()
         self.jobops.data['menu'] = self.menu
 
+        if hasattr(self.properties, 'protomsg'):
+            try:
+                self.jobops.data['protomsg'] = JobConfig_pb()
+            except Exception:
+                self.__logger.error('Cannot create JobConfig msg')
+            try:
+                with open(self.properties.protomsg, 'rb') as f:
+                    self.jobops.data['protomsg'].\
+                            ParseFromString(f.read())
+            except IOError:
+                self.__logger.error("Cannot read collections")
+            except Exception:
+                self.__logger.error('Cannot parse msg')
+                raise
+            # Add the menu message back to jobops men
+            try:
+                self.jobops.data['menu']['protomsg'] = \
+                        self.jobops.data['protomsg'].menu
+            except Exception:
+                self.__logger.error('Cannot set menu msg')
+
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
 
         # Configure the generator
@@ -264,25 +292,36 @@ class Artemis():
 
     def _gen_config(self):
         self.__logger.info('Load the generator')
-        try:
-            with open(self.properties.generator, 'r') as ifile:
-                gencfg = json.load(ifile, object_pairs_hook=OrderedDict)
-        except IOError as e:
-            self.__logger.error("Cannot open file: %s",
-                                self.properties.generator)
-            self.__logger.error('I/O({0}: {1})'.format(e.errno, e.strerror))
-            # Propagate the expection up to Artemis::control()
-            raise
-        except Exception as e:
-            self.__logger.error("Unknow expection")
-            self.__logger.error("Reason: %s" % e)
-            # Propagate the expection up to Artemis::control()
-            raise
-        try:
-            self.generator = AlgoBase.load(self.__logger, **gencfg)
-        except Exception:
-            self.__logger.error('Error loading the generator')
-            raise
+        if hasattr(self.properties, 'protomsg'):
+            self.__logger.info('Loading generator from protomsg')
+            _msggen = self.jobops.data['protomsg'].input.generator.config
+            try:
+                self.generator = AlgoBase.from_msg(self.__logger, _msggen)
+            except Exception:
+                self.__logger.info("Failed to load generator from protomsg")
+                raise
+        else:
+            self.__logger.info('Loading from json')
+            try:
+                with open(self.properties.generator, 'r') as ifile:
+                    gencfg = json.load(ifile, object_pairs_hook=OrderedDict)
+            except IOError as e:
+                self.__logger.error("Cannot open file: %s",
+                                    self.properties.generator)
+                self.__logger.error('I/O({0}: {1})'.format(e.errno,
+                                                           e.strerror))
+                # Propagate the expection up to Artemis::control()
+                raise
+            except Exception as e:
+                self.__logger.error("Unknow expection")
+                self.__logger.error("Reason: %s" % e)
+                # Propagate the expection up to Artemis::control()
+                raise
+            try:
+                self.generator = AlgoBase.load(self.__logger, **gencfg)
+            except Exception:
+                self.__logger.error('Error loading the generator')
+                raise
         try:
             self.generator.initialize()
         except Exception:
@@ -298,7 +337,7 @@ class Artemis():
             self.__logger.error("Cannot set generator")
             raise
         # Add the generator to the jobproperties
-        self.jobops.data['generator'] = gencfg
+        # self.jobops.data['generator'] = gencfg
 
     def _initialize(self):
         self.__logger.info("{}: Initialize".format('artemis'))
@@ -348,6 +387,8 @@ class Artemis():
         self.__logger.debug(pformat(self._meta_dict))
 
     def _to_json(self):
+        if 'protomsg' in self._meta_dict['menu']:
+            del self._meta_dict['menu']['protomsg']
         try:
             with open(self.meta_filename, 'x') as ofile:
                 json.dump(self._meta_dict, ofile, indent=4)
@@ -464,7 +505,9 @@ class Artemis():
         self.jobops.data['results']['artemis.blocksize'] = mu_blocksize
 
         collections = self.hbook.to_message()
+        self.jobinfo.summary.collection.CopyFrom(collections)
         colname = self.jobname + '_hist.dat'
+        jobinfoname = self.jobname + '_info.dat'
         try:
             with open(colname, "wb") as f:
                 f.write(collections.SerializeToString())
@@ -472,15 +515,26 @@ class Artemis():
             self.__logger.error("Cannot write hbook")
         except Exception:
             raise
+        try:
+            with open(jobinfoname, "wb") as f:
+                f.write(self.jobinfo.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write hbook")
+        except Exception:
+            raise
 
         self.__logger.info(pformat(self.jobops.data))
         postname = self.jobname + '_results.json'
+        if 'protomsg' in self.jobops.data:
+            del self.jobops.data['protomsg']
         try:
             with open(postname, 'x') as ofile:
                 json.dump(self.jobops.data, ofile, indent=4)
         except IOError as e:
             self.__logger.error('I/O Error({0}: {1})'.
                                 format(e.errno, e.strerror))
+
+        self.jobinfo.finished.GetCurrentTime()
 
     def _check_requests(self):
         self.__logger.info('Remaining data check. Status coming up.')

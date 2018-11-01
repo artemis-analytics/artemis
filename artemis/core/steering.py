@@ -28,26 +28,32 @@ class Steering(AlgoBase):
         self.__logger.info('%s: __init__ Steering' % self.name)
         self.__logger.debug('%s: __init__ Steering' % self.name)
         self.__logger.warning('%s: __init__ Steering' % self.name)
+        self._chunk_cntr = 0
+        # Execution graph
+        self._menu = OrderedDict()
+        self.jobops = JobProperties()
         self.__timers = dict()
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
         # self.hbook = job.hbook
-        self.jobops = JobProperties()
-        try:
-            self._validate_menu()
-        except KeyError:
-            self.__logger.error('Cannot validate menu')
-            raise
+
         self.__logger.info('Menu validated')
-
-        graphcfg = self.jobops.data['menu']
-        self._chunk_cntr = 0
-        # Execution graph
-        self._menu = OrderedDict()
-        self.__logger.debug(pformat(graphcfg))
-
         self._seq_tree = Tree(self.jobops.data['job']['jobname'])
+        if 'protomsg' in self.jobops.data['menu']:
+            self.from_msg()
+        else:
+            try:
+                self._validate_menu()
+            except KeyError:
+                self.__logger.error('Cannot validate menu')
+                raise
+            self.from_dict()
+
+    def from_dict(self):
+        self.__logger.info('Loading menu from json')
+        graphcfg = self.jobops.data['menu']
+        self.__logger.debug(pformat(graphcfg))
 
         self.__logger.debug(pformat(graphcfg))
         self.__logger.info('Initializing Tree and Algos')
@@ -116,6 +122,62 @@ class Steering(AlgoBase):
         for key in keys:
             if key not in self.jobops.data['menu'].keys():
                 raise KeyError(key)
+
+    def from_msg(self):
+        '''
+        Configure steering from a protobuf msg
+        '''
+        self.__logger.info('Loading menu from protobuf')
+        msg = self.jobops.data['menu']['protomsg']
+
+        self.__logger.info('Initializing Tree and Algos')
+
+        # Initialize algorithms
+        # Look up instance to add to execution graph
+        algo_instances = {}
+        for algo in msg.algos:
+            try:
+                algo_instances[algo.name] = \
+                        AlgoBase.from_msg(self.__logger, algo)
+            except Exception:
+                self.__logger.error('Initializing from protobuf %s', algo.name)
+                raise
+            try:
+                algo_instances[algo.name].initialize()
+            except Exception:
+                self.__logger.error("Cannot initialize algo %s" % algo.name)
+                raise
+
+        for node in msg.tree.nodes:
+            self.__logger.debug("graph node %s" % (node.name))
+            # Create the nodes for the tree
+            if node.name == 'initial':
+                self._seq_tree.root = Node(node.name, [])
+                self._seq_tree.add_node(self._seq_tree.root)
+            else:
+                self._seq_tree.add_node(Node(node.name, node.parents))
+
+            # Initialize the algorithms
+            # Create the execution graph
+            algos = []
+            for algo in node.algos:
+                self.__logger.debug("%s in graph node %s" % (algo, node.name))
+                # TODO
+                # Initial node has placeholder algo iorequest
+                # iorequest algo is just a string name
+                # no algo message, in json dict this is stored as an empt dict
+                if node.name == 'initial':
+                    algos.append('iorequest')
+                    continue
+                algos.append(algo_instances[algo])
+            self._menu[node.name] = tuple(algos)
+
+        self._seq_tree.update_parents()
+        self._seq_tree.update_leaves()
+
+        self.__logger.info('Tree nodes are as follows: %s' %
+                           str(self._seq_tree.nodes))
+        self.__logger.info('%s: Initialized Steering' % self.name)
 
     def lock(self):
         '''
@@ -234,6 +296,7 @@ class Steering(AlgoBase):
             _name = '.'
             _name = _name.join([self.name, 'time', key])
             mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
+            std = self.hbook.get_histogram(self.name, 'time.'+key).std()
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
             self.__logger.info("%s timing: %2.4f" % (key, mu))
@@ -242,3 +305,14 @@ class Steering(AlgoBase):
             except KeyError:
                 self.__logger.warning('Error in JobProperties')
                 # Do not raise, just issue warning
+            # Add to the msg
+            try:
+                msgtime = self.jobops.data['protomsg'].\
+                        jobinfo.summary.timers.add()
+                msgtime.name = _name
+                msgtime.mean = mu
+                msgtime.std = std
+            except KeyError:
+                self.__logger.warning('Protomsg not found')
+            except Exception:
+                self.__logger.error('Unknown error')
