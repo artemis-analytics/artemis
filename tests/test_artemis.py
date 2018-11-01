@@ -12,6 +12,7 @@
 import unittest
 import logging
 import json
+from google.protobuf import text_format
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
@@ -20,19 +21,20 @@ from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
+from artemis.io.protobuf.artemis_pb2 import JobConfig 
 
 logging.getLogger().setLevel(logging.INFO)
 
 
 class ArtemisTestCase(unittest.TestCase):
-
+        
     def setUp(self):
-        self.menucfg = 'arrow_testmenu.json'
-        self.gencfg = 'arrow_testgen.json'
-
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
+        self.menucfg = ''
+        self.gencfg = ''
+        self.prtcfg = ''
         testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
         csvalgo = CsvParserAlgo('csvparser')
 
@@ -60,16 +62,31 @@ class ArtemisTestCase(unittest.TestCase):
         seqX = Sequence(["initial"], (csvalgo,), "seqX")
         csvChain.add(seqX)
 
-        testmenu = Menu("test")
-        testmenu.add(dummyChain1)
-        testmenu.add(dummyChain2)
-        testmenu.add(csvChain)
-        testmenu.generate()
+        self.testmenu = Menu("test")
+        self.testmenu.add(dummyChain1)
+        self.testmenu.add(dummyChain2)
+        self.testmenu.add(csvChain)
+        self.testmenu.generate()
+
+    def tearDown(self):
+        Singleton.reset(JobProperties)
+
+    def test_control(self):
+        print("Testing the Artemis Prototype")
+        Singleton.reset(JobProperties)
+        self.menucfg = 'arrow_testmenu.json'
+        self.gencfg = 'arrow_testgen.json'
+        self.prtcfg = 'arrow_proto.data'
         try:
-            testmenu.to_json(self.menucfg)
+            self.testmenu.to_json(self.menucfg)
         except Exception:
             raise
-
+        try:
+            msg = self.testmenu.to_msg()
+        except Exception:
+            raise
+        print(text_format.MessageToString(msg))        
+        
         generator = GenCsvLikeArrow('generator',
                                     nbatches=1,
                                     num_cols=20,
@@ -81,12 +98,14 @@ class ArtemisTestCase(unittest.TestCase):
                           indent=4)
         except Exception:
             raise
-
-    def tearDown(self):
-        Singleton.reset(JobProperties)
-
-    def test_control(self):
-        print("Testing the Artemis Prototype")
+        
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
         bow = Artemis("arrow", 
                       menu=self.menucfg, 
                       generator=self.gencfg,
@@ -94,6 +113,39 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         bow.control()
+    
+    def test_proto(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.data'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        bow.control()
+        
+    
 
 
 if __name__ == '__main__':

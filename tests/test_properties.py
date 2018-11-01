@@ -50,6 +50,14 @@ class PropertyTestCase(unittest.TestCase):
         print(_props)
         #json.dumps(_props, indent=4)
 
+    def test_protobuf(self):
+        a_dummy = self.DummyClass(prop1="string", prop2=2.0, prop3=3, prop4=False)
+        msg = a_dummy.properties.to_msg()
+        for p in msg.property:
+            print(p.name, p.type, p.value)
+        
+        a_dict = Properties.from_msg(msg)
+        print(a_dict)
 
 
 

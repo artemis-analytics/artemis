@@ -15,7 +15,7 @@ import logging
 from toposort import toposort, toposort_flatten
 
 from artemis.core.dag import Sequence, Chain, Menu
-
+from google.protobuf import text_format
 
 class DagTestCase(unittest.TestCase):
     
@@ -110,6 +110,9 @@ class DagTestCase(unittest.TestCase):
         testmenu.add(dummyChainX)
         testmenu.generate()
         testmenu.to_json('testmenu.json')
+
+        msg = testmenu.to_msg()
+        print(text_format.MessageToString(msg))        
 
 
 
