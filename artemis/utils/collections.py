@@ -106,8 +106,8 @@ class HCollections():
             d['Keywords'] = 'PdfPages multipage keywords author title subject'
             d['CreationDate'] = datetime.datetime(2018, 10, 31)
 
-    def parse_files(directory):
-        onlyfiles = [f for f in listdir(directory) if isfile(join(directory, f))]
+    def parse_files(dir_name):
+        onlyfiles = [f for f in listdir(dir_name) if isfile(join(dir_name, f))]
         rest = [k for k in onlyfiles if 'hist.dat' in k]
 
         for fname in rest:
