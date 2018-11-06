@@ -75,7 +75,6 @@ class AlgoBase(metaclass=AbcAlgoBase):
         Logger.configure(self, **kwargs)
 
         self.__logger.info('__init__ AlgoBase')
-        print('__init__ AlgoBase')
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
@@ -112,7 +111,6 @@ class AlgoBase(metaclass=AbcAlgoBase):
         '''
         Returns the class instance from a dictionary
         '''
-        print("ANOTHER WTF ANOTHER WTF LOAD LOAD LOAD")
         logger.info('Loading Algo %s' % kwargs['name'])
         try:
             module = importlib.import_module(

@@ -24,11 +24,11 @@ class Physt_Wrapper(metaclass=Singleton):
         # TODO
         # Explore more options for correctly initializing h1
         try:
-            print(bins)
+            # self.__logger.debug(bins)
             self.hbook[name_] = Histogram1D(bins,
                                             stats={"sum": 0.0, "sum2": 0.0})
         except Exception:
-            self.__logger.error("Physt fails to book")
+            # self.__logger.error("Physt fails to book")
             raise
 
         if axis_name:
