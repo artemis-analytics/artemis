@@ -14,6 +14,7 @@ from collections import OrderedDict
 
 from artemis.core.singleton import Singleton
 from artemis.io.protobuf.artemis_pb2 import Properties as Properties_pb
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 
 class Properties():
@@ -87,4 +88,4 @@ class JobProperties(metaclass=Singleton):
     Holds JobProperties for use throughout framework
     '''
     def __init__(self):
-        self.data = OrderedDict()
+        self.meta = JobInfo_pb()

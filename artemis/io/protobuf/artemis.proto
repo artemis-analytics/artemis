@@ -72,15 +72,26 @@ message Input {
     AtomInput atom = 2;
 }
 
+message CsvParser {
+    uint64 block_size = 1;
+    string delimiter = 2;  // Can be bytes
+    bool skip_header = 3;
+    uint64 header_size = 4;
+}
+
+message Parser {
+    CsvParser csvparser = 1;
+}
+
 message JobConfig {
     Input input = 1;
     Menu menu = 2;
+    Parser parser = 3; 
 }
 
 message RawInfo {
     uint64 size_bytes = 1;
 }
-
 
 message ByteRange {
     uint64 offset_bytes = 1;
@@ -103,13 +114,17 @@ message Schema {
 }
 
 message SchemaInfo {
-    repeated Schema columns = 1;    
+    repeated Schema columns = 1;  
+    uint64 size_bytes = 2;
+    bytes header = 3;
 }
 
 message FileInfo {
-    RawInfo raw = 1;
-    repeated BlockInfo blocks = 2;
-    SchemaInfo schema = 3;
+    string name = 1;
+    RawInfo raw = 2;
+    repeated BlockInfo blocks = 3;
+    SchemaInfo schema = 4;
+    RawInfo processed = 5;
 }
 
 enum JobState {
@@ -139,4 +154,6 @@ message JobInfo {
     repeated FileInfo data = 4;
     Summary summary = 5;
     JobState state = 6;
+    JobConfig config = 7;
+    Properties properties = 8;
 }

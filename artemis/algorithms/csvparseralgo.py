@@ -35,7 +35,6 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.warning('%s: __init__ CsvParserAlgo' % self.name)
         self.reader = None
         self.jobops = None
-        print('%s: __init__ CsvParserAlgo' % self.name)
 
     def initialize(self):
         self.__logger.info(self.__logger)
@@ -45,6 +44,7 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
 
     def book(self):
+        self.__logger.info("Book")
         self.hbook = Physt_Wrapper()
         self.__timers = dict()
         self.__timers['pyparse'] = list()
@@ -114,10 +114,9 @@ class CsvParserAlgo(AlgoBase):
     def execute(self, element):
 
         raw_ = element.get_data()
-        fileinfo = list(self.jobops.data['file'].items())[-1]
-        self.__logger.info(fileinfo)
-        schema = fileinfo[-1]['schema']
-        self.__logger.info('Expected header %s' % schema)
+        _finfo = self.jobops.meta.data[-1]
+        schema = [x.name for x in _finfo.schema.columns]
+        self.__logger.debug('Expected header %s' % schema)
         columns = [[] for _ in range(len(schema))]
         length = 0
 
@@ -137,11 +136,12 @@ class CsvParserAlgo(AlgoBase):
             self.__logger.error("PyArrow parsing fails")
             raise
 
-        self.__logger.info("Arrow schema: %s time: ", rbatch.schema)
-        self.__logger.info("Arrow schema: %s time: ", table.schema)
+        self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
+        self.__logger.debug("Arrow schema: %s time: ", table.schema)
 
     def finalize(self):
         self.__logger.info("Completed CsvParsing")
+        summary = self.jobops.meta.summary
         for key in self.__timers:
             _name = '.'
             _name = _name.join([self.name, 'time', key])
@@ -150,20 +150,9 @@ class CsvParserAlgo(AlgoBase):
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
             self.__logger.info("%s timing: %2.4f" % (key, mu))
-            try:
-                self.jobops.data['results'][_name] = mu
-            except KeyError:
-                self.__logger.warning('Error in JobProperties')
-                # Do not raise
 
             # Add to the msg
-            try:
-                msgtime = self.jobops.data['protomsg'].\
-                        jobinfo.summary.timers.add()
-                msgtime.name = _name
-                msgtime.mean = mu
-                msgtime.std = std
-            except KeyError:
-                self.__logger.warning('Protomsg not found')
-            except Exception:
-                self.__logger.error('Unknown error')
+            msgtime = summary.timers.add()
+            msgtime.name = _name
+            msgtime.time = mu
+            msgtime.std = std

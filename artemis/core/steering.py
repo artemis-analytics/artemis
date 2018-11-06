@@ -10,7 +10,6 @@
 Steering
 """
 from collections import OrderedDict
-from pprint import pformat
 from statistics import mean
 
 from artemis.utils.utils import range_positive
@@ -36,100 +35,15 @@ class Steering(AlgoBase):
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
-        # self.hbook = job.hbook
-
-        self.__logger.info('Menu validated')
-        self._seq_tree = Tree(self.jobops.data['job']['jobname'])
-        if 'protomsg' in self.jobops.data['menu']:
-            self.from_msg()
-        else:
-            try:
-                self._validate_menu()
-            except KeyError:
-                self.__logger.error('Cannot validate menu')
-                raise
-            self.from_dict()
-
-    def from_dict(self):
-        self.__logger.info('Loading menu from json')
-        graphcfg = self.jobops.data['menu']
-        self.__logger.debug(pformat(graphcfg))
-
-        self.__logger.debug(pformat(graphcfg))
-        self.__logger.info('Initializing Tree and Algos')
-        for key in graphcfg['graph']:
-            self.__logger.debug("graph node %s" % (key))
-            # Create the nodes for the tree
-            if key == 'initial':
-                self._seq_tree.root = Node(key, [])
-                self._seq_tree.add_node(self._seq_tree.root)
-            else:
-                if key in graphcfg['tree']:
-                    self._seq_tree.add_node(Node(key, graphcfg['tree'][key]))
-                else:
-                    self.__logger.error("%s node not found in tree" % key)
-
-            # Initialize the algorithms
-            # Create the execution graph
-            algos = []
-            for algo in graphcfg['graph'][key]:
-                self.__logger.debug("%s in graph node %s" % (algo, key))
-                if graphcfg['algos'][algo] is None:
-                    algos.append(algo)
-                    continue
-                elif len(graphcfg['algos'][algo].items()) == 0:
-                    algos.append(algo)
-                    continue
-                try:
-                    instance = AlgoBase.load(self.__logger,
-                                             **graphcfg['algos'][algo])
-                except Exception:
-                    self.__logger.error('Error loading %s', algo)
-                    raise
-
-                algos.append(instance)
-                try:
-                    instance.initialize()
-                except Exception:
-                    self.__logger.error("Cannot initialize algo %s" % algo)
-                    raise
-                self.__logger.debug("from_dict: instance {}".format(instance))
-            self._menu[key] = tuple(algos)
-
-        self._seq_tree.update_parents()
-        self._seq_tree.update_leaves()
-
-        self.__logger.info('Tree nodes are as follows: %s' %
-                           str(self._seq_tree.nodes))
-        self.__logger.info('%s: Initialized Steering' % self.name)
-
-    def _validate_menu(self):
-        '''
-        Internal method to validate the expected
-        menu layout
-        essentially validating the data model
-        better ways to do this ...
-        Move to staticmethod in dag.py
-        '''
-        self.__logger.debug("Validate menu")
-        self.__logger.debug(pformat(self.jobops.data['menu']))
-        self.__logger.debug(self.jobops.data.keys())
-        if 'menu' not in self.jobops.data.keys():
-            self.__logger.error("KeyError %s" % 'menu')
-            raise KeyError('menu')
-
-        keys = ['graph', 'tree', 'algos']
-        for key in keys:
-            if key not in self.jobops.data['menu'].keys():
-                raise KeyError(key)
+        self._seq_tree = Tree(self.jobops.meta.name)
+        self.from_msg()
 
     def from_msg(self):
         '''
         Configure steering from a protobuf msg
         '''
         self.__logger.info('Loading menu from protobuf')
-        msg = self.jobops.data['menu']['protomsg']
-
+        msg = self.jobops.meta.config.menu
         self.__logger.info('Initializing Tree and Algos')
 
         # Initialize algorithms
@@ -184,6 +98,7 @@ class Steering(AlgoBase):
         Overides the base class lock
         controls locking of all algorithm properties
         '''
+        self.__logger.info("Lock Steering properties")
         self.properties.lock = True
         for key in self._menu:
             algos = self._menu[key]
@@ -192,28 +107,8 @@ class Steering(AlgoBase):
                     continue
                 algo.lock()
 
-    def to_dict(self):
-        # TODO
-        # Reuse existing base class code
-        # extend the dictionary somehow
-        print(super().to_dict())
-        _dict = OrderedDict()
-        _dict['name'] = self.name
-        _dict['class'] = self.__class__.__name__
-        _dict['module'] = self.__module__
-        _dict['properties'] = self.properties.to_dict()
-        _dict['graph'] = OrderedDict()
-        for key in self._menu:
-            _dict['graph'][key] = OrderedDict()
-            algos = self._menu[key]
-            for algo in algos:
-                if isinstance(algo, str):
-                    _dict['graph'][key][algo] = OrderedDict()
-                else:
-                    _dict['graph'][key][algo.name] = algo.to_dict()
-        return _dict
-
     def book(self):
+        self.__logger.info("Book")
         self.hbook = Physt_Wrapper()
         # self.hbook.book(self.name, 'counts', range(100))
         # self.hbook.book(self.name, 'payload', range(100))
@@ -284,14 +179,13 @@ class Steering(AlgoBase):
 
     def finalize(self):
         self.__logger.info("Completed steering")
-        self.__logger.info("Finalize Algos")
+        summary = self.jobops.meta.summary
         for key in self._menu:
             for algo in self._menu[key]:
                 if isinstance(algo, str):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
                     algo.finalize()
-
         for key in self.__timers:
             _name = '.'
             _name = _name.join([self.name, 'time', key])
@@ -300,19 +194,7 @@ class Steering(AlgoBase):
             self.__logger.info("%s timing: %2.4f" %
                                (key, mean(self.__timers[key])))
             self.__logger.info("%s timing: %2.4f" % (key, mu))
-            try:
-                self.jobops.data['results'][_name] = mu
-            except KeyError:
-                self.__logger.warning('Error in JobProperties')
-                # Do not raise, just issue warning
-            # Add to the msg
-            try:
-                msgtime = self.jobops.data['protomsg'].\
-                        jobinfo.summary.timers.add()
-                msgtime.name = _name
-                msgtime.mean = mu
-                msgtime.std = std
-            except KeyError:
-                self.__logger.warning('Protomsg not found')
-            except Exception:
-                self.__logger.error('Unknown error')
+            msgtime = summary.timers.add()
+            msgtime.name = _name
+            msgtime.time = mu
+            msgtime.std = std

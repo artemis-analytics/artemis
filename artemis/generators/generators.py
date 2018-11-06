@@ -483,7 +483,6 @@ class GenCsvLikeArrow(AlgoBase):
 
         # Set the properties with the full configuration
         super().__init__(name, **self._defaults)
-        print(self.properties.to_dict())
         self.nbatches = self.properties.nbatches
         self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
@@ -496,7 +495,6 @@ class GenCsvLikeArrow(AlgoBase):
         for _ in range(self.num_cols):
             self.types.append(self.pa_types
                               [random.randint(0, len(self.pa_types)-1)])
-        print("WTFWTFWTFWTFWTF!!!!!!!!!!!!!")
         self.__logger.info("Initialized %s" % self.__class__.__name__)
         self.__logger.info(self.__class__.__dict__)
 
@@ -585,7 +583,6 @@ class GenCsvLikeArrow(AlgoBase):
         self.__logger.info('Generate')
         self.__logger.info("%s: Producing Data" % (self.__class__.__name__))
         self.__logger.debug("%s: Producing Data" % (self.__class__.__name__))
-        print("WTFWTFWTFWTFWTF!!!!!!!!!!!!!")
         i = 0
         mysum = 0
         mysumsize = 0

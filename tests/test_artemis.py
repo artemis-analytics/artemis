@@ -11,7 +11,6 @@
 """
 import unittest
 import logging
-import json
 from google.protobuf import text_format
 
 from artemis.core.dag import Sequence, Chain, Menu
@@ -36,7 +35,7 @@ class ArtemisTestCase(unittest.TestCase):
         self.gencfg = ''
         self.prtcfg = ''
         testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
-        csvalgo = CsvParserAlgo('csvparser')
+        csvalgo = CsvParserAlgo('csvparser', loglevel='INFO')
 
         seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
         seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
@@ -70,53 +69,10 @@ class ArtemisTestCase(unittest.TestCase):
 
     def tearDown(self):
         Singleton.reset(JobProperties)
-
-    def test_control(self):
-        print("Testing the Artemis Prototype")
-        Singleton.reset(JobProperties)
-        self.menucfg = 'arrow_testmenu.json'
-        self.gencfg = 'arrow_testgen.json'
-        self.prtcfg = 'arrow_proto.data'
-        try:
-            self.testmenu.to_json(self.menucfg)
-        except Exception:
-            raise
-        try:
-            msg = self.testmenu.to_msg()
-        except Exception:
-            raise
-        print(text_format.MessageToString(msg))        
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        try:
-            with open(self.gencfg, 'x') as ofile:
-                json.dump(generator.to_dict(), 
-                          ofile, 
-                          indent=4)
-        except Exception:
-            raise
-        
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("arrow", 
-                      menu=self.menucfg, 
-                      generator=self.gencfg,
-                      blocksize=2**16,
-                      skip_header=True,
-                      loglevel='INFO')
-        bow.control()
     
     def test_proto(self):
         Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.data'
+        self.prtcfg = 'arrowproto_proto.dat'
         try:
             msgmenu = self.testmenu.to_msg()
         except Exception:
@@ -131,6 +87,11 @@ class ArtemisTestCase(unittest.TestCase):
         msg = JobConfig()
         msg.input.generator.config.CopyFrom(msggen)
         msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -144,8 +105,6 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         bow.control()
-        
-    
 
 
 if __name__ == '__main__':
