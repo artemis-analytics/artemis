@@ -21,6 +21,7 @@ class TreeDummyCase(unittest.TestCase):
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
         Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
         self.sequence['test0'] = (Seq_prop('algotest0', []))
