@@ -27,3 +27,6 @@ class Singleton(type):
             del cls._instances[cls]
         else:
             print('Key: ' + str(cls) + ' is not present.')
+
+    def exists(cls):
+        return cls in cls._instances

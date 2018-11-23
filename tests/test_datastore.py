@@ -11,87 +11,13 @@
 """
 import unittest
 
-from artemis.core.algo import AlgoBase
+import pyarrow as pa
+
 import logging
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
-from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow
-from pprint import pformat
-import sys
 
-logging.getLogger().setLevel(logging.DEBUG)
-
-
-class AlgoTestCase(unittest.TestCase):
-    class TestAlgo(AlgoBase):
-
-        def __init__(self, name, **kwargs):
-            super().__init__(name, **kwargs)
-            self.__logger.debug(pformat(kwargs))
-            self.__logger.debug(pformat(self.__dict__))
-            self.__logger.debug(pformat(self.__class__.__dict__))
-            self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
-            self.store = ArrowSets()
-
-        def initialize(self):
-            self.__logger.info(self.__logger)
-            self.__logger.info(self._TestAlgo__logger)
-            self.__logger.info('%s: property %s' % (self.name, self.properties.myproperty))
-
-        def book(self):
-            pass
-
-        def execute(self, payload):
-            if(logging.getLogger().isEnabledFor(logging.DEBUG) or
-                    self.__logger.isEnabledFor(logging.DEBUG)):
-
-                # Prevent excessive formating calls when not required
-                # Note that we can indepdently change the logging level
-                # for algo loggers and root logger
-                # Use string interpolation to prevent excessive format calls
-                self.__logger.debug('%s: execute ' % self.name)
-                # Check logging level if formatting requiered
-                self.__logger.debug('{}: execute: payload {}'.format(self.name, sys.getsizeof(payload)))
-
-            self.__logger.debug("Trying to debug")
-            my_data = self.store.get_data(payload)
-            my_data2 = []
-            count = 0
-            my_sum = 0
-            avg1 = 0
-            avg2 = 0
-
-            print('my_data: ' + str(my_data))
-
-            for value in my_data:
-                my_sum += value
-                count += 1
-                value += 1
-                my_data2.append(value)
-            avg1 = my_sum/count
-            count = 0
-            my_sum = 0
-
-            print('my_data, redux: ' + str(my_data2))
-
-            for value in my_data2:
-                my_sum += value
-                count += 1
-            avg2 = my_sum/count
-
-            print('Average 1 equals: ' + str(avg1))
-            print('Average 2 equals: ' + str(avg2))
-            print('Average 2 minus average 1 equals: ' + str(avg2 - avg1))
-
-            self.store.add_to_dict('test1', my_data2)
-            self.store.add_to_dict('avg1', avg1)
-            self.store.add_to_dict('avg2', avg2)
-
-            print('Datastore')
-            print(self.store.arrow_dict)
-
-        def finalize(self):
-            pass
+class DatastoreTest(unittest.TestCase):
 
     def setUp(self):
         print("================================================")
@@ -101,38 +27,109 @@ class AlgoTestCase(unittest.TestCase):
     def tearDown(self):
         Singleton.reset(ArrowSets)
 
-    def test_algo(self):
-        self.testalgo = self.TestAlgo("testalgo", myproperty='ptest', loglevel='DEBUG')
-        print("Name", self.testalgo.name)
-        print(self.testalgo.__dict__)
-        self.testalgo.initialize()
-        print("Name", self.testalgo.name)
-        print(self.testalgo.__dict__)
-        print(self.testalgo.properties.myproperty)
-        store = ArrowSets()
-        store.add_to_dict('test0', [1, 2, 3])
+    def test_create(self):
+        self.assertFalse(Singleton.exists(ArrowSets), msg='ArrowSets should not be initialized.')
+        my_data = ArrowSets()
+        self.assertTrue(Singleton.exists(ArrowSets), msg='ArrowSets should be initialized.')
 
-        self.testalgo.execute('test0')
+    def test_book(self):
+        my_data = ArrowSets()
+        self.assertFalse(my_data.contains('test1'), msg='ArrowSets should not contain test1.')
+        my_data.book('test1')
+        self.assertTrue(my_data.contains('test1'), msg='ArrowSets should contain test1.')
 
-    def test_gen_flow(self):
-        generator = GenCsvLike()
-        generator.nchunks = 1
-        ichunk = 0
-        for chunk in generator.generate():
-            print('Test chunk %s' % ichunk)
-            ichunk += 1
+    def test_add(self):
+        my_data = ArrowSets()
+        self.assertFalse(my_data.contains('test3'), msg='ArrowSets should not contain test3.')
+        my_data.add_to_dict('test3', 9)
+        self.assertTrue(my_data.contains('test3'), msg='ArrowSets should contain test3.')
+        self.assertEqual(my_data.get_data('test3'), 9, msg='Data should be 9.')
 
-    def chunker(self):
-        nbatches = 1
-        generator = GenCsvLikeArrow('test')
-        for ibatch in range(nbatches):
-            yield generator.make_random_csv()
-
-    def test_chunker(self):
-        for batch in self.chunker():
-            print('Batch test')
-            print(batch)
+    def test_book_and_add(self):
+        my_data = ArrowSets()
+        my_data.book('test2')
+        self.assertIsNone(my_data.get_data('test2'), msg='ArrowSets should not contain data for test2.')
+        my_data.add_to_dict('test2', 5)
+        self.assertEqual(my_data.get_data('test2'), 5, msg='Data should be 5.')
 
 
-if __name__ == '__main__':
-    unittest.main()
+    def test_get(self):
+        my_data = ArrowSets()
+        self.assertFalse(my_data.contains('test4'))
+        my_data.add_to_dict('test4', 13)
+        self.assertTrue(my_data.contains('test4'))
+        my_value = my_data.get_data('test4')
+        self.assertEqual(my_value, 13, msg='Data should be 13.')
+
+    def test_arrow(self):
+        arr1 = pa.array([1, 2, 3, 4])
+        arr2 = pa.array(['test1', 'test2', 'test3', 'test4'])
+
+        data = [arr1, arr2]
+
+        batch = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        print('Number of columns: ' + str(batch.num_columns))
+        print('Number of rows: ' + str(batch.num_rows))
+        print('Schema of batch: ' + str(batch.schema))
+
+        for i_batch in batch:
+            print('Batch print: ' + str(i_batch))
+
+        arr3 = pa.array([ 11, 21, 31, 41])
+        arr4 = pa.array(['test11','test21','test31','test41'])
+        data2 = [arr3, arr4]
+        batch2 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        arr5 = pa.array([ 12, 22, 32, 42])
+        arr6 = pa.array(['test12','test22','test32','test42'])
+        data3 = [arr5, arr6]
+        batch3 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        arr7 = pa.array([ 13, 23, 33, 43])
+        arr8 = pa.array(['test13','test23','test33','test43'])
+        data4 = [arr7, arr8]
+        batch4 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        arr9 = pa.array([ 14, 24, 34, 44])
+        arr10 = pa.array(['test14','test24','test34','test44'])
+        data5 = [arr9, arr10]
+        batch5 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        arr11 = pa.array([ 15, 25, 35, 45])
+        arr12 = pa.array(['test15','test25','test35','test45'])
+        data6 = [arr11, arr12]
+        batch6 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        arr13 = pa.array([ 16, 26, 36, 46])
+        arr14 = pa.array(['test16','test26','test36','test46'])
+        data7 = [arr13, arr14]
+        batch7 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        arr15 = pa.array([ 17, 27, 37, 47])
+        arr16 = pa.array(['test17','test27','test37','test47'])
+        data8 = [arr15, arr16]
+        batch8 = pa.RecordBatch.from_arrays(data, ['f0', 'f1'])
+
+        print('Type of multiplied batc: ' + str(type([batch]*5)))
+
+        print('Test of Table.from_batches with hand-constructed list.')
+        table = pa.Table.from_batches([batch, batch2, batch3, batch4,
+                                       batch5, batch6, batch7, batch8])
+
+        print(table)
+        print('Number of rows: ' + str(table.num_rows))
+
+        tables = [table] * 3
+
+        table_all = pa.concat_tables(tables)
+
+        print('Number of rwos of concatenated tables: ' + str(table_all.num_rows))
+
+        print('Number of chunks of column 0: ' + str(table_all[0].data.num_chunks))
+        print('Print dta of chunks of column 0: ' + str(table_all[0].data))
+        print('Number of chunks of column 1: ' + str(table_all[1].data.num_chunks))
+        print('Print data of column1: ' + str(table_all[1].data))
+
+        pandas = table.to_pandas()
+        print('Print panadas dataframe: \n' + str(pandas))

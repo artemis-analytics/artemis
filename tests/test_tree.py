@@ -12,7 +12,7 @@ from collections import OrderedDict, namedtuple
 
 from artemis.core.tree import Tree, Node, Element
 from artemis.core.singleton import Singleton
-
+from artemis.core.datastore import ArrowSets
 
 class TreeDummyCase(unittest.TestCase):
 
@@ -21,6 +21,7 @@ class TreeDummyCase(unittest.TestCase):
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
         Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
         self.sequence['test0'] = (Seq_prop('algotest0', []))
@@ -39,6 +40,98 @@ class TreeDummyCase(unittest.TestCase):
 
     def tearDown(self):
         Singleton.reset(Tree)
+
+    def test_create_element(self):
+        my_element = Element('testElement0')
+        self.assertEqual(my_element.key, 'testElement0', msg='Element name should be testElement.')
+
+    def test_element_lock(self):
+        my_element = Element('testElement1')
+        self.assertFalse(my_element.locked, msg='Element should not be locked.')
+        my_element.locked = True
+        self.assertTrue(my_element.locked, msg='Element should be locked.')
+
+    def test_add_data(self):
+        my_element = Element('testElement2')
+        my_element.locked = True
+        self.assertTrue(my_element.locked, msg='Element should be locked.')
+        my_element.add_data('testData0')
+        self.assertIsNone(my_element.get_data())
+        self.assertEqual(len(my_element._store.arrow_dict), 1, msg='Length should be 1.')
+        my_element.locked = False
+        self.assertFalse(my_element.locked, msg='Element should not be locked.')
+        my_element.add_data('testData1')
+        self.assertEqual(my_element.get_data(), 'testData1', msg='Data should be testData1.')
+
+    def test_get_data(self):
+        my_element = Element('testElement3')
+        my_element.add_data('testData2')
+        self.assertEqual(my_element.get_data(), 'testData2', msg='Data should be testData2.')
+
+    def test_create_node(self):
+        my_node = Node('node0', [])
+        self.assertEqual(my_node.key, 'node0', msg='Node key should be node0.')
+
+    def test_node_add_data(self):
+        my_node = Node('node1', [])
+        self.assertEqual(my_node.key, 'node1', msg='Node key should be node1.')
+        self.assertEqual(len(my_node.payload), 0, msg='Payload should be empty.')
+        my_node.add_payload('testdata0')
+        self.assertEqual(len(my_node.payload), 1, msg='Payload should be 1.')
+
+    def test_create_tree(self):
+        self.assertFalse(Singleton.exists(Tree))
+        my_tree = Tree('tree0')
+        self.assertTrue(Singleton.exists(Tree))
+
+    def test_get_node_by_key(self):
+        my_tree = Tree('tree1')
+        my_node = Node('node2', [])
+        self.assertEqual(len(my_tree.nodes), 0, msg='Nodes should be empty.')
+        my_tree.add_node(my_node)
+        self.assertEqual(len(my_tree.nodes), 1, msg='Nodes should be one.')
+        self.assertEqual(my_tree.get_node_by_key('node2'), my_node, msg='Values should be identical.')
+
+    def test_add_node(self):
+        my_tree = Tree('tree2')
+        my_node = Node('node3', [])
+        self.assertEqual(len(my_tree.nodes), 0, msg='Nodes should be empty.')
+        my_tree.add_node(my_node)
+        self.assertEqual(len(my_tree.nodes), 1, msg='Nodes should be one.')
+
+    def test_update_leaves(self):
+        my_tree = Tree('tree3')
+        self.assertEqual(len(my_tree.leaves), 0, msg='Leaves should be empty.')
+        my_tree.add_node(Node('node4', []))
+        self.assertEqual(len(my_tree.leaves), 0, msg='Leaves should be empty.')
+        my_tree.update_leaves()
+        self.assertEqual(len(my_tree.leaves), 1, msg='Leaves should be one.')
+        my_tree.add_node(Node('node5', ['node4']))
+        my_tree.add_node(Node('node6', ['node4']))
+        self.assertEqual(len(my_tree.leaves), 1, msg='Leaves should be one.')
+        my_tree.update_parents()
+        my_tree.update_leaves()
+        self.assertEqual(len(my_tree.leaves), 2, msg='Leaves should be two.')
+
+    def test_update_parents(self):
+        my_tree = Tree('tree4')
+        my_tree.add_node(Node('node7', []))
+        self.assertEqual(len(my_tree.nodes['node7'].children), 0, msg='Children should be zero.')
+        my_tree.add_node(Node('node8', ['node7']))
+        self.assertEqual(len(my_tree.nodes['node7'].children), 0, msg='Children should be zero.')
+        my_tree.update_parents()
+        my_tree.update_leaves()
+        self.assertEqual(len(my_tree.nodes['node7'].children), 1, msg='Children should be one.')
+
+    def test_flush(self):
+        my_tree = Tree('tree5')
+        my_node = Node('node9', [])
+        my_tree.add_node(my_node)
+        self.assertEqual(len(my_tree.nodes['node9'].payload), 0, msg='Payload should be empty.')
+        my_tree.nodes['node9'].add_payload('testpayload1')
+        self.assertEqual(len(my_tree.nodes['node9'].payload), 1, msg='Payload should be one.')
+        my_tree.flush()
+        self.assertEqual(len(my_tree.nodes['node9'].payload), 0, msg='Payload should be empty.')
 
     def test_tree(self):
         # Dummy to create Tree.
