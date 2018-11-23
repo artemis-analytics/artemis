@@ -6,8 +6,6 @@
 #
 # Distributed under terms of the  license.
 
-import pyarrow as pa
-
 from .singleton import Singleton
 from .datastore import ArrowSets
 
