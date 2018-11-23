@@ -12,7 +12,7 @@ from collections import OrderedDict, namedtuple
 
 from artemis.core.tree import Tree, Node, Element
 from artemis.core.singleton import Singleton
-
+from artemis.core.datastore import ArrowSets
 
 class TreeDummyCase(unittest.TestCase):
 
