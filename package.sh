@@ -15,13 +15,13 @@ do
 			;;
 esac
 done
-set -- "${POSTIONAL[@]}"
+set -- "${POSITIONAL[@]}"
 
 #Help option to explain program.
 if [[ $1 == 'help' || $1 == '-h' || $1 == '--help' ]]
 then
 	echo "Usage:"
-	echo "How to use, TODO"
+	echo "package.sh -d /path/to/desired/output/directory"
 	exit 0
 fi
 
