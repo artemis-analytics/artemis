@@ -108,8 +108,15 @@ class CsvParserAlgo(AlgoBase):
         except Exception:
             self.__logger.error("Problem converting csv to table")
             raise
+        # We actually want a batch
+        # batch can be converted to table but not vice-verse, we get batches
+        # Should always be length 1 though (chunksize can be set however)
+        batches = table.to_batches()
+        if len(batches) != 1:
+            self.__logger.error("Table has more than 1 RecordBatches")
+            raise Exception
 
-        return table
+        return batches[-1]
 
     def execute(self, element):
 
@@ -129,7 +136,7 @@ class CsvParserAlgo(AlgoBase):
             raise
 
         try:
-            table, time_ = self.pyarrow_parsing(raw_)
+            tbatch, time_ = self.pyarrow_parsing(raw_)
             self.__timers['pyarrowparse'].append(time_)
             self.hbook.fill(self.name, 'time.pyarrowparse', time_)
         except Exception:
@@ -137,7 +144,11 @@ class CsvParserAlgo(AlgoBase):
             raise
 
         self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
-        self.__logger.debug("Arrow schema: %s time: ", table.schema)
+        self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
+        self.__logger.info("Batches equal %s", rbatch.equals(tbatch))
+        # Does this overwrite the existing data for this element?
+        element.add_data(tbatch)
+        self.__logger.info("Element Data type %s", type(element.get_data()))
 
     def finalize(self):
         self.__logger.info("Completed CsvParsing")

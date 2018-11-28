@@ -16,11 +16,14 @@ from google.protobuf import text_format
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.algorithms.csvparseralgo import CsvParserAlgo
+from artemis.algorithms.profileralgo import ProfilerAlgo
 from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
-from artemis.io.protobuf.artemis_pb2 import JobConfig 
+
+import artemis.io.protobuf.artemis_pb2 as artemis_pb2
+
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -36,6 +39,7 @@ class ArtemisTestCase(unittest.TestCase):
         self.prtcfg = ''
         testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
         csvalgo = CsvParserAlgo('csvparser', loglevel='INFO')
+        profileralgo = ProfilerAlgo('profiler', loglevel='INFO')
 
         seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
         seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
@@ -59,8 +63,10 @@ class ArtemisTestCase(unittest.TestCase):
 
         csvChain = Chain("csvchain")
         seqX = Sequence(["initial"], (csvalgo,), "seqX")
+        seqY = Sequence(["seqX"], (profileralgo,), "seqY")
         csvChain.add(seqX)
-
+        csvChain.add(seqY)
+        
         self.testmenu = Menu("test")
         self.testmenu.add(dummyChain1)
         self.testmenu.add(dummyChain2)
@@ -84,13 +90,20 @@ class ArtemisTestCase(unittest.TestCase):
                                     num_rows=10000)
         msggen = generator.to_msg()
 
-        msg = JobConfig()
+        msg = artemis_pb2.JobConfig()
         msg.input.generator.config.CopyFrom(msggen)
         msg.menu.CopyFrom(msgmenu)
         parser = msg.parser.csvparser
         parser.block_size = 2**16
         parser.delimiter = '\r\n'
         parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
 
         try:
             with open(self.prtcfg, "wb") as f:

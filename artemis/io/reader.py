@@ -16,6 +16,7 @@ import weakref
 
 import pyarrow as pa
 from pyarrow.csv import read_csv
+import pyarrow.parquet as pq
 
 from artemis.logger import Logger
 
@@ -345,3 +346,155 @@ class FileHandler():
         # Seek back to start
         file_.seek(0)
         return blocks
+
+    @staticmethod
+    def to_csv(table, path_or_buf=None, sep=",", na_rep='', float_format=None,
+               columns=None, header=True, index=False, index_label=None,
+               mode='w', encoding=None, compression=None, quoting=None,
+               quotechar='"', line_terminator='\n', chunksize=None,
+               tupleize_cols=None, date_format=None, doublequote=True,
+               escapechar=None, decimal='.'):
+        r"""Write DataFrame to a comma-separated values (csv) file
+
+        Obtained from pandas.core.frame
+        Parameters
+        ----------
+        table : arrow table
+        path_or_buf : string or file handle, default None
+            File path or object, if None is provided the result is returned as
+            a string.
+        sep : character, default ','
+            Field delimiter for the output file.
+        na_rep : string, default ''
+            Missing data representation
+        float_format : string, default None
+            Format string for floating point numbers
+        columns : sequence, optional
+            Columns to write
+        header : boolean or list of string, default True
+            Write out the column names. If a list of strings is given it is
+            assumed to be aliases for the column names
+        index : boolean, default True
+            Write row names (index)
+        index_label : string or sequence, or False, default None
+            Column label for index column(s) if desired. If None is given, and
+            `header` and `index` are True, then the index names are used. A
+            sequence should be given if the DataFrame uses MultiIndex.  If
+            False do not print fields for index names. Use index_label=False
+            for easier importing in R
+        mode : str
+            Python write mode, default 'w'
+        encoding : string, optional
+            A string representing the encoding to use in the output file,
+            defaults to 'ascii' on Python 2 and 'utf-8' on Python 3.
+        compression : string, optional
+            A string representing the compression to use in the output file.
+            Allowed values are 'gzip', 'bz2', 'zip', 'xz'. This input is only
+            used when the first argument is a filename.
+        line_terminator : string, default ``'\n'``
+            The newline character or character sequence to use in the output
+            file
+        quoting : optional constant from csv module
+            defaults to csv.QUOTE_MINIMAL. If you have set a `float_format`
+            then floats are converted to strings and thus csv.QUOTE_NONNUMERIC
+            will treat them as non-numeric
+        quotechar : string (length 1), default '\"'
+            character used to quote fields
+        doublequote : boolean, default True
+            Control quoting of `quotechar` inside a field
+        escapechar : string (length 1), default None
+            character used to escape `sep` and `quotechar` when appropriate
+        chunksize : int or None
+            rows to write at a time
+        tupleize_cols : boolean, default False
+            .. deprecated:: 0.21.0
+               This argument will be removed and will always write each row
+               of the multi-index as a separate row in the CSV file.
+
+            Write MultiIndex columns as a list of tuples (if True) or in
+            the new, expanded format, where each MultiIndex column is a row
+            in the CSV (if False).
+        date_format : string, default None
+            Format string for datetime objects
+        decimal: string, default '.'
+            Character recognized as decimal separator. E.g. use ',' for
+            European data
+
+        """
+
+        '''
+        if tupleize_cols is not None:
+            warnings.warn("The 'tupleize_cols' parameter is deprecated and "
+                          "will be removed in a future version",
+                          FutureWarning, stacklevel=2)
+        else:
+            tupleize_cols = False
+        '''
+        # Convert table to dataframe
+        # use_threads can be enabled
+        frame = table.to_pandas(use_threads=False)
+
+        from pandas.io.formats.csvs import CSVFormatter
+        formatter = CSVFormatter(frame, path_or_buf,
+                                 line_terminator=line_terminator, sep=sep,
+                                 encoding=encoding,
+                                 compression=compression, quoting=quoting,
+                                 na_rep=na_rep, float_format=float_format,
+                                 cols=columns, header=header, index=index,
+                                 index_label=index_label, mode=mode,
+                                 chunksize=chunksize, quotechar=quotechar,
+                                 tupleize_cols=tupleize_cols,
+                                 date_format=date_format,
+                                 doublequote=doublequote,
+                                 escapechar=escapechar, decimal=decimal)
+        formatter.save()
+
+        if path_or_buf is None:
+            return formatter.path_or_buf.getvalue()
+
+    @staticmethod
+    def write(elements, fbasename, schema,
+              use_buffer=False,
+              use_osfile=False,
+              use_parquet=False,
+              use_csv=False):
+        '''
+        generic FileHandler method to persist data to various
+        formats
+        '''
+        if use_buffer:
+            with pa.BufferOutputStream() as sink:
+                writer = pa.RecordBatchFileWriter(sink, schema)
+                for el in elements:
+                    batch = el.get_data()
+                    writer.write_batch(batch)
+                writer.close()
+        if use_osfile:
+            _fname = fbasename + '.dat'
+            with pa.OSFile(_fname, 'wb') as sink:
+                writer = pa.RecordBatchFileWriter(sink, schema)
+                for el in elements:
+                    batch = el.get_data()
+                    writer.write_batch(batch)
+                writer.close()
+        if use_parquet:
+            _fname = fbasename + '.parquet'
+            _batches = []
+            for el in elements:
+                _batches.append(el.get_data())
+            _table = pa.Table.from_batches(_batches)
+            with pq.ParquetWriter(_fname, _table.schema) as writer:
+                writer.write_table(_table)
+        if use_csv:
+            _fname = fbasename + '.csv'
+            _batches = []
+            for el in elements:
+                _batches.append(el.get_data())
+            _table = pa.Table.from_batches(_batches)
+            try:
+                # pandas creates filehandle
+                FileHandler.to_csv(_table, _fname)
+            except IOError:
+                FileHandler.__logger.error("Error converting to csv")
+            except Exception:
+                raise

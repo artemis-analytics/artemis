@@ -49,7 +49,7 @@ class Element:
         else:
             self._store.add_to_dict(self.key, data)
 
-    def get_data(self):
+    def get_data(self, prefix=None):
         return self._store.get_data(self.key)
 
 

@@ -21,6 +21,7 @@ import io
 
 # Externals
 import pyarrow as pa
+# import pyarrow.parquet as pq
 
 # Framework
 from artemis.logger import Logger
@@ -43,6 +44,8 @@ from artemis.core.physt_wrapper import Physt_Wrapper
 # Protobuf
 # from artemis.io.protobuf.artemis_pb2 import JobConfig as JobConfig_pb
 # from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+# from artemis.io.protobuf.artemis_pb2 import JobState as JobState_pb
+import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 # Utils
 from artemis.utils.utils import bytes_to_mb, range_positive
@@ -63,6 +66,7 @@ class Artemis():
         # Set defaults if not configured
         self.jobops.meta.name = name
         self.jobops.meta.started.GetCurrentTime()
+        self.jobops.meta.state = artemis_pb2.JOB_STARTING
 
         # Define the internal objects for Artemis
         self.steer = None
@@ -102,6 +106,7 @@ class Artemis():
         '''
         Stateful Job processing via pytransitions
         '''
+        self.jobops.meta.state = artemis_pb2.JOB_RUNNING
         self._launch()
 
         # Configure Artemis job
@@ -254,21 +259,109 @@ class Artemis():
         self.hbook.book('artemis', 'blocksize', bins, 'MB')
 
         # Timing plots
-        bins = [x for x in range_positive(0., 100., 2.)]
+        bins = [x for x in range_positive(0., 500., 2.)]
         self.hbook.book('artemis', 'time.prepblks', bins, 'ms')
         self.hbook.book('artemis', 'time.prepschema', bins, 'ms')
         self.hbook.book('artemis', 'time.execute', bins, 'ms')
+        self.hbook.book('artemis', 'time.collect', bins, 'ms')
+
         # TODO
         # Think of better way to loop over list of timers
         self.__timers.append('prepblks')
         self.__timers.append('prepschema')
         self.__timers.append('execute')
+        self.__timers.append('collect')
 
         try:
             self.steer.book()
         except Exception:
             self.__logger.error('Cannot book Steering')
             raise
+
+    def _rebook(self):
+        '''
+        Rebook histograms for timers or profiles
+        after random sampling of data chunk
+        '''
+        pass
+
+    @timethis
+    def _collect(self):
+        '''
+        Collect all batches from the leaves
+        Occurs after single input source is chunked
+        Each chunked converted to a batch
+        Batches on leaves collected
+        Input file -> Output Arrow RecordBatches
+        '''
+        _tree = Tree()  # Singleton!
+
+        _use_buffer = True
+        _use_osfile = False
+        _use_parquet = False
+        _use_csv = False
+        _msgcfg = self.jobops.meta.config
+
+        # Artemis can have multiple output formats
+        # ideally, async io
+        # each writer must have a dedicated to config
+        try:
+            for w in _msgcfg.writers:
+                if w.HasField('csvwriter'):
+                    self.__logger.info("Write to csv")
+                    _use_csv = True
+                elif w.HasField('osfilewriter'):
+                    self.__logger.info("Write to recordbatch file")
+                    _use_osfile = True
+                elif w.HasField('parquetwriter'):
+                    self.__logger.info("Write to parquet")
+                    _use_parquet = True
+                else:
+                    self.__logger.info("No writers defined, default to buffer")
+                    _use_buffer = True
+
+        except Exception:
+            self.__logger.warning('No writers defined')
+            _use_buffer = True
+
+        # TODO
+        # Improve creation of output file names with metadata
+        _fbasename = self.jobops.meta.name + \
+            '_batches_' + str(self._requestcntr)
+
+        for leaf in _tree.leaves:
+            self.__logger.info("Leave node %s", leaf)
+            node = _tree.get_node_by_key(leaf)
+            els = node.payload
+            self.__logger.info('Batches of leaf %s', len(els))
+            if isinstance(els[-1].get_data(), pa.lib.RecordBatch):
+                self.__logger.info("RecordBatch")
+                self.__logger.info("Allocated %i", pa.total_allocated_bytes())
+                _schema_batch = els[-1].get_data().schema
+
+                # TODO
+                # Configure to use in-memory buffer
+                # Output NativeFile
+                # Output Parquet
+                # Enforce schema check
+                try:
+                    self._filehandler.write(els,
+                                            _fbasename,
+                                            _schema_batch,
+                                            _use_buffer,
+                                            _use_osfile,
+                                            _use_parquet,
+                                            _use_csv)
+                except Exception:
+                    self.__logger.error("Error in writer")
+                    raise
+
+                self.__logger.info("Allocated after write %i",
+                                   pa.total_allocated_bytes())
+            else:
+                self.__logger.info("%s", type(els[-1].get_data()))
+
+        return True
 
     def _run(self):
         '''
@@ -278,17 +371,30 @@ class Artemis():
         self.__logger.debug('artemis: Count at run call %s' %
                             str(self._requestcntr))
         while (self._requestcntr < self.max_requests):
+            self.hbook.fill('artemis', 'counts', self._requestcntr)
             try:
-                self.hbook.fill('artemis', 'counts', self._requestcntr)
                 result_, time_ = self._execute()
-                self.hbook.fill('artemis', 'time.execute', time_)
-                self.__logger.debug('Count after process_data %s' %
-                                    str(self._requestcntr))
-                # TODO: Insert collect for datastore/nodes/tree.
-                # TODO: Test memory release.
-                Tree().flush()
             except Exception:
                 self.__logger.error("Problem executing")
+                raise
+
+            self.hbook.fill('artemis', 'time.execute', time_)
+            self.__logger.debug('Count after process_data %s' %
+                                str(self._requestcntr))
+            # TODO: Insert collect for datastore/nodes/tree.
+            # TODO: Test memory release.
+            try:
+                result_, time_ = self._collect()
+            except Exception:
+                self.__logger.error("Problem collecting")
+                raise
+            self.hbook.fill('artemis', 'time.collect', time_)
+
+            # Clear memory, tree, ...
+            try:
+                Tree().flush()
+            except Exception:
+                self.__logger("Problem flushing")
                 raise
 
     def _check_requests(self):
@@ -510,6 +616,8 @@ class Artemis():
 
         summary.collection.CopyFrom(self.hbook.to_message())
         jobinfoname = self.jobops.meta.name + '_meta.dat'
+        self.jobops.meta.state = artemis_pb2.JOB_SUCCESS
+        self.jobops.meta.finished.GetCurrentTime()
         try:
             with open(jobinfoname, "wb") as f:
                 f.write(self.jobops.meta.SerializeToString())
@@ -517,7 +625,6 @@ class Artemis():
             self.__logger.error("Cannot write hbook")
         except Exception:
             raise
-        self.jobops.meta.finished.GetCurrentTime()
 
         self.__logger.info("Processed file summary")
         for f in self.jobops.meta.data:
@@ -528,9 +635,9 @@ class Artemis():
             self.__logger.info(text_format.MessageToString(t))
 
     def abort(self, *args, **kwargs):
+        self.jobops.meta.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")
         self.__logger.error("Reason %s" % args[0])
-#        self.jobops.meta.state = JOB_ABORT
         self.jobops.meta.finished.GetCurrentTime()
         jobinfoname = self.jobname + '_meta.dat'
         try:
