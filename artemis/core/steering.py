@@ -155,6 +155,9 @@ class Steering(AlgoBase):
                 self._seq_tree.nodes[key].payload[-1].add_data(payload)
             else:
                 for parent in self._seq_tree.nodes[key].parents:
+                    # When retrieving input data, we are duplicating data
+                    # adding the input data as part of the new element
+                    # with that element key
                     self._seq_tree.nodes[key].payload[-1].\
                         add_data(self._seq_tree.nodes[parent].payload[-1].
                                  get_data())
