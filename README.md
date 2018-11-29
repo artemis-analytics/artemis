@@ -4,7 +4,7 @@ Artemis -- stateful processing framework for administrative data powered by Apac
 
 # To Build
 
-Build application with '''python setup.py sdist bdist_wheel'''.
+Build application with ''python setup.py sdist bdist_wheel''.
 
 # Building the protobuf
 Artemis metadata is defined in io/protobuf/artemis.proto. An important component
@@ -14,14 +14,19 @@ not distributed with the package. This requires building the protobuf with
 a copy of the histogram.proto class. 
 
 To build (from the io/protobuf directory)
-'''bash
+
+''
 protoc -I=./ --python_out=./ ./artemis.proto
-'''
+''
+
 After, modify the python code:
-'''python
+
+''
 import histogram_pb2 as histogram_pb2
-'''
+''
+
 to
-'''python
+
+''
 import physt.io.protobuf.histogram_pb2 as histogram_pb2
-'''
+''

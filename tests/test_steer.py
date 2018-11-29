@@ -32,10 +32,10 @@ class SteeringTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        self.steer = Steering('steer', loglevel="DEBUG")
+        # self.steer = Steering('steer', loglevel="DEBUG")
 
     def tearDown(self):
-        self.steer.finalize()
+        # self.steer.finalize()
         Singleton.reset(JobProperties)
     
     def test_from_msg(self):
@@ -45,6 +45,7 @@ class SteeringTestCase(unittest.TestCase):
         a_steer.initialize()
         a_steer.book()
         a_steer.execute(b'payload')
+        # a_steer.finalize()
         #del jobops.data['menu']
 
 

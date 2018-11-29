@@ -10,7 +10,6 @@
 Steering
 """
 from collections import OrderedDict
-from statistics import mean
 
 from artemis.utils.utils import range_positive
 from artemis.core.properties import JobProperties
@@ -18,6 +17,7 @@ from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
 from .algo import AlgoBase
 from .tree import Tree, Node, Element
+from artemis.core.timerstore import TimerSvc
 
 
 class Steering(AlgoBase):
@@ -31,7 +31,7 @@ class Steering(AlgoBase):
         # Execution graph
         self._menu = OrderedDict()
         self.jobops = JobProperties()
-        self.__timers = dict()
+        self.__timers = TimerSvc()
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
@@ -114,12 +114,18 @@ class Steering(AlgoBase):
         # self.hbook.book(self.name, 'payload', range(100))
         # self.hbook.book(self.name, 'nblocks', range(100))
         # self.hbook.book(self.name, 'block_size', range(100))
+
+        # FIXME
+        # Rebooking timer histograms due to same algo instances in multiple
+        # menu sequences
+        # need to just get list of algos once
+
         for key in self._menu:
             for algo in self._menu[key]:
                 if isinstance(algo, str):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
-                    self.__timers[algo.name] = list()
+                    self.__timers.book(self.name, algo.name)
                     bins = [x for x in range_positive(0., 100., 2.)]
                     try:
                         self.hbook.book(self.name, 'time.'+algo.name,
@@ -129,6 +135,29 @@ class Steering(AlgoBase):
                         raise
                     try:
                         algo.book()
+                    except Exception:
+                        self.__logger.error('Cannot book %s' % algo.name)
+
+    def rebook(self):
+        '''
+        retrieve the sampling times and rebook
+        '''
+
+        for key in self.__timers.keys:
+            if 'steer' not in key:
+                continue
+            name = key.split('.')[-1]
+            avg_, std_ = self.__timers.stats(self.name, name)
+            bins = [x for x in range_positive(0., avg_ + 5*std_, 2.)]
+            self.hbook.rebook('steer.time', name, bins, 'ms')
+
+        for key in self._menu:
+            for algo in self._menu[key]:
+                if isinstance(algo, str):
+                    self.__logger.debug('Not an algo: %s' % algo)
+                else:
+                    try:
+                        algo.rebook()
                     except Exception:
                         self.__logger.error('Cannot book %s' % algo.name)
 
@@ -173,7 +202,7 @@ class Steering(AlgoBase):
                     try:
                         time_ = _algexe(self._seq_tree.nodes[key].
                                         payload[-1])[-1]
-                        self.__timers[algo.name].append(time_)
+                        self.__timers.fill(self.name, algo.name, time_)
                         self.hbook.fill(self.name, 'time.'+algo.name, time_)
                     except Exception:
                         raise
@@ -189,13 +218,16 @@ class Steering(AlgoBase):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
                     algo.finalize()
-        for key in self.__timers:
+        self.__logger.info("Timers %s", self.__timers.keys)
+        for key in self.__timers.keys:
+            if 'steer' in key:
+                key = key.split('.')[-1]
+            else:
+                continue
             _name = '.'
             _name = _name.join([self.name, 'time', key])
             mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
             std = self.hbook.get_histogram(self.name, 'time.'+key).std()
-            self.__logger.info("%s timing: %2.4f" %
-                               (key, mean(self.__timers[key])))
             self.__logger.info("%s timing: %2.4f" % (key, mu))
             msgtime = summary.timers.add()
             msgtime.name = _name

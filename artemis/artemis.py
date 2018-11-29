@@ -18,6 +18,7 @@ owns the stores needed by the user algorithms
 from pprint import pformat
 import sys
 import io
+import random
 
 # Externals
 import pyarrow as pa
@@ -33,6 +34,7 @@ from artemis.core.properties import JobProperties
 from artemis.core.steering import Steering
 from artemis.core.tree import Tree
 from artemis.core.algo import AlgoBase
+from artemis.core.timerstore import TimerSvc
 
 # Data generators
 # from artemis.generators.generators import GenCsvLikeArrow
@@ -72,9 +74,11 @@ class Artemis():
         self.steer = None
         self.generator = None
         self.data_handler = None
+        self._raw = None
 
         # List of timer histos for easy access
-        self.__timers = []
+        self.__timers = TimerSvc()
+
         # Temporary placeholders to managing event loop
         self.max_requests = 0
         self._requestcntr = 0
@@ -101,6 +105,22 @@ class Artemis():
         # Temporary hard-coded values to get something running
         defaults = {'max_requests': 2}
         return defaults
+
+    @property
+    def datum(self):
+        '''
+        datum represents a raw input source
+        file
+        memoryview
+        db source
+        table ...
+        gets updated in the event loop, so acts as a temporary datastore
+        '''
+        return self._raw
+
+    @datum.setter
+    def datum(self, raw):
+        self._raw = raw
 
     def control(self):
         '''
@@ -259,7 +279,7 @@ class Artemis():
         self.hbook.book('artemis', 'blocksize', bins, 'MB')
 
         # Timing plots
-        bins = [x for x in range_positive(0., 500., 2.)]
+        bins = [x for x in range_positive(0., 1000., 2.)]
         self.hbook.book('artemis', 'time.prepblks', bins, 'ms')
         self.hbook.book('artemis', 'time.prepschema', bins, 'ms')
         self.hbook.book('artemis', 'time.execute', bins, 'ms')
@@ -267,10 +287,10 @@ class Artemis():
 
         # TODO
         # Think of better way to loop over list of timers
-        self.__timers.append('prepblks')
-        self.__timers.append('prepschema')
-        self.__timers.append('execute')
-        self.__timers.append('collect')
+        self.__timers.book('artemis', 'prepblks')
+        self.__timers.book('artemis', 'prepschema')
+        self.__timers.book('artemis', 'execute')
+        self.__timers.book('artemis', 'collect')
 
         try:
             self.steer.book()
@@ -283,7 +303,19 @@ class Artemis():
         Rebook histograms for timers or profiles
         after random sampling of data chunk
         '''
-        pass
+        self.hbook.rebook_all(excludes=['artemis.time.prepblks',
+                                        'artemis.time.prepschema'])
+        try:
+            self.steer.rebook()
+        except Exception:
+            raise
+
+        _finfo = self.jobops.meta.data[-1]
+        avg_, std_ = self.__timers.stats('artemis', 'execute')
+        factor = 2 * len(_finfo.blocks)
+
+        bins = [x for x in range_positive(0., avg_*factor, 2.)]
+        self.hbook.rebook('artemis', 'time.execute', bins, 'ms')
 
     @timethis
     def _collect(self):
@@ -373,6 +405,27 @@ class Artemis():
         while (self._requestcntr < self.max_requests):
             self.hbook.fill('artemis', 'counts', self._requestcntr)
             try:
+                self._prepare()
+            except Exception:
+                self.__logger.error("Failed data prep")
+                raise
+            # TODO
+            # Make number of samples configurable
+            for _ in range(10):
+                try:
+                    result_, time_ = self._execute_sampler()
+                    self.__timers.fill('artemis', 'execute', time_)
+                    self.__logger.info("Sampler execute time %2.2f", time_)
+                except Exception:
+                    self.__logger.error("Problem executing sample")
+                    raise
+            try:
+                self._rebook()
+            except Exception:
+                self.__logger.error("Cannot rebook")
+                raise
+
+            try:
                 result_, time_ = self._execute()
             except Exception:
                 self.__logger.error("Problem executing")
@@ -390,7 +443,8 @@ class Artemis():
                 raise
             self.hbook.fill('artemis', 'time.collect', time_)
 
-            # Clear memory, tree, ...
+            # Clear memory, tree, raw datum...
+            self.datum = None
             try:
                 Tree().flush()
             except Exception:
@@ -491,23 +545,15 @@ class Artemis():
             msg.range.size_bytes = block[1]
         return True
 
-    @timethis
-    def _execute(self):
+    def _prepare_datum(self):
         '''
-        Execute called for each input datum (e.g. a file)
-        File preprocessing
-            obtain the file schema information
-            scan the file and create byte blocks
-            update all the metadata
-        Block processing
-            loop over all blocks from file input
-            retrieve raw bytes from file
-            pass raw data to steering to process block
+        Prepare the input datum (file) for chunk processing
         '''
-
-        # Request the data via the datahandler
+        # Request the data via the getter
+        # TODO
+        # Validate that we get the right data back!
         try:
-            raw = self._request_data()
+            raw = self.datum
         except Exception:
             self.__logger.debug("Data generator completed file batches")
             raise
@@ -549,6 +595,106 @@ class Artemis():
                            (len(raw), bytes_to_mb(len(raw))))
 
         _finfo.processed.size_bytes = _finfo.schema.size_bytes
+
+        try:
+            file_.close()
+        except Exception:
+            self.__logger.error("Problem closing file")
+            raise
+        try:
+            stream.close()
+        except Exception:
+            self.__logger.error("Problem closing stream")
+            raise
+
+    def _prepare(self):
+        '''
+        Requests the input data from the data handler
+        calls all data preparation methods
+        '''
+        try:
+            self.datum = self._request_data()
+        except Exception:
+            raise
+
+        try:
+            self._prepare_datum()
+        except Exception:
+            self.__logger.error("failed to prepare the datum")
+            raise
+
+    @timethis
+    def _execute_sampler(self):
+        '''
+        Random chunk sampling processing
+        '''
+
+        # Get the last in list
+        _finfo = self.jobops.meta.data[-1]
+
+        meta = []
+        for column in _finfo.schema.columns:
+            meta.append(column.name)
+
+        stream = io.BytesIO(self.datum)
+
+        file_ = pa.PythonFile(stream, mode='r')
+
+        # Select a random block
+        # TODO add a configurable seed
+        # Use a single instance of random
+        # should be configured at job start
+        iblock = random.randint(0, len(_finfo.blocks) - 1)
+        self.__logger.info("Selected random block %i with size %2.2f",
+                           iblock, _finfo.blocks[iblock].range.size_bytes)
+
+        try:
+            chunk = self._request_block(file_, iblock, meta)
+        except Exception:
+            self.__logger.error("Error requesting block")
+            raise
+        try:
+            self.steer.execute(chunk)  # Make chunk immutable
+        except Exception:
+            raise
+
+        try:
+            file_.close()
+        except Exception:
+            self.__logger.error("Problem closing file")
+            raise
+        try:
+            stream.close()
+        except Exception:
+            self.__logger.error("Problem closing stream")
+            raise
+        return True
+
+    @timethis
+    def _execute(self):
+        '''
+        Execute called for each input datum (e.g. a file)
+        File preprocessing
+            obtain the file schema information
+            scan the file and create byte blocks
+            update all the metadata
+        Block processing
+            loop over all blocks from file input
+            retrieve raw bytes from file
+            pass raw data to steering to process block
+        '''
+
+        # requestdata prepares the input and adds the FileInfo msg
+        # Get the last in list
+        _finfo = self.jobops.meta.data[-1]
+
+        meta = []
+        for column in _finfo.schema.columns:
+            meta.append(column.name)
+
+        stream = io.BytesIO(self.datum)
+
+        file_ = pa.PythonFile(stream, mode='r')
 
         # Execute steering over all blocks from raw input
         for i, block in enumerate(_finfo.blocks):
@@ -601,16 +747,17 @@ class Artemis():
         self.__logger.info("Mean payload %2.2f MB" % mu_payload)
         self.__logger.info("Mean blocksize %2.2f MB" % mu_blocksize)
 
-        for key in self.__timers:
-            _name = '.'
-            _name = _name.join(['artemis', 'time', key])
-            mu = self.hbook.get_histogram('artemis', 'time.'+key).mean()
-            std = self.hbook.get_histogram('artemis', 'time.'+key).std()
-            self.__logger.info("%s timing: %2.4f" % (_name, mu))
+        for key in self.__timers.keys:
+            if 'artemis' not in key:
+                continue
+            name = key.split('.')[-1]
+            mu = self.hbook.get_histogram('artemis', 'time.'+name).mean()
+            std = self.hbook.get_histogram('artemis', 'time.'+name).std()
+            self.__logger.info("%s timing: %2.4f" % (key, mu))
 
             # Add to the msg
             msgtime = summary.timers.add()
-            msgtime.name = _name
+            msgtime.name = key
             msgtime.time = mu
             msgtime.std = std
 

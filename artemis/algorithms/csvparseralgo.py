@@ -13,7 +13,6 @@ given a bytes object
 from ast import literal_eval
 import csv
 import io
-from statistics import mean
 
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
@@ -24,6 +23,7 @@ from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.utils.utils import range_positive
+from artemis.core.timerstore import TimerSvc
 
 
 class CsvParserAlgo(AlgoBase):
@@ -46,12 +46,21 @@ class CsvParserAlgo(AlgoBase):
     def book(self):
         self.__logger.info("Book")
         self.hbook = Physt_Wrapper()
-        self.__timers = dict()
-        self.__timers['pyparse'] = list()
-        self.__timers['pyarrowparse'] = list()
+        self.__timers = TimerSvc()
+        self.__timers.book(self.name, 'pyparse')
+        self.__timers.book(self.name, 'pyarrowparse')
         bins = [x for x in range_positive(0., 100., 2.)]
         self.hbook.book(self.name, 'time.pyparse', bins, 'ms')
         self.hbook.book(self.name, 'time.pyarrowparse', bins, 'ms')
+
+    def rebook(self):
+        for key in self.__timers.keys:
+            if 'steer' not in key:
+                continue
+            name = key.split('.')[-1]
+            avg_, std_ = self.__timers.stats(self.name, name)
+            bins = [x for x in range_positive(0., avg_ + 5*std_, 2.)]
+            self.hbook.rebook('steer', name, bins, 'ms')
 
     @timethis
     def py_parsing(self, schema, columns, length, block):
@@ -129,7 +138,7 @@ class CsvParserAlgo(AlgoBase):
 
         try:
             rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
-            self.__timers['pyparse'].append(time_)
+            self.__timers.fill(self.name, 'pyparse', time_)
             self.hbook.fill(self.name, 'time.pyparse', time_)
         except Exception:
             self.__logger.error("Python parsing fails")
@@ -137,7 +146,7 @@ class CsvParserAlgo(AlgoBase):
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)
-            self.__timers['pyarrowparse'].append(time_)
+            self.__timers.fill(self.name, 'pyarrowparse', time_)
             self.hbook.fill(self.name, 'time.pyarrowparse', time_)
         except Exception:
             self.__logger.error("PyArrow parsing fails")
@@ -153,13 +162,23 @@ class CsvParserAlgo(AlgoBase):
     def finalize(self):
         self.__logger.info("Completed CsvParsing")
         summary = self.jobops.meta.summary
-        for key in self.__timers:
+
+        for key in self.__timers.keys:
+            if self.name in key:
+                key = key.split('.')[-1]
+            else:
+                continue
             _name = '.'
             _name = _name.join([self.name, 'time', key])
-            mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
-            std = self.hbook.get_histogram(self.name, 'time.'+key).std()
-            self.__logger.info("%s timing: %2.4f" %
-                               (key, mean(self.__timers[key])))
+            if _name == self.name + '.time.' + self.name:
+                continue
+            self.logger.info("Retrieve %s %s", self.name, 'time.'+key)
+            try:
+                mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
+                std = self.hbook.get_histogram(self.name, 'time.'+key).std()
+                print(mu, std)
+            except KeyError:
+                self.__logger.error("Cannot retrieve %s ", _name)
             self.__logger.info("%s timing: %2.4f" % (key, mu))
 
             # Add to the msg
