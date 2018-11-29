@@ -240,6 +240,12 @@ class AlgoBase(metaclass=AbcAlgoBase):
         '''
         pass
 
+    def rebook(self):
+        '''
+        Rebook with new binnings
+        '''
+        pass
+
     def execute(self, payload):
         '''
         Algo always accepts the output Node on a graph

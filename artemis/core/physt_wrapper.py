@@ -28,7 +28,7 @@ class Physt_Wrapper(metaclass=Singleton):
         # Explore more options for correctly initializing h1
         value = self.hbook.get(name_, None)
         if value is not None:
-            self.__logger.error("Histogram already exists")
+            self.__logger.error("Histogram already exists %s", name_)
         else:
             try:
                 # self.__logger.debug(bins)
@@ -40,6 +40,19 @@ class Physt_Wrapper(metaclass=Singleton):
 
         if axis_name:
             self.hbook[name_].axis_name = axis_name
+
+    def rebook_all(self, excludes=[]):
+        '''
+        Force reset of all histograms with a copy
+        do NOT include copying data
+        '''
+        for key in self.hbook.keys():
+            if key in excludes:
+                continue
+            bins = self.hbook[key].binning
+            self.hbook[key] = Histogram1D(bins,
+                                          stats={"sum": 0.0, "sum2": 0.0})
+            self.logger.info('Rebook %s %s', key, self.hbook[key])
 
     def rebook(self, algname, name, bins, axis_name=None):
         name_ = '.'
