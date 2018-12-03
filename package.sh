@@ -28,6 +28,7 @@ fi
 # Actual work done.
 python setup.py sdist bdist_wheel
 pip freeze > ./dist/requirements.txt # Extract python packages from local environment.
+pip download -d ./dist/ -r ./dist/requirements.txt
 tar -cvf artemis.tar ./dist/
 mkdir -p $DIR
 gzip -c artemis.tar > "$DIR"/artemis.tar.gz

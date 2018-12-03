@@ -44,7 +44,7 @@ fi
 # Function that installs Artemis with source code available.
 cli(){
 	tar -xzvf artemis.tar.gz
-	pip install -r ./dist/requirements.txt
+	pip install -r ./dist/requirements.txt --no-index --find-links file://$DIR/dist/
 	tar -xzvf "dist/$VERSION.tar.gz"
 	python $VERSION/setup.py install
 }
