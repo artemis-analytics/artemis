@@ -14,6 +14,7 @@ import logging
 from google.protobuf import text_format
 
 from artemis.core.dag import Sequence, Chain, Menu
+from artemis.core.steering import Steering
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.algorithms.csvparseralgo import CsvParserAlgo
 from artemis.algorithms.profileralgo import ProfilerAlgo
@@ -21,6 +22,8 @@ from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
+from artemis.logger import Logger
+from artemis.core.physt_wrapper import Physt_Wrapper
 
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
@@ -76,7 +79,7 @@ class ArtemisTestCase(unittest.TestCase):
     def tearDown(self):
         Singleton.reset(JobProperties)
     
-    def test_proto(self):
+    def test_launch(self):
         Singleton.reset(JobProperties)
         self.prtcfg = 'arrowproto_proto.dat'
         try:
@@ -121,23 +124,313 @@ class ArtemisTestCase(unittest.TestCase):
         bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
         print('Launching')
         bow._launch()
+        print('End Launch')
+
+    def test_configure(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.dat'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = artemis_pb2.JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
+
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        print('State change -> RUNNING')
+        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
         print('Configuring')
         bow._configure()
+
+    def test_lock(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.dat'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = artemis_pb2.JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
+
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        print('State change -> RUNNING')
+        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
         print('Locking')
+        bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         bow._lock()
+
+    def test_initialize(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.dat'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = artemis_pb2.JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
+
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        print('State change -> RUNNING')
+        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         print('Initializing')
         bow._initialize()
+
+    def test_book(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.dat'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = artemis_pb2.JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
+
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        print('State change -> RUNNING')
+        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         print('Booking')
+        bow.hbook = Physt_Wrapper()
         bow._book()
+
+    def test_run(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.dat'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = artemis_pb2.JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
+
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        print('State change -> RUNNING')
+        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        _msgcfg = bow.jobops.meta.config
+        with open(bow.properties.protomsg, 'rb') as f:
+            _msgcfg.ParseFromString(f.read())
+        bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         print('Running')
+        bow.hbook = Physt_Wrapper()
+        bow.hbook.book('artemis', 'counts', range(10))
+        bow._gen_config()
         bow._run()
+
+    def test_finalize(self):
+        Singleton.reset(JobProperties)
+        self.prtcfg = 'arrowproto_proto.dat'
+        try:
+            msgmenu = self.testmenu.to_msg()
+        except Exception:
+            raise
+        
+        generator = GenCsvLikeArrow('generator',
+                                    nbatches=1,
+                                    num_cols=20,
+                                    num_rows=10000)
+        msggen = generator.to_msg()
+
+        msg = artemis_pb2.JobConfig()
+        msg.input.generator.config.CopyFrom(msggen)
+        msg.menu.CopyFrom(msgmenu)
+        parser = msg.parser.csvparser
+        parser.block_size = 2**16
+        parser.delimiter = '\r\n'
+        parser.skip_header = True
+
+        writer = msg.writers.add()
+        csvwriter = writer.csvwriter
+        csvwriter.suffix = '.txt'
+        writer = msg.writers.add()
+        parquetwriter = writer.parquetwriter
+        parquetwriter.suffix = '.parquet'
+
+        try:
+            with open(self.prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("arrowproto", 
+                      protomsg=self.prtcfg,
+                      blocksize=2**16,
+                      skip_header=True,
+                      loglevel='INFO')
+        print('State change -> RUNNING')
+        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        _msgcfg = bow.jobops.meta.config
+        with open(bow.properties.protomsg, 'rb') as f:
+            _msgcfg.ParseFromString(f.read())
+        bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
+        print('Running')
+        bow.hbook = Physt_Wrapper()
+        bow.hbook.book('artemis', 'counts', range(10))
+        bow._gen_config()
         print('Finalizing')
         bow._finalize()
         print('Job finished')
 
 def suite():
     suite = unittest.TestSuite()
-    suite.addTest(ArtemisTestCase('test_proto'))
+    suite.addTest(ArtemisTestCase('test_launch'))
+    suite.addTest(ArtemisTestCase('test_configure'))
+    suite.addTest(ArtemisTestCase('test_lock'))
+    suite.addTest(ArtemisTestCase('test_initialize'))
+    suite.addTest(ArtemisTestCase('test_book'))
+    suite.addTest(ArtemisTestCase('test_run'))
+    suite.addTest(ArtemisTestCase('test_finalize'))
 
 if __name__ == '__main__':
     runner = unittest.ArtemisTestCase()
