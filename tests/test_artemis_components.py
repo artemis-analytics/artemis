@@ -24,6 +24,8 @@ from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
 from artemis.logger import Logger
 from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.core.datastore import ArrowSets
+from artemis.core.tree import Tree
 
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
@@ -37,6 +39,9 @@ class ArtemisTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
+        Singleton.reset(JobProperties)
+        #Singleton.reset(ArrowSets)
+        Singleton.reset(Tree)
         self.menucfg = ''
         self.gencfg = ''
         self.prtcfg = ''
@@ -365,6 +370,7 @@ class ArtemisTestCase(unittest.TestCase):
         bow.hbook = Physt_Wrapper()
         bow.hbook.book('artemis', 'counts', range(10))
         bow._gen_config()
+        tree = Tree('artemis')
         bow._run()
 
     def test_finalize(self):
