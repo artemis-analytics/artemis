@@ -148,7 +148,123 @@ class GeneratorTestCase(unittest.TestCase):
         assert(batch.schema.names == names)
         assert(batch.schema == rbatch.schema)
         return rbatch
+    
+    def test_write_mixed_csv(self):
 
+        generator = GenCsvLikeArrow('test', 
+                                    nbatches=10, 
+                                    num_cols=100, 
+                                    num_rows=10000)
+
+        data, col_names, batch = generator.make_mixed_random_csv()
+        _fname = 'test.dat'
+        with pa.OSFile(_fname, 'wb') as sink:
+            writer = pa.RecordBatchFileWriter(sink, batch.schema)
+            i = 0
+            for _ in range(10):
+                print("Generating batch ", i)
+                data, batch = next(generator.generate())
+                writer.write_batch(batch)
+                i += 1
+            writer.close()
+   
+    def test_continuous_write(self):
+        generator = GenCsvLikeArrow('test', 
+                                    nbatches=4, 
+                                    num_cols=100, 
+                                    num_rows=10000)
+
+        data, col_names, batch = generator.make_mixed_random_csv()
+        schema = batch.schema
+        sink = pa.BufferOutputStream()
+        writer = pa.RecordBatchFileWriter(sink, schema)
+        i = 0
+        ifile = 0
+        batch = None
+        print("Size allocated ", pa.total_allocated_bytes())
+        for data, batch in generator.generate(): 
+            print("Generating batch ", i)
+            print("Size allocated ", pa.total_allocated_bytes())
+            if pa.total_allocated_bytes() < int(20000000):
+                print("Writing to buffer ", batch.num_rows)
+                writer.write_batch(batch)
+            else:
+                print("Flush to disk ", pa.total_allocated_bytes())
+                _fname = 'test_'+str(ifile)+'.dat'
+                buf = sink.getvalue()
+                with pa.OSFile(_fname, 'wb') as f:
+                    try:
+                        f.write(buf)
+                    except Exception:
+                        print("Bad idea")
+                print("Size allocated ", pa.total_allocated_bytes())
+                ifile += 1
+                # Batch still needs to be written
+                sink = pa.BufferOutputStream()
+                writer = pa.RecordBatchFileWriter(sink, schema)
+                writer.write_batch(batch)
+            i += 1
+        
+        batch = None
+
+        print("Size allocated ", pa.total_allocated_bytes())
+
+    def test_write_buffer_csv(self):
+
+        generator = GenCsvLikeArrow('test', 
+                                    nbatches=4, 
+                                    num_cols=100, 
+                                    num_rows=10000)
+
+        data, col_names, batch = generator.make_mixed_random_csv()
+        sink = pa.BufferOutputStream()
+        writer = pa.RecordBatchFileWriter(sink, batch.schema)
+        i = 0
+        _sum_size = 0 
+        for _ in range(2):
+            print("Generating batch ", i)
+            data, batch = next(generator.generate())
+            writer.write_batch(batch)
+            _sum_size += pa.get_record_batch_size(batch)
+            i += 1
+        batch = None
+        print("Size allocated ", pa.total_allocated_bytes())
+        print("Sum size serialized ", _sum_size) 
+        if pa.total_allocated_bytes() < 20000000:
+            for _ in range(2):
+                print("Generating batch ", i)
+                data, batch = next(generator.generate())
+                writer.write_batch(batch)
+                _sum_size += pa.get_record_batch_size(batch)
+                i += 1
+            batch = None
+            print("Size allocated ", pa.total_allocated_bytes())
+            print("Sum size serialized ", _sum_size) 
+        writer.close() 
+        try:
+            sink.flush()
+        except ValueError:
+            print("Cannot flush")
+
+        buf = sink.getvalue() 
+        print("Size in buffer ", buf.size)
+        print("Size allocated ", pa.total_allocated_bytes())
+        
+
+        reader = pa.RecordBatchFileReader(pa.BufferReader(buf))
+        print(reader.num_record_batches)
+        
+        with pa.OSFile('test.dat', 'wb') as f:
+            try:
+                f.write(buf)
+            except Exception:
+                print("Bad idea")
+        
+        file_obj = pa.OSFile('test.dat')
+        reader = pa.open_file(file_obj)
+        print(reader.num_record_batches)
+
+     
     def test_pyarrow_read_mixed_csv(self):
         generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_mixed_random_csv()
@@ -184,6 +300,4 @@ class GeneratorTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
 

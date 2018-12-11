@@ -41,6 +41,7 @@ from artemis.core.timerstore import TimerSvc
 
 # IO
 from artemis.io.reader import FileHandler
+from artemis.io.writer import BufferOutputWriter
 from artemis.core.physt_wrapper import Physt_Wrapper
 
 # Protobuf
@@ -75,6 +76,8 @@ class Artemis():
         self.generator = None
         self.data_handler = None
         self._raw = None
+        self._schema = {}
+        self._buffer_streams = {}
 
         # List of timer histos for easy access
         self.__timers = TimerSvc()
@@ -370,6 +373,10 @@ class Artemis():
                 self.__logger.info("RecordBatch")
                 self.__logger.info("Allocated %i", pa.total_allocated_bytes())
                 _schema_batch = els[-1].get_data().schema
+                # TODO
+                # Get the pyarrow schema as early as possible
+                # Store/retrieive from the metastore
+                # Do not assume each file has same schema!!!!
 
                 # TODO
                 # Configure to use in-memory buffer
@@ -388,6 +395,13 @@ class Artemis():
                     self.__logger.error("Error in writer")
                     raise
 
+                try:
+                    self._buffer_streams[node.key]._schema = _schema_batch
+                    self._buffer_streams[node.key].write(els)
+                except Exception:
+                    self.__logger.error("Error in buffer writer")
+                    raise
+
                 self.__logger.info("Allocated after write %i",
                                    pa.total_allocated_bytes())
             else:
@@ -402,7 +416,13 @@ class Artemis():
         self.__logger.info("artemis: Run")
         self.__logger.debug('artemis: Count at run call %s' %
                             str(self._requestcntr))
+        self.__logger.info("artemis: Run: pyarrow malloc %i",
+                           pa.total_allocated_bytes())
+        _tree = Tree()  # Singleton!
         while (self._requestcntr < self.max_requests):
+            self.__logger.info("artemis: request %i malloc %i",
+                               self._requestcntr,
+                               pa.total_allocated_bytes())
             self.hbook.fill('artemis', 'counts', self._requestcntr)
             try:
                 self._prepare()
@@ -425,12 +445,45 @@ class Artemis():
                 self.__logger.error("Cannot rebook")
                 raise
 
+            self.__logger.info("artemis: sampleing complete malloc %i",
+                               pa.total_allocated_bytes())
+
+            # Configure the output data streams
+            # Each stream associated with leaf in Tree
+            # Store consistent Arrow Table for each process chain
+
+            for leaf in _tree.leaves:
+                self.__logger.info("Leave node %s", leaf)
+                node = _tree.get_node_by_key(leaf)
+                key = node.key
+                _last = node.payload[-1].get_data()
+                if isinstance(_last, pa.lib.RecordBatch):
+                    self.__logger.info("RecordBatch")
+                    self.__logger.info("Allocated %i",
+                                       pa.total_allocated_bytes())
+                    self._buffer_streams[key] = BufferOutputWriter(key)
+                    self._buffer_streams[key]._fbasename = \
+                        self.jobops.meta.name
+                    self._buffer_streams[key]._schema = _last.schema
+                    self._buffer_streams[key].initialize()
+
+            try:
+                Tree().flush()
+            except Exception:
+                self.__logger("Problem flushing")
+                raise
+
+            self.__logger.info("artemis: flush before execute %i",
+                               pa.total_allocated_bytes())
+
             try:
                 result_, time_ = self._execute()
             except Exception:
                 self.__logger.error("Problem executing")
                 raise
 
+            self.__logger.info("artemis: execute complete malloc %i",
+                               pa.total_allocated_bytes())
             self.hbook.fill('artemis', 'time.execute', time_)
             self.__logger.debug('Count after process_data %s' %
                                 str(self._requestcntr))
@@ -460,7 +513,7 @@ class Artemis():
 
     def _request_data(self):
         try:
-            raw = next(self.data_handler())
+            raw, batch = next(self.data_handler())
         except Exception:
             self.__logger.debug("Iterator empty")
             raise
@@ -772,6 +825,13 @@ class Artemis():
             self.__logger.error("Cannot write hbook")
         except Exception:
             raise
+
+        for key in self._buffer_streams:
+            try:
+                self._buffer_streams[key]._finalize()
+            except Exception:
+                self.__logger.error("Finalize buffer stream fails %s", key)
+                raise
 
         self.__logger.info("Processed file summary")
         for f in self.jobops.meta.data:

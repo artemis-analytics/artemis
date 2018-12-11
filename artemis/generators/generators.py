@@ -490,6 +490,10 @@ class GenCsvLikeArrow(AlgoBase):
         self.seed = self.properties.seed
         self.header = self.properties.header
 
+        # Build the random columns names once
+        self.col_names = list(itertools.islice(self.generate_col_names(),
+                              self.num_cols))
+
         self._builtin_generator = BuiltinsGenerator(self.seed)
         self.types = []
         for _ in range(self.num_cols):
@@ -523,14 +527,11 @@ class GenCsvLikeArrow(AlgoBase):
         arr = np.random.RandomState(self.seed).\
                 randint(0, 1000, size=(self.num_cols, self.num_rows))
 
-        col_names = list(itertools.islice(self.generate_col_names(),
-                                          self.num_cols))
-
         # Simulates the write of csv file
         # Encode to bytes for processing, as above
         csv = io.StringIO()
         if self.header is True:
-            csv.write(u",".join(col_names))
+            csv.write(u",".join(self.col_names))
             csv.write(self.linesep)
         for row in arr.T:
             csv.write(u",".join(map(str, row)))
@@ -539,8 +540,8 @@ class GenCsvLikeArrow(AlgoBase):
         # bytes object with unicode encoding
         csv = csv.getvalue().encode()
         columns = [pa.array(a, type=pa.int64()) for a in arr]
-        expected = pa.RecordBatch.from_arrays(columns, col_names)
-        return csv, col_names, expected
+        expected = pa.RecordBatch.from_arrays(columns, self.col_names)
+        return csv, self.col_names, expected
 
     def make_mixed_random_csv(self):
         '''
@@ -552,8 +553,6 @@ class GenCsvLikeArrow(AlgoBase):
 
         columns = [[] for _ in range(self.num_cols)]
 
-        col_names = list(itertools.islice(self.generate_col_names(),
-                                          self.num_cols))
         for icol in range(self.num_cols):
             ty, data = self._builtin_generator.\
                 get_type_and_builtins(self.num_rows, self.types[icol])
@@ -561,7 +560,7 @@ class GenCsvLikeArrow(AlgoBase):
 
         csv = io.StringIO()
         if self.header is True:
-            csv.write(u",".join(col_names))
+            csv.write(u",".join(self.col_names))
             csv.write(self.linesep)
         for irow in range(size):
             row = []
@@ -576,8 +575,8 @@ class GenCsvLikeArrow(AlgoBase):
         # bytes object with unicode encoding
         csv = csv.getvalue().encode()
         columns = [pa.array(a) for a in columns]
-        expected = pa.RecordBatch.from_arrays(columns, col_names)
-        return csv, col_names, expected
+        expected = pa.RecordBatch.from_arrays(columns, self.col_names)
+        return csv, self.col_names, expected
 
     def generate(self):
         self.__logger.info('Generate')
@@ -594,7 +593,7 @@ class GenCsvLikeArrow(AlgoBase):
             mysumsize += sys.getsizeof(data)
             mysum += len(data)
             i += 1
-            yield data
+            yield data, batch
 
         # Helped to figure out the math for an average float size.
         self.__logger.debug('%s: Average of total: %2.1f' %
