@@ -29,7 +29,7 @@ fi
 python setup.py sdist bdist_wheel
 pip freeze > ./dist/requirements.txt # Extract python packages from local environment.
 pip download -d ./dist/ -r ./dist/requirements.txt
-tar -cvf artemis.tar ./dist/
+tar -cvf artemis.tar ./dist/ setup.sh
 mkdir -p $DIR
 gzip -c artemis.tar > "$DIR"/artemis.tar.gz
 rm -r artemis.egg-info build dist artemis.tar # Cleanup environment where package was built.
