@@ -8,9 +8,9 @@ To build Artemis, simply call the shell script package.sh with the argument -d t
 
 Example: '''bash package.sh -d test_build'''
 
-Artemis deployment is handled via setup.sh. You must supply the version (with the format artemis-x.y.z) and the type of installation, cli for source code access or package for interpreter/import only access.
+Artemis deployment is handled via setup.sh. You must supply the version (with the format artemis-x.y.z) and the type of installation, unpack or setup.
 
-Example: '''bash setup.sh -t cli -v artemis-0.0.1'''
+Example: '''bash setup.sh -t unpack -v artemis-0.0.1'''
 
 # Building the protobuf
 Artemis metadata is defined in io/protobuf/artemis.proto. An important component
