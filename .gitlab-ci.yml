@@ -80,8 +80,14 @@ test:
     - pip install pyarrow 
     - pip install packaging #  required by physt
     - pip install protobuf
+    - pip install coverage
     - python setup.py install
-    - python -m unittest
+    - coverage3 run --source=artemis/ -m unittest
+    - coverage html
+  artifacts:
+      paths:
+          - htmlcov/
+      expires_in: 1 week
   only:
     - branches
 
