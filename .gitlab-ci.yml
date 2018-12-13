@@ -87,7 +87,7 @@ test:
   artifacts:
       paths:
           - htmlcov/
-      expires_in: 1 week
+      expire_in: 1 week
   only:
     - branches
 
