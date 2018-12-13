@@ -84,7 +84,7 @@ test:
     - python setup.py install
     - coverage3 run --source=artemis/ -m unittest
     - coverage html
-    - echo "Coverage report: "
+    - echo "Coverage report:"
     - grep "pc_cov" htmlcov/index.html | grep -e "[0123456879]*%" -o
   artifacts:
       paths:
