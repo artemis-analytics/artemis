@@ -1,5 +1,16 @@
 *~
 *log
 *json
+*txt
+*pdf
+*dat
+*parquet
+*csv
+*arrow
 __pycache__
+dist
+build
+.eggs
+artemis.egg-info
+.ipynb_checkpoints
 *pyc
