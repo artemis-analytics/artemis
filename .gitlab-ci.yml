@@ -123,7 +123,7 @@ package:
     - pip install coverage
     - pip install wheel
     - python setup.py install
-    - bash package -d artemis_build
+    - bash package.sh -d artemis_build
   artifacts:
       paths:
           - artemis_build/artemis.tar.gz
