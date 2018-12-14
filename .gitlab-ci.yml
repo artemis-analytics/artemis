@@ -80,8 +80,16 @@ test:
     - pip install pyarrow 
     - pip install packaging #  required by physt
     - pip install protobuf
+    - pip install coverage
     - python setup.py install
-    - python -m unittest
+    - coverage3 run --source=artemis/ -m unittest
+    - coverage html
+    - echo "Coverage report:"
+    - grep "pc_cov" htmlcov/index.html | grep -e "[0123456879]*%" -o
+  artifacts:
+      paths:
+          - htmlcov/
+      expire_in: 1 week
   only:
     - branches
 
