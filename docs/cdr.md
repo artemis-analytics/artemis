@@ -231,7 +231,8 @@ computing as well as distributed in-memory computing.
 
 * Anticipate a common workload is to perform computation on streams of record batches. 
 It is not safe to assume that computation will be performed against fully in-memory or
-memory-mapped datasets at all times.  For example, it is possible to perform
+memory-mapped datasets at all times.  
+For example, it is possible to perform
 many kinds of filter-project-aggregate on a very large dataset where 
 only one small row batch at a time is in-memory. 
 
@@ -317,38 +318,40 @@ can be considered as a tables (Arrow::Table).  Note, Arrow Tables can
 support nested, hierarchal tables. In the current prototype, we focus on
 demonstrating the use case for flat tables.
 
-The primary assumption for the data production of Arrow Tables is that chunks
-of data can be read into in-memory buffers, converted to a standard tabular
-format, processed and filtered independently with Arrow RecordBatches.  The
-basic processing strategy is described herein.
+Anticipate a common workload is to perform computation on streams of record batches. 
+For example, it is possible to perform
+many kinds of filter-project-aggregate on a very large dataset where 
+only one small row batch at a time is in-memory. 
 
-The raw dataset consists of one or more files or database tables, e.g.
+The primary assumption for Artemis data production is that chunks
+of raw data can be read into Arrow buffers and subsequently perform computation on streams 
+of record batches. The computations may perform many kinds of filter-projection-aggregate
+operations on very large dataset with only a small record batch in-memory. The processing
+of the record batches can be parallized across many cores or across a cluster of
+machines, resulting in both vertical and horizontal scaling of computing resources.
 
-Dataset
-    File 1
-    File 2
-    File 3 ...
+The raw dataset consists of one or more datums, such as files, database tables,
+or any data parition.  In order to organize the data into collections of a
+fixed number of record batches and manage the data in-memory, each datum is
+separated into chunks of fixed size in bytes. Each chunk is converted from the
+raw input data to a record batch (Arrow::RecordBatch). The record batch can
+undergo any number of operations, e.g. parsing, conversion, cleaning,
+filtering, aggregation, integration until the the entire transformation is
+applied to record batch.  The output record batch from a raw input chunk of a
+datum is written (serialized) to an output buffer (Arrow::BufferOutstream). Raw input
+data chunks continue to stream into Artemis while the record batches continue to be
+serialized into the output stream. Once the buffer output stream consumes
+enough memory, the output buffer is "spilled" to disk.  As more data continues
+to stream into the application, new buffers are created until all files from
+the raw dataset are stored in collections of Arrow record batches. 
 
-Each file (or table) is considered a datum of a dataset. In order to organize
-the data into collections of RecordBatches, as well as manage the data
-in-memory efficiently, each datum is separated into chunks of fixed size in
-bytes. Each chunk is converted from the raw input data to a RecordBatch. The
-RecordBatch can undergo any number of operations, e.g. parsing, conversion,
-cleaning, filtering, to a final RecordBatch. The final RecordBatch
-from a raw input chunk of a datum is written to an output buffer
-(Arrow::BufferOutstream). The RecordBatches continue to be
-collected in the output buffer for each subsequent data chunk. The
-output buffer is flushed to disk.  As more data continues to stream
-into the application, new buffers are created until all files from
-the raw dataset are stored in RecordBatches.
-
-TODO -- Create a picture depicting the general data flow.
-
-Note, we do not assume that the output dataset maps directly back to the input
-dataset, as the data is reorganized into RecordBatches to provide performant,
-random access data files. In addition, the ability to transform the data
+The output dataset does not assume to map directly back to the input
+dataset, as the data is reorganized into Arrow::RecordBatches to provide performant,
+random access data files. The ability to transform the data in-memory
 can result in one or more final output partitioning schemes which conform
-to the requirements of the downstream analysis.
+to the requirements of the downstream analysis. The columnar data structure 
+is highly compressible and retains the schema as well as the entire payload 
+in a given file. Arrow supports both streams and random access reads.
 
 ### Business process model <a name="bpm"></a>
 
@@ -407,7 +410,7 @@ and execution order is stored in metadata to be made available to *Artemis*.
 ### Execution Engine <a name="steering"></a>
 
 *Artemis* has a top-level algorithm, *Steering*, 
-to serves as the execution engine for the user-defined algorithms. 
+which serves as the execution engine for the user-defined algorithms. 
 
 An interesting comparison to the Gandiva contribution to Arrow from Dremio
 elucidates some parallels to Artemis.  Gandiva is a C++ library for efficient
