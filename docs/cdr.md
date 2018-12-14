@@ -1,5 +1,10 @@
-# STC Artemis Project Conceptual Design Report
+---
+title: STC Artemis Project Conceptual Design Report
+date: "December 2018"
+author: "Statistics Canada, Data Stewardship Division; Ryan M. White; Dominic Parent"
+---
 
+# Artemis Conceptual Design Report
 The conceptual design report describes the Artemis data processing framework
 powered by Apache Arrow, an industry standard in-memory columnar data format.
 The conceptual design derives from experience prototyping typical data
@@ -40,6 +45,12 @@ The framework design must have at the core a well-defined data format
 that can accelerate analytical processing of the data on modern computing
 architecture.
 
+At the core of any data enterprise is a consistent, well-defined data model. 
+The data model will underpin the long-term data management strategy and provide
+the requirements for computing, storage, and data analysis. The choice of
+the data model must reflect the analysis patterns of the end-user, and
+support the analytical workloads for data production. 
+
 The Artemis data processing framework demonstrates the use of the Apache Arrow
 in-memory columnar data format and modern computing techniques for data ingestion,
 management and analysis of very large datasets. The framework
@@ -52,7 +63,11 @@ buffers to produce high-quality datasets. Artemis accomplishes this by
 providing a framework to execute operations on Arrow tables (an execution
 engine) through user-defined algorithms and tools. Artemis core
 functionality is configurable control flow for producing datasets
-consisting of one or more Arrow Tables. The primary objectives for the prototype:
+consisting of one or more Arrow Tables. The language-neutral Arrow data format
+allows Artemis to pass data to/from other processes or libraries, in-memory, with
+zero-copy and no serlialzation overhead. 
+
+The primary objectives for the prototype:
 
 1. Production of logical datasets of a single
 consistent data format that enable efficient interactions with very large
@@ -147,7 +162,10 @@ providing a cross-language development platform for in-memory data which
 specifies a standardized language-independent columnar memory format for flat
 and hierarchical data, organized for efficient analytic operations on modern
 hardware. Arrow provides computational libraries and zero-copy streaming
-messaging and interprocess communication. The key benefits of Arrow:
+messaging and interprocess communication. Arrow is a common data interface
+for interprocess and remote processes.
+
+The key benefits of Arrow:
 
 **Fast** – enables execution engines to take advantage of the latest SIMD (Single
 input multiple data) operations in modern processors, for native
@@ -261,10 +279,6 @@ Develop tools to "spill" datasets to disk
 using the Arrow binary IPC protocols (either for stream-based access or random access).
 
 ## Artemis Prototype <a name="artemis"></a>
-
-*TODO*
-Need to provide a concise, well-described summary of the Artemis functionality. Details
-for each component are just supplementary detail.
 
 The Artemis prototype framework leverages the Apache Arrow development platform
 capability, and focuses on data processing and analysis in a
@@ -495,7 +509,9 @@ native Arrow buffers directly and all processing is performed on these buffers.
 The in-memory native Arrow buffers are collected and organized as collections
 of record batches which are persisted to disk as serialized Arrow data tables.
 
-Generically, Artemis will interact with a *DataHandler* whereby the
+**TODO** rewrite this paragraph
+
+Artemis interacts with a *DataHandler* whereby the
 *DataHandler* is a data producer which interacts with the persistent data to
 load into a memory buffer Artemis is a data consumer, consuming the
 *DataHandler* buffer and fills its own output buffer.  Artemis sends a data
@@ -516,42 +532,49 @@ betweens *Nodes*, and all Arrow buffers attached to the *Elements*
 buffers (data tables) are attached to *Elements* and can be accessed by
 subsequent algorithms. 
 
-*TODO*
+**TODO**
+
 Add diagram or code which how to retrieve and attach data. Diagram depicting
 the Tree, Nodes, Elements.
 
 ### Data conversion <a name="conversion"></a> 
 
-For each format, Artemis and Arrow aim to support some rudimentary features
+For each data format, Artemis and Arrow aim to support some rudimentary features
 
 * Convert from Arrow record batches to the target format, and back, with minimal loss.
+* Automatic decompression of input files.
 * Given a supplied schema, read a file in one chunk at time.
 * Schema inference (schema on read)
 * Conversion profiling for converted data, e.g. frequencies of errors in columns for converting to the desired data type
 
-Artemis uses the schema inference and data conversion of the Arrow readers
-(parsers). Rather than relying directly on the chunking of data in the Arrow
-readers, Artemis manages the creation and reading of raw data chunks, so that
-downstream processes applied to the data occur on one data chunk at a time.
-This enables Artemis to manage the data in-memory and the execution of
-algorithms by monitoring the Arrow memory pool and the size of serialized data
-in the output buffer.  The algorithms leverage the functionality of Arrow by
-directly interacting with Arrow record batches. Arrow parsers are implemented
-to support both single-threaded and multi-threaded reads, adapting the Artemis
-data chunker on the Arrow implementation could be a foreseen development. As
-well, Artemis is targeting the processing of legacy data (from mainframe, Cobol
-applications). Developing a native Arrow reader for EBCDIC data format in C++ could be
+Artemis works with the schema-on-read paradigm, a general requirement for data
+science applications. Artemis manages the creation and reading of raw data
+chunks, in addition to fetching the schema (if available) from the input datum.
+(A predefined schema can also be provided as part of the initial Artemis job configuration.)
+Artemis passes the raw data chunk to the Arrow readers for column-wise type
+inference and data conversion to an Arrow record batch. Robust checking of the
+supplied and/or extracted schema against the inferred data types occurs on each
+chunk. Artemis also collects statistics on errors occured during processing,
+recording this information in frequency tables or histograms as part of the
+job summary metadata.  The data error handling and statistics rely on
+information gathered from the Arrow readers.
+
+Arrow provides funtionality to chunk data in their readers, returning an Arrow
+table of one or more record batches. However, delegating this funtionality to
+Artemis allows the framework to configure the size of the raw data to process
+in memory, apply all downstream processes to the data one chunk at a time a
+time, monitor the total Arrow memory consumption and handle flushing the Arrow
+memory and "spilling" processed data to disk.
+
+The Artemis algorithms leverage the functionality of Arrow by directly interacting with
+Arrow record batches. Arrow parsers are implemented to support both
+single-threaded and multi-threaded reads, adapting the Artemis data chunker on
+the Arrow implementation could be a foreseen development. As well, Artemis is
+targeting the processing of legacy data (from mainframe, Cobol applications).
+Developing a native Arrow reader for EBCDIC data format in C++ could be
 considered a worthwhile contribution to the Arrow project.
 
-Artemis relies on the schema-on-read paradigm, a requirement for data science
-applications.  Artemis executes the appropiate parser on a raw data chunk,
-extracting the schema for each chunk, validating the data schema against a
-provided schema and/or against schema information extracted from previously
-processed data or header information.  Artemis also collects statistics on
-errors occured during processing, recording this information in frequency
-tables or histograms.  The data error handling and statistics will rely on
-the Arrow functionality once provided and persist this information in
-histograms managed by Artemis.
+Refer to the Appendix for additional details of the CSV reader implemented in Arrow.
 
 ### Data quality <a name="dataqual"></a>
 
@@ -590,7 +613,6 @@ data stores for leveraging a multicore environment; aleviating the need
 for users to deal with data management, serialization and persistency. In
 other words, any algorithm that works with Arrow data types can be easily 
 incorporated into the Artemis framework with general ease.
-
 
 #### Metastore
 
@@ -631,9 +653,15 @@ HPC deployments.
 
 #### Histogram and Timer Store
 
+**TODO**
+
 #### Algorithms and Tools
 
+**TODO**
+
 #### Logging
+
+**TODO**
 
 ## Computing infrastructure recommendations <a name="infra"></a>
 * Advantageous use of cloud for simulation / data synthesis
@@ -665,6 +693,10 @@ solutions and direct data science application development.
 
 * Integration of GPU-based analysis workloads using Arrow tables.
 
+## Summary
+
+**TODO**
+
 ## References <a name="refs"></a>
 
 * Canonical Apache Arrow source code, https://github.com/apache/arrow 
@@ -683,6 +715,24 @@ https://scholar.colorado.edu/csci_techreports/463
 * Ibis, Python Data Analysis Productivity Framework, https://docs.ibis-project.org/html
 
 ## Appendix <a name="appendix"></a>
+
+### Requirements for data science 
+
+The Artemis conceptual design aims at addressing data science core requirements for performing 
+rigourous data analysis. 
+
+* Discoverability
+* Reproducbility
+* Provenance
+* Incrementality
+* Collaboration
+* Accessibility & Autonomy
+* Performance
+* Ease of use, maintability
+* Flexibility to incorporate new Arrow developments
+    * Multi-language support via python 
+    * Native C++ algorithms with bindings, callable R algorithms via rpy?
+* Reliability
 
 ### Description of open data standards and formats
 
@@ -723,65 +773,14 @@ Several examples of data standards in computing today:
   * Timers
   * Job summary
 
+### Reading CSV Files with Arrow
 
-## Additional text
+Arrow provides support for reading data from CSV files with the following features:
 
-The prototype not only must demonstrate various capabilities and potential use
-of data standardization but also test the validity of assumptions of processing
-adminstrative data files
-
-* Data can be converted, stored and analyzed in a tabular data format.
-* Data can be partitioned and processed independently, in parallel, 
-facilitating both vertical and horizontal scaling 
-(multi-processing (across cores) and distributed computing (across nodes).
-* If the latter assumption fails, aggregated data stored in histograms can be used as input in 
-subsequent processing to process the data in parallel. (E.g. imputation based on field mean).
-The Artemis conceptual design aims at addressing data science core requirements for performing 
-rigourous data analysis. 
-
-* Discoverability
-* Reproducbility
-* Provenance
-* Incrementality
-* Collaboration
-* Accessibility & Autonomy
-* Performance
-* Ease of use, maintability
-* Flexibility to incorporate new Arrow developments
-    * Multi-language support via python 
-    * Native C++ algorithms with bindings, callable R algorithms via rpy?
-* Reliability
-
-## Design strategy for Data science <a name="designstrategy"></a>
-        
-
-* Data management strategy
-
-At the core of any data enterprise is a consistent, well-defined data model. 
-The data model will underpin the long-term data management strategy and provide
-the requirements for computing, storage, and data analysis. The choice of
-the data model must reflect the analysis patterns of the end-user, and
-support the analytical workloads for data production. 
-
-    * Importance of understanding data analysis model for designing IT infrastructure
-    * Vertical and horizontal scaling -- general computing / processing model
-    * Motivations for using an open industry-standard in-memory data format
-
-* Design philosphy and user-target base
-    
-The Artemis conceptual design aims at addressing data science core requirements for performing 
-rigourous data analysis. 
-
-* Discoverability
-* Reproducbility
-* Provenance
-* Incrementality
-* Collaboration
-* Accessibility & Autonomy
-* Performance
-* Ease of use, maintability
-* Flexibility to incorporate new Arrow developments
-    * Multi-language support via python 
-    * Native C++ algorithms with bindings, callable R algorithms via rpy?
-* Reliability
+* multi-threaded or single-threaded reading
+* automatic decompression of input files (based on the filename extension)
+* fetching column names from the first row in the CSV file
+* column-wise type inference and conversion to one of null, int64, float64,timestamp[s],
+string, or binary data
+* detect various spellings of null values (sentinel values) such as NaN or #N/A
 
