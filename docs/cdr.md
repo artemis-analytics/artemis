@@ -115,8 +115,6 @@ into the datasets.
 
 ## Apache Arrow industry-standard columnar data <a name="arrow"></a>
 
-### Open data standarards
-
 Open standards enable systems, processes and libraries to communicate with each
 other.  Direct communication using standard protocols and data formats
 simplifies system architecture, reduces ecosystem fragmentation, improves
@@ -131,13 +129,6 @@ a columnar memory layout allows applications to avoid uneccesary IO and
 accelerates analytical processing on modern CPUs and GPUs. (Additional discussion
 on open data standards can be found in the [Appendix](#appendix))
 
-The scientific community developed many common libraries in-use by data
-scientists today in Fortran, such as linear algebra routines. The scientific
-programming ecosystem in python effectively united around the ndarray, which is
-the NumPy multidimensional fortran-compatible array which allows for re-use of
-linear algrabra routines, providing zero-overhead memory sharing to/from
-various libraries and processes.
-
 The data science and social science community typically deal with tabular data
 which manifests itself in various forms, most commonly refered to as
 *DataFrames*. The *DataFrame* concept and the semantics found in various
@@ -151,8 +142,6 @@ SQL, the "Big Data" community developed Spark and Hive, and in-memory
 Julia all have a *DataFrame* in-memory tabular data which is commonly used by
 analysts.
 
-### Apache Arrow in-memory data 
-
 The Apache Arrow project solves the non-portable *DataFrame* problem by
 providing a cross-language development platform for in-memory data which
 specifies a standardized language-independent columnar memory format for flat
@@ -161,7 +150,7 @@ hardware. Arrow provides computational libraries and zero-copy streaming
 messaging and interprocess communication. The key benefits of Arrow:
 
 **Fast** – enables execution engines to take advantage of the latest SIMD (Single
-input multiple data) operations in modern processes, for native
+input multiple data) operations in modern processors, for native
 vectorized optimization of analytical data processing. Columnar layout is
 optimized for data locality for better performance.  The Arrow format supports
 zero-copy reads for fast data access without serialization overhead.
@@ -173,15 +162,18 @@ and supports a wide variety of industry specific languages, including native
 implementations in C++, Java, Javascript, Rust and Go, with bindings from C++ libraries
 for Python, Ruby, and R.  
 
-**Standard** – Apache Arrow is backed by key developers from major open-source
-projects.
+**Standard** – Apache Arrow is backed by key developers from 13 major open-source
+projects, scientists working at the data frontier, deep learning, and GPU-based
+software developers, including Calcite, Cassandra, Drill, Hadoop, HBase, Ibis,
+Impala, Kudu, Pandas, Parquet, Phoenix, Spark, and Storm and CERN
+making it the de-facto standard for columnar in-memory analytics.
 
 ![Arrow support](docs/native_arrow_implementation.png)
 
-Apache Arrow specifies a standardized language-independent columnar memory
-format for flat and hierarchical data, defining primitive data types for
+Apache Arrow comprehensive data format defines primitive data types for
 scalars of fixed and variable length size as well as complex types such as
-unions (dense and sparse), structs and lists. Complex types can support nested
+unions (dense and sparse), structs and lists. Variable width data supports 
+UTF8 or varchar as well as varbinary. Complex types can support nested
 hierarchical data, for example, to represent nested JSON data. 
 
 * Fixed-length supported primitive types: numbers, booleans, date and times, fixed size binary, decimals, and other values that fit into a given number
@@ -206,8 +198,9 @@ reasons.
 
 The Apache Arrow objective is to provide a
 development platform for data science systems which decouples the vertical
-integration of data processing components, e.g. configuration, I/O, in-memory
-storage, computational engine. Apache Arrow deconstructs the typical
+integration of data processing components: performant 
+serialization / deserialization and I/O, standard in-memory
+storage, and embedded computational engine. Apache Arrow deconstructs the typical
 data architecture stack that is vertically integrated, providing public APIs
 for each component:
 
@@ -225,7 +218,7 @@ Arrow powered data science systems.
 ### Apache Arrow Roadmap
 
 The following information was obtained from the 2019 Ursa Labs Planning document.
-The development belows listed below are the most relevant to the design
+The developments listed below are the most relevant to the design
 strategy for Artemis and the requirements that the prototype aims to meet. Several
 planned developments are already part of the Artemis functionality, and the design
 supports integration of future Arrow developments such as operators and an embedded 
@@ -432,13 +425,6 @@ to consider an embeddable C++ execution engine.  The embedded executor engine
 could be used in-process in many programming languages and therefore easily
 incorporated into Artemis. Arrow developers are taking inspiration
 from ideas presented in the Volcano engine and from the Ibis project.
-
-References
-Graefe, Goetz, "Volcano, an Extensible and Parallel Query Evaluation System"; 
-CU-CS-481-90 (1990). Computer Science Technical Reports, 463 
-https://scholar.colorado.edu/csci_techreports/463
-
-Ibis, Python Data Analysis Productivity Framework, https://docs.ibis-project.org/html
 
 ### Metadata model <a name="metadata"></a>
 
@@ -675,27 +661,31 @@ solutions and direct data science application development.
 
 ## References <a name="refs"></a>
 
-* Supporting documentation (highlight current/planned developments in Arrow throughout CDR)
-    * Canonical Arrow: https://github.com/apache/arrow 
-    * Draft Ursa 2019:
-        https://docs.google.com/document/d/12dWBniKW2JQ-5djE3SPjyQXVquCAEmLXVlb1dnhLhQ0/edit#heading=h.62rx18p423rw
-    * Blog http://arrow.apache.org/blog/
-    * Apache Arrow homepage: http://arrow.apache.org
-
-Atlas Collaboration, ATLAS high-level trigger, data-acquisition and controls: 
+* Canonical Apache Arrow source code, https://github.com/apache/arrow 
+* Wes McKinney, 2019 Ursa Labs Planning Document, https://docs.google.com/document/d/12dWBniKW2JQ-5djE3SPjyQXVquCAEmLXVlb1dnhLhQ0/edit#heading=h.62rx18p423rw
+* Apache Arrow homepage: http://arrow.apache.org
+* Apache Arrow columnar format specification, https://cwiki.apache.org/confluence/display/ARROW/Columnar+Format+1.0+Milestone)
+* Atlas Collaboration, ATLAS high-level trigger, data-acquisition and controls: 
 Technical Design Report, CERN-LHCC-2003-022; ATLAS-TDR-16
-
-Google Protocol Buffers, github.com/protocolbuffers/protobuf, developers.google.com/protocol-buffers/
-
-The NumPy array: a structure for efficient numerical computation, 
+* Google Protocol Buffers, github.com/protocolbuffers/protobuf, developers.google.com/protocol-buffers/
+* The NumPy array: a structure for efficient numerical computation, 
 Van Der Walt, Stefan; Colbert, S. Chris; Varoquaux, Gael,
 Computing in Science and Engineering 13, 2 (2011) 22-30, 2011
+* Graefe, Goetz, "Volcano, an Extensible and Parallel Query Evaluation System"; 
+CU-CS-481-90 (1990). Computer Science Technical Reports, 463 
+https://scholar.colorado.edu/csci_techreports/463
+* Ibis, Python Data Analysis Productivity Framework, https://docs.ibis-project.org/html
 
-https://cwiki.apache.org/confluence/display/ARROW/Columnar+Format+1.0+Milestone):
 ## Appendix <a name="appendix"></a>
 
 ### Description of open data standards and formats
 
+The scientific community developed many common libraries in-use by data
+scientists today in Fortran, such as linear algebra routines. The scientific
+programming ecosystem in python effectively united around the ndarray, which is
+the NumPy multidimensional fortran-compatible array which allows for re-use of
+linear algrabra routines, providing zero-overhead memory sharing to/from
+various libraries and processes.
 Several examples of data standards in computing today:
 
 * Human-readable semi-structured: XML, JSON
