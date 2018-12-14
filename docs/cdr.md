@@ -351,14 +351,17 @@ random access data files. The ability to transform the data in-memory
 can result in one or more final output partitioning schemes which conform
 to the requirements of the downstream analysis. The columnar data structure 
 is highly compressible and retains the schema as well as the entire payload 
-in a given file. Arrow supports both streams and random access reads.
+in a given file. Arrow supports both streams and random access reads, as well
+as support for writing to variety of on-disk persistent storage formats, e.g. Parquet,
+ORC, and Feather. Artemis utilizes the ability to "spill" to disk in configurable
+file sizes into a native Arrow bytestream format. 
 
 ### Business process model <a name="bpm"></a>
 
 Artemis design decouples the definition of the business process model (BPM) from
 the execution of those business processes on the data. Business process models
-are defined by the user and retained in the Artemis metadata.The flexibility of
-defining, retaining and storing the business process model in the metadata allows for
+are defined by the user and retained in the Artemis metadata. The flexibility of
+defining, retaining and storing the business process model in the metadata enables
 various configurations to be used on the same data, allows for the job to be
 reproducible, and facilitates data validation and code testing.
 
