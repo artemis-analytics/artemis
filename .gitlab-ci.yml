@@ -45,8 +45,8 @@ variables:
 stages:
   - review  
   - test
-  - document  
-
+  - document
+  - package
 
 review:
   stage: review
@@ -103,6 +103,32 @@ document:
         untracked: true
     only:
         - master
+
+package:
+  stage: package
+  image: centos/python-36-centos7:latest
+  variables:
+    DOCKER_DRIVER: overlay2
+  script:
+    - which python
+    - python -m pip --version  
+    - pip install setuptools 
+    - pip install numpy
+    - pip install pandas  #  required by pyarrow
+    - pip install scipy
+    - pip install cython
+    - pip install pyarrow 
+    - pip install packaging #  required by physt
+    - pip install protobuf
+    - pip install coverage
+    - pip install wheel
+    - python setup.py install
+    - bash package -d artemis_build
+  artifacts:
+      paths:
+          - artemis_build/artemis.tar.gz
+  only:
+      - tags
 # ---------------------------------------------------------------------------
 
 .auto_devops: &auto_devops |
