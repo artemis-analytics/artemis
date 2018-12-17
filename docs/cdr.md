@@ -449,6 +449,7 @@ from ideas presented in the Volcano engine and from the Ibis project.
 ### Metadata model <a name="metadata"></a>
 
 The Artemis metadata model has three primary components:
+
 1. The defintion of the data processing job, i.e. all the required metadata to execute a business process model.
     * Defintion of the data source or source(s)
     * Definition of business process model for that particular data source(s)
@@ -504,22 +505,13 @@ easily leverage these capabilities as they become available.
 
 ###  Inter-algorithm communication <a name="iac"></a> 
 
-Artemis provides access to data from different sources, the data is read into
+Artemis provides access to data from different sources. The data is read into
 native Arrow buffers directly and all processing is performed on these buffers.
 The in-memory native Arrow buffers are collected and organized as collections
-of record batches which are persisted to disk as serialized Arrow data tables.
-
-**TODO** rewrite this paragraph
-
-Artemis interacts with a *DataHandler* whereby the
-*DataHandler* is a data producer which interacts with the persistent data to
-load into a memory buffer Artemis is a data consumer, consuming the
-*DataHandler* buffer and fills its own output buffer.  Artemis sends a data
-request. The DataHandler manages the request, fills a buffer and returns a
-generator which is consumed by Artemis.  The *DataHandler* provides a python
-generator of partitions of data in predetermined chunk sizes.  Artemis *Run*
-and *Execution* states manage the processing of data chunks, passing the
-initial input chunk to *Steering* for the execution of the BPM on the data.
+of record batches in order to build new on-disk datasets given the stream of record batches.
+Once raw data is materialized as Arrow record batches, Artemis needs to provide 
+the correct data inputs to the algorithms so that the final record batches
+have the defined BPM applied to the data.
 
 The *Steering* algorithm manages the data dependencies for the execution of the
 BPM by seeding the required data inputs to each *Node* in a *Tree* via an
@@ -577,19 +569,57 @@ considered a worthwhile contribution to the Arrow project.
 Refer to the Appendix for additional details of the CSV reader implemented in Arrow.
 
 ### Data quality <a name="dataqual"></a>
-Data and the quality of that data are of importance across 
-all domains of science, engineering, commerce, medicine, public health and policy. 
-Data quality can be addressed by controlling the measurement and data collection processes
-and through data ownershp. The increased use of administrative data sources poses
-a challenge on both controlling and accessing the data quality through the traditional
-control of measurement and collection.
-Data quality is generally considered an implicit part of the role of the data user.
-Statistical infrastructure will need support the data users ability to
-measure data quality throughout the data lifecycle. Data-as-a-service oriented
-enterpise data solutions are not generally focused on the ensuring the measurement
-of data quality.
 
-Histogram-based data quality framework
+The quality of that data is an inherent part of data analysis.
+The importance of data quality transcends domains of science, engineering,
+commerce, medicine, public health and policy.  Traditionally, data quality can be
+addressed by controlling the measurement and data collection processes and
+through data ownershp. The increased use of administrative data sources
+poses a challenge on both controlling and accessing the data quality
+through the traditional control of measurement and collection.
+
+In the scientific domain, data quality is generally considered an implicit part
+of the role of the data user.  Statistical infrastructure will need support the
+data users ability to measure data quality throughout the data lifecycle.
+Data-as-a-service oriented enterpise data solutions are not generally focused
+on ensuring the measurement of data quality. As well, the statistical tools
+required for data quality meaurements need to be developed to address data quality
+issues in administrative data. 
+
+**TODO**
+
+* List of possible data quality indicators or measures
+* What is currently used for admin data
+* What are the critical dimensions
+* What are the accepted tools for data quality, e.g. histograms, correlations, etc.
+
+Artemis relies on a histogram-based data quality framework, providing tools for
+user-defined histograms, automated profiling of dataset distributions, and
+storage of histograms. Histograms are the bread-and-butter of statistical data
+analysis and data visualization, and a key tool for quality control. They
+serve as an ideal statistical tool for describing data, and can be used
+to summarize large datasets by retaining both the frequencies as well as the errors.
+
+The histogram is an accurate representation of a distribution of numerical data (or
+dictionary encoded categorical data), and it represents graphically the
+relationship between a probability density function *f(x)* and a set of *n*
+observations pf *x, x1, x2, ... xn*
+
+Automated data profiling can be a powerful tool for data quality, data discovery,
+and fit-for-use assessment. However, unless the distributions are well-understood, such as
+the resolution on the measurement and expected limits on the distribution, quickly
+profiling data can be challening. For distributed processing of data, unless the histogram
+definition (bin width, number of bins and limits) is fixed, the histograms for each datum
+cannot be merged. In addition, the number of processing stages needs to be minimized while
+still gathering relevant information on the entire dataset.
+
+Statistical approaches, such as the Friedman-Diaconis rule for determining
+optimal bin width of histograms can be used as part of the initial data quality
+and profiling of new datasets.
+
+<math>\text{Bin width}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
+
+where the IQR is the interquantile range.
 
 * Profiling and automation
     * Cost metrics
@@ -597,16 +627,6 @@ Histogram-based data quality framework
     * Auto scanning of histograms, multi-pass in-memory processing
 * Data Quality
     * Histogram-based data quality framework
-Automated data profiling can be a powerful tool for data quality, data discovery,
-and fit-for-use assessment. 
-
-Statistical approaches, such as the Friedman-Diaconis rule for determining optimal bin width of histograms can be used 
-as part of the initial data quality and profiling of new datasets.
-
-:<math>\text{Bin wdith}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
-
-where the IQR is the interquantile range.
-
 
 ### Services, algorithms and tools <a name="services"></a>
 
@@ -684,8 +704,28 @@ HPC deployments.
 
 **TODO**
 
-## Computing infrastructure recommendations <a name="infra"></a>
+## Data Production
 
+**TODO**
+
+High-level summary of techniques for efficient data production with Arrow columnar 
+data.
+
+* Scalable batch processing
+* Efficient skimming (selection of column subsets)
+* Efficient filtering (selection of column and row subsets from fast queries)
+* Postprocessing and dataset merging
+
+## Synthetic Information Technology
+
+**TODO**
+
+Data generators for data application development
+    * Structural data format, e.g. csv, ebcdic, etc.
+    * Database generators, e.g. hierarchical databases. 
+    For use in developing embeddable query engines, for instance. See Arrow-3998 and TPC-H dbgen.
+
+## Computing infrastructure recommendations <a name="infra"></a>
 
 * Advantageous use of cloud for simulation / data synthesis
 * Secure HPC environment for SSI analysis
@@ -752,6 +792,8 @@ S. Keller; G. Korkmaz; M. Orr; A. Schroeder; and S. Schipp, Annu. Rev. Stat Appl
 * Freedman, David; Diaconis, Persi (December 1981). "On the histogram as a density estimator: L2 theory", Probability Theory and Related Fields. HeidelbergL: Springer Berlin. **57**
 * EOS as the present and future solution for data storage at CERN, AJ Peters; EA Sindrilaru; G Adde,
 Journal of Physics, Conference Series 664 (2015) 042042
+* Glen Cowan, *Statistical Data Analysis*, Oxford Press, 1998
+
 
 ## Appendix <a name="appendix"></a>
 
