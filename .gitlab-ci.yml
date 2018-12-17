@@ -99,6 +99,7 @@ document:
     image: jagregory/pandoc
     script:
         - find . -name '*.md' -exec sh -c 'pandoc -f markdown -t latex $0 -o $0.pdf' {} \;
+        - find . -name '*.md' -exec sh -c 'pandoc -s $0 -o $0.docx' {} \;
     artifacts:
         untracked: true
     only:
