@@ -619,7 +619,13 @@ and profiling of new datasets.
 
 <math>\text{Bin width}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
 
-where the IQR is the interquantile range.
+where the IQR is the interquartile range. For automated profiling, sufficient information
+needs to be gathered from an initial pass over the data in order to calculate the bin width.
+As well, if the data is processed in a distributed manner, the differences in the interquartile
+range from different data partitions would need to be reconciled. 
+
+**TODO**
+Description of a method for automated profiling
 
 * Profiling and automation
     * Cost metrics
