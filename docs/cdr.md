@@ -577,6 +577,17 @@ considered a worthwhile contribution to the Arrow project.
 Refer to the Appendix for additional details of the CSV reader implemented in Arrow.
 
 ### Data quality <a name="dataqual"></a>
+Data and the quality of that data are of importance across 
+all domains of science, engineering, commerce, medicine, public health and policy. 
+Data quality can be addressed by controlling the measurement and data collection processes
+and through data ownershp. The increased use of administrative data sources poses
+a challenge on both controlling and accessing the data quality through the traditional
+control of measurement and collection.
+Data quality is generally considered an implicit part of the role of the data user.
+Statistical infrastructure will need support the data users ability to
+measure data quality throughout the data lifecycle. Data-as-a-service oriented
+enterpise data solutions are not generally focused on the ensuring the measurement
+of data quality.
 
 Histogram-based data quality framework
 
@@ -586,6 +597,16 @@ Histogram-based data quality framework
     * Auto scanning of histograms, multi-pass in-memory processing
 * Data Quality
     * Histogram-based data quality framework
+Automated data profiling can be a powerful tool for data quality, data discovery,
+and fit-for-use assessment. 
+
+Statistical approaches, such as the Friedman-Diaconis rule for determining optimal bin width of histograms can be used 
+as part of the initial data quality and profiling of new datasets.
+
+:<math>\text{Bin wdith}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
+
+where the IQR is the interquantile range.
+
 
 ### Services, algorithms and tools <a name="services"></a>
 
@@ -664,9 +685,22 @@ HPC deployments.
 **TODO**
 
 ## Computing infrastructure recommendations <a name="infra"></a>
+
+
 * Advantageous use of cloud for simulation / data synthesis
 * Secure HPC environment for SSI analysis
 * Analyst challenges for migrating to HPC environment
+* Dataset management
+
+Large-scale distibuted dataset management is a critical computing requirement for
+data frontier scientific experiments. The design of of both storage 
+and data transport protocols is based on the general requirements of the science
+use-cases. CERN developed an open source storage system that meets the needs of
+the experiments and provided integration with the protocol mechanism for
+transporting petabyte-scale dataset across the globe. Strategies for cloud or
+hybrid cloud pose challenges, as the underlying storage mechanisms may lead 
+to different latencies which would need to be considered when designing 
+data ingestion, processing and data production applications. 
 
 ## Development strategies <a name="devstrategy"></a>
 * Dual-use development strategy for cloud-native and traditional HPC scientific computing 
@@ -713,6 +747,11 @@ Computing in Science and Engineering 13, 2 (2011) 22-30, 2011
 CU-CS-481-90 (1990). Computer Science Technical Reports, 463 
 https://scholar.colorado.edu/csci_techreports/463
 * Ibis, Python Data Analysis Productivity Framework, https://docs.ibis-project.org/html
+* The Evolution of Data Quality: Understanding the Transdisciplinary Origins of Data Quality Approaches, 
+S. Keller; G. Korkmaz; M. Orr; A. Schroeder; and S. Schipp, Annu. Rev. Stat Appl. 2017. 4:85-108
+* Freedman, David; Diaconis, Persi (December 1981). "On the histogram as a density estimator: L2 theory", Probability Theory and Related Fields. HeidelbergL: Springer Berlin. **57**
+* EOS as the present and future solution for data storage at CERN, AJ Peters; EA Sindrilaru; G Adde,
+Journal of Physics, Conference Series 664 (2015) 042042
 
 ## Appendix <a name="appendix"></a>
 
