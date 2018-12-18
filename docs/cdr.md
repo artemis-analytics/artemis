@@ -605,8 +605,15 @@ of the processing for centralized monitoring services:
 * Payload sizes, including datums and chunks
 * Memory consumption 
 * Total batches processed, number of records per batch
+* Statistics on processing errors
 
-Automated the profiling of the distributions of the data is forseen as well.
+Separate histogram-based monitoring applications can be developed as a postprocessing
+stage of Artemis and will be able to run quickly over large datasets since the
+input data are Arrow record batches.
+
+Automated the profiling of the distributions of the data is forseen as well as 
+input for the postprocessing stage.
+
 Further discussion on automated profiling is included in the appendix.
 
 ### Services, algorithms and tools <a name="services"></a>
@@ -675,78 +682,54 @@ HPC deployments.
 
 #### Histogram and Timer Store
 
-**TODO**
+Histograms and timers are centralled managed by the framework.  The managed
+store allow Artemis to collect histograms and timing information into the
+metadata, serialize and persist this information at the job finalize stage. The
+stores support booking and filling histograms in any user-defined algorithms by
+registering them in the histograms timer store services.  
+
+The histogram store also works as proxy to different histogram representations. Artemis
+currrently support two libraries histbook (from diana-hep) and physt (janpipek). Use
+in Artemis is primarily with physt since conversion to and from protobuf is supported.
+Once the physt histogram is converted to a protobuf message, the collection is added
+to the job metastore. 
 
 #### Algorithms and Tools
 
-**TODO**
+Similar to *numpy* user-defined functions, Artemis supports user-defined algorithms and tools. 
+Any algorithm or tool which works with Arrow data structures can be easily incorporated into
+an Artemis BPM and executed on a dataset. Algorithms support user-defined properties in order
+to easily re-use algorithmic code to perform the same task with different configurations.
+Developers implement the base class methods, define any defined properties, and access
+the Arrow buffers through the *Element*. *Steering* manages algorithm instantiation, scheduling and execution.
+For the end-user the most important part of the code is defined in the ```execute``` method. 
+Code organization and re-use can be improved by delegating common tasks which return a value to tools.
+The scheduling of the tools is managed directly in the algorithm, in other words, it is up
+to the user to apply the tools in the appropiate order.
 
-#### Logging
+```python
+class MyAlgo(AlgoBase):
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        # kwargs are the user-defined properties
+        # defined at configuration 
+    def initialize(self):
+        pass
+    def book(self):
+        # define histograms and timers
+    def execute(self, element):
+        # Algorithmic code
+    def finalize(self):
+        # gather any user-defined summary information
+```
 
-**TODO**
+#### Logging and exception handling
 
-## Data Production
-
-**TODO**
-
-High-level summary of techniques for efficient data production with Arrow columnar 
-data.
-
-* Scalable batch processing
-* Efficient skimming (selection of column subsets)
-* Efficient filtering (selection of column and row subsets from fast queries)
-* Postprocessing and dataset merging
-
-## Synthetic Information Technology
-
-**TODO**
-
-Data generators for data application development
-    * Structural data format, e.g. csv, ebcdic, etc.
-    * Database generators, e.g. hierarchical databases. 
-    For use in developing embeddable query engines, for instance. See Arrow-3998 and TPC-H dbgen.
-
-## Computing infrastructure recommendations <a name="infra"></a>
-
-* Advantageous use of cloud for simulation / data synthesis
-* Secure HPC environment for SSI analysis
-* Analyst challenges for migrating to HPC environment
-* Dataset management
-
-Large-scale distibuted dataset management is a critical computing requirement for
-data frontier scientific experiments. The design of of both storage 
-and data transport protocols is based on the general requirements of the science
-use-cases. CERN developed an open source storage system that meets the needs of
-the experiments and provided integration with the protocol mechanism for
-transporting petabyte-scale dataset across the globe. Strategies for cloud or
-hybrid cloud pose challenges, as the underlying storage mechanisms may lead 
-to different latencies which would need to be considered when designing 
-data ingestion, processing and data production applications. 
-
-## Development strategies <a name="devstrategy"></a>
-* Dual-use development strategy for cloud-native and traditional HPC scientific computing 
-* Leveraging simulation and data syntethis production for research
-* Developing a secure HPC environment for near term research
-
-## Recommendations for IT Business Data Analytics <a name="it"></a>
-
-* Significant advantage of Arrow is the ability for data scientists to develop
-directly with the Arrow API and / or
-take advantage of dataframe-like semantics. This still poses a challenge for
-business analysts and the IT counterpount. 
-
-* The Big Data community is already leveraging Arrow under-the-hood to deliver
-analytics tailored toward curating data 
-to deliver to a wide-range of users. The Dremio project along with the Gandiva
-contribution is delivering such solutions to get data to BI tools, machine
-learning, SQL, and data science clients. 
-
-* Developing a common experimental project to leverage both Dremio and Artemis
-on common datasets and data problem would
-better elucidate the strengths and weaknesses of out-of-box enterprise
-solutions and direct data science application development. 
-
-* Integration of GPU-based analysis workloads using Arrow tables.
+Artemis uses standard python logging module as well as exception handling.
+The framework provides a logging functionality with a decorator. All algorithms can access
+a logger, using ```self.__logger.info("My message")```. Exceptions must be raised in order
+to propagate upward. As long as all exceptions can be handled appropiately, the framework
+gracefully moves into an Abort state if the exception prevents further processing.
 
 ## Summary
 
@@ -866,3 +849,66 @@ where the IQR is the interquartile range. For automated profiling, sufficient in
 needs to be gathered from an initial pass over the data in order to calculate the bin width.
 As well, if the data is processed in a distributed manner, the differences in the interquartile
 range from different data partitions would need to be reconciled. 
+
+## Data Production
+
+**TODO**
+
+High-level summary of techniques for efficient data production with Arrow columnar 
+data.
+
+* Scalable batch processing
+* Efficient skimming (selection of column subsets)
+* Efficient filtering (selection of column and row subsets from fast queries)
+* Postprocessing and dataset merging
+
+## Synthetic Information Technology
+
+**TODO**
+
+Data generators for data application development
+    * Structural data format, e.g. csv, ebcdic, etc.
+    * Database generators, e.g. hierarchical databases. 
+    For use in developing embeddable query engines, for instance. See Arrow-3998 and TPC-H dbgen.
+
+## Computing infrastructure recommendations <a name="infra"></a>
+
+* Advantageous use of cloud for simulation / data synthesis
+* Secure HPC environment for SSI analysis
+* Analyst challenges for migrating to HPC environment
+* Dataset management
+
+Large-scale distibuted dataset management is a critical computing requirement for
+data frontier scientific experiments. The design of of both storage 
+and data transport protocols is based on the general requirements of the science
+use-cases. CERN developed an open source storage system that meets the needs of
+the experiments and provided integration with the protocol mechanism for
+transporting petabyte-scale dataset across the globe. Strategies for cloud or
+hybrid cloud pose challenges, as the underlying storage mechanisms may lead 
+to different latencies which would need to be considered when designing 
+data ingestion, processing and data production applications. 
+
+## Development strategies <a name="devstrategy"></a>
+* Dual-use development strategy for cloud-native and traditional HPC scientific computing 
+* Leveraging simulation and data syntethis production for research
+* Developing a secure HPC environment for near term research
+
+## Recommendations for IT Business Data Analytics <a name="it"></a>
+
+* Significant advantage of Arrow is the ability for data scientists to develop
+directly with the Arrow API and / or
+take advantage of dataframe-like semantics. This still poses a challenge for
+business analysts and the IT counterpount. 
+
+* The Big Data community is already leveraging Arrow under-the-hood to deliver
+analytics tailored toward curating data 
+to deliver to a wide-range of users. The Dremio project along with the Gandiva
+contribution is delivering such solutions to get data to BI tools, machine
+learning, SQL, and data science clients. 
+
+* Developing a common experimental project to leverage both Dremio and Artemis
+on common datasets and data problem would
+better elucidate the strengths and weaknesses of out-of-box enterprise
+solutions and direct data science application development. 
+
+* Integration of GPU-based analysis workloads using Arrow tables.
