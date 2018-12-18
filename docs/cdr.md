@@ -727,7 +727,20 @@ exceptions can be handled appropiately, the framework gracefully moves into an
 
 ## Summary
 
-**TODO**
+Statistical organizations are shifting to an administrative data first approach
+for producing official statistics. Inherent in the production of high-quality,
+fit-for-use administrative data is the ability for analysts to use the data,
+measure data quality, and iteratively develop data applications and
+statistical tools. Administrative datasets are becoming increasingly larger
+and complex, challenging the ways we approach data analysis and computing.
+The Apache Arrow in-memory columnar data format provides the ability to
+develop statistical infrastructure to address data quality and fit-for-use
+challenges with adminstrative data; better define computing requirements with the
+efficient use of CPU and memory; build sustainable, secure and coherent data ecosystems
+with interoperability; foster a collaborative environment due to code re-use.
+The Artemis data processing framework demonstrates the ease to design, build
+and scale data science systems using a single open source library to deliver high-quality,
+manageable data sets designed for efficient processing on single-node multicore environments.
 
 ## References <a name="refs"></a>
 
