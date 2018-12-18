@@ -570,13 +570,14 @@ Refer to the Appendix for additional details of the CSV reader implemented in Ar
 
 ### Data quality <a name="dataqual"></a>
 
-The quality of that data is an inherent part of data analysis.
+The data quality is an inherent part of data analysis, and therefore needs
+to be part of the core design of Artemis.
 The importance of data quality transcends domains of science, engineering,
 commerce, medicine, public health and policy.  Traditionally, data quality can be
 addressed by controlling the measurement and data collection processes and
 through data ownershp. The increased use of administrative data sources
-poses a challenge on both controlling and accessing the data quality
-through the traditional control of measurement and collection.
+poses a challenge on both ownership and controls of the data. Data quality
+tools, techniques and methodologies will need to evolve. 
 
 In the scientific domain, data quality is generally considered an implicit part
 of the role of the data user.  Statistical infrastructure will need support the
@@ -584,55 +585,29 @@ data users ability to measure data quality throughout the data lifecycle.
 Data-as-a-service oriented enterpise data solutions are not generally focused
 on ensuring the measurement of data quality. As well, the statistical tools
 required for data quality meaurements need to be developed to address data quality
-issues in administrative data. 
+issues in administrative data. Artemis primary statistical analysis tool for
+data quality is the histogram.
 
-**TODO**
-
-* List of possible data quality indicators or measures
-* What is currently used for admin data
-* What are the critical dimensions
-* What are the accepted tools for data quality, e.g. histograms, correlations, etc.
-
-Artemis relies on a histogram-based data quality framework, providing tools for
-user-defined histograms, automated profiling of dataset distributions, and
-storage of histograms. Histograms are the bread-and-butter of statistical data
+Histograms are the bread-and-butter of statistical data
 analysis and data visualization, and a key tool for quality control. They
 serve as an ideal statistical tool for describing data, and can be used
 to summarize large datasets by retaining both the frequencies as well as the errors.
-
 The histogram is an accurate representation of a distribution of numerical data (or
 dictionary encoded categorical data), and it represents graphically the
 relationship between a probability density function *f(x)* and a set of *n*
-observations pf *x, x1, x2, ... xn*
+observations pf *x, x1, x2, ... xn*. 
 
-Automated data profiling can be a powerful tool for data quality, data discovery,
-and fit-for-use assessment. However, unless the distributions are well-understood, such as
-the resolution on the measurement and expected limits on the distribution, quickly
-profiling data can be challening. For distributed processing of data, unless the histogram
-definition (bin width, number of bins and limits) is fixed, the histograms for each datum
-cannot be merged. In addition, the number of processing stages needs to be minimized while
-still gathering relevant information on the entire dataset.
+Artemis retains distributions related to the processing and overall cost
+of the processing for centralized monitoring services: 
 
-Statistical approaches, such as the Friedman-Diaconis rule for determining
-optimal bin width of histograms can be used as part of the initial data quality
-and profiling of new datasets.
+* Timing distributions for each processing stage
+* Timing distributions for each algorithm in the BPM
+* Payload sizes, including datums and chunks
+* Memory consumption 
+* Total batches processed, number of records per batch
 
-<math>\text{Bin width}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
-
-where the IQR is the interquartile range. For automated profiling, sufficient information
-needs to be gathered from an initial pass over the data in order to calculate the bin width.
-As well, if the data is processed in a distributed manner, the differences in the interquartile
-range from different data partitions would need to be reconciled. 
-
-**TODO**
-Description of a method for automated profiling
-
-* Profiling and automation
-    * Cost metrics
-    * Auto profiling data
-    * Auto scanning of histograms, multi-pass in-memory processing
-* Data Quality
-    * Histogram-based data quality framework
+Automated the profiling of the distributions of the data is forseen as well.
+Further discussion on automated profiling is included in the appendix.
 
 ### Services, algorithms and tools <a name="services"></a>
 
@@ -871,3 +846,23 @@ Arrow provides support for reading data from CSV files with the following featur
 string, or binary data
 * detect various spellings of null values (sentinel values) such as NaN or #N/A
 
+### Profiling techniques for large datasets
+
+Automated data profiling can be a powerful tool for data quality, data discovery,
+and fit-for-use assessment. However, unless the distributions are well-understood, such as
+the resolution on the measurement and expected limits on the distribution, quickly
+profiling data can be challening. For distributed processing of data, unless the histogram
+definition (bin width, number of bins and limits) is fixed, the histograms for each datum
+cannot be merged. In addition, the number of processing stages needs to be minimized while
+still gathering relevant information on the entire dataset.
+
+Statistical approaches, such as the Friedman-Diaconis rule for determining
+optimal bin width of histograms can be used as part of the initial data quality
+and profiling of new datasets.
+
+<math>\text{Bin width}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
+
+where the IQR is the interquartile range. For automated profiling, sufficient information
+needs to be gathered from an initial pass over the data in order to calculate the bin width.
+As well, if the data is processed in a distributed manner, the differences in the interquartile
+range from different data partitions would need to be reconciled. 
