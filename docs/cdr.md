@@ -64,7 +64,7 @@ engine) through user-defined algorithms and tools. Artemis core
 functionality is configurable control flow for producing datasets
 consisting of one or more Arrow Tables. The language-neutral Arrow data format
 allows Artemis to pass data to/from other processes or libraries, in-memory, with
-zero-copy and no serlialzation overhead. 
+zero-copy and no serialization overhead. 
 
 The primary objectives for the prototype:
 
@@ -75,10 +75,17 @@ datasets in a single-node, multicore environment.
 3. Execution of complex business processes on record batches to transform data.
 4. Incorporate data quality and fitness-for-use tools as part of the data production process.
 
-The document is organized as follows: description of general requirements for
-data processing, description of the Apache Arrow data format and development roadmap,
-overview of the Artemis framework and detailed description of the various components
-of the framework, followed by a discussion of various computing models (cloud, HPC, multiprocessing).
+The document is organized as follows:
+* General requirements for data processing of administrative data (or any non-survey large datasets).
+* Description of the Apache Arrow data format and development roadmap.
+* Overview of the Artemis framework and detailed description of the various framework components.
+* Summary
+
+The appendix includes more detailed information and related topics that will need 
+for research and development for defining computing and infrastructure requirements
+Such topics include different various computing models (cloud, HPC, multiprocessing), 
+different storage mechanisms (disrtibuted, local, cloud object storage), as well
+as communication protocols for data management on large federated networks.
 Throughout the document we refer to current and planned developments in Apache Arrow as well
 as contributions to Apache Arrow that may be incorporated into Artemis.
 
