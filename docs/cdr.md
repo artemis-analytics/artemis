@@ -850,14 +850,11 @@ still gathering relevant information on the entire dataset.
 
 Statistical approaches, such as the Friedman-Diaconis rule for determining
 optimal bin width of histograms can be used as part of the initial data quality
-and profiling of new datasets.
-
-<math>\text{Bin width}=2\, { \text{IQR}(x) \ over{ \sqrt[3]{n} } }</math>
-
-where the IQR is the interquartile range. For automated profiling, sufficient information
-needs to be gathered from an initial pass over the data in order to calculate the bin width.
-As well, if the data is processed in a distributed manner, the differences in the interquartile
-range from different data partitions would need to be reconciled. 
+and profiling of new datasets. For automated profiling, sufficient information
+needs to be gathered from an initial pass over the data in order to calculate
+the bin width, e.g. total number of observations and interquartile range (IQR).
+If the data is processed in a distributed manner, the differences in the
+interquartile range from different data partitions would need to be reconciled. 
 
 ### Data Production
 

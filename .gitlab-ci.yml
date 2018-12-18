@@ -104,6 +104,7 @@ document:
         untracked: true
     only:
         - master
+        - cdr
 
 package:
   stage: package
