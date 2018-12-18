@@ -19,10 +19,9 @@ production of large-scale scientific data sets.
 4. [Artemis](#artemis)
     * [Overview](#artemissummary)
     * [Business Process Model](#bpm)
-    * [Execution Engine](#steering)
+    * [Execution Engine & Inter-algorithm communication](#steering)
     * [Metadata Model](#metadata)
     * [IO](#io)
-    * [Inter-algorithm Communication](#iac)
     * [Data conversion](#conversion)
     * [Data Quality](#dataqual)
     * [Services, Algorithms and Tools](#services)
@@ -392,7 +391,7 @@ The ordering of algorithms must ensure that the data dependencies are met
 before the execution of an algorithm. 
 
 *TODO*
-Add the picture of the graph
+Diagram Business Process Model
 
 The ordering of the algorithmic execution is handled through a sorting
 algorithm. Users only need to ensure their pipeline defines the input(s), the
@@ -424,10 +423,30 @@ refer to the Wikipedia description of topological sorting and
 the toposort algorithm available on BitBucket.) The resulting *Tree*
 and execution order is stored in metadata to be made available to *Artemis*.
 
-### Execution Engine <a name="steering"></a>
+### Execution Engine and Inter-algorithm communication <a name="steering"></a>
 
-*Artemis* has a top-level algorithm, *Steering*, 
-which serves as the execution engine for the user-defined algorithms. 
+Artemis provides access to data from different sources. The data is read into
+native Arrow buffers directly and all processing is performed on these buffers.
+The in-memory native Arrow buffers are collected and organized as collections
+of record batches in order to build new on-disk datasets given the stream of record batches.
+Once raw data is materialized as Arrow record batches, Artemis needs to provide 
+the correct data inputs to the algorithms so that the final record batches
+have the defined BPM applied to the data.
+
+*Artemis* has a top-level algorithm, *Steering*, which serves as the execution
+engine for the user-defined algorithms.  The *Steering* algorithm manages the
+data dependencies for the execution of the *BPM* by seeding the required data
+inputs to each *Node* in a *Tree* via an *Element*.  The *Tree* data structure
+is the directed graph generated from the user-defined *BPM Menu*.  *Steering*
+holds and manages the entire *Tree* data structure, consisting of the
+*Elements* of each *Node*, the relationships betweens *Nodes*, and all Arrow
+buffers attached to the *Elements* (a reference to the Arrow buffers). The
+*Elements* serve as a medium for inter-algorithm communication. The Arrow
+buffers (data tables) are attached to *Elements* and can be accessed by
+subsequent algorithms. 
+
+**TODO**
+Diagram Data Access via Elements
 
 An interesting comparison to the Gandiva contribution to Arrow from Dremio
 elucidates some parallels to Artemis.  Gandiva is a C++ library for efficient
@@ -462,7 +481,7 @@ The Artemis metadata model has three primary components:
     * Statistical information gathered during the processing of the data
     * Cost information (timing disrtibutions) for processing stages, algorithm and tool execution
 
-Detailed information on the model can be found in the Appendix.
+Detailed information on the model can be found in the [Appendix](#appendix).
 
 ### I/O <a name="io"></a>
 
@@ -496,38 +515,12 @@ for
 Ideally, once the raw data is organized into Arrow tabular datasets, simple,
 high-level code for skimming data (selecting) columns and slimming data
 (predicate pushdown) can be easily implemented to run over datums in
-parallel (one-job per file).
+parallel (one-job per file). See the [Appendix](#appendix)) for more discussion.
 
 Modularity of I/O can allow for a seperate process entirely to serve data to
 the application. Arrow developments for I/O tools, performant database
 connectors, and messaging are on the roadmap, and Artemis must be able to
 easily leverage these capabilities as they become available.
-
-###  Inter-algorithm communication <a name="iac"></a> 
-
-Artemis provides access to data from different sources. The data is read into
-native Arrow buffers directly and all processing is performed on these buffers.
-The in-memory native Arrow buffers are collected and organized as collections
-of record batches in order to build new on-disk datasets given the stream of record batches.
-Once raw data is materialized as Arrow record batches, Artemis needs to provide 
-the correct data inputs to the algorithms so that the final record batches
-have the defined BPM applied to the data.
-
-The *Steering* algorithm manages the data dependencies for the execution of the
-BPM by seeding the required data inputs to each *Node* in a *Tree* via an
-*Element*.  The *Tree* data structure is the directed graph generated from the
-user-defined BPM *Menu*.  *Steering* holds and manages the entire *Tree* data
-structure, consisting of the *Elements* of each *Node*, the relationships
-betweens *Nodes*, and all Arrow buffers attached to the *Elements* 
-(a reference to the Arrow buffers). The
-*Elements* serve as a medium for inter-algorithm communication. The Arrow
-buffers (data tables) are attached to *Elements* and can be accessed by
-subsequent algorithms. 
-
-**TODO**
-
-Add diagram or code which how to retrieve and attach data. Diagram depicting
-the Tree, Nodes, Elements.
 
 ### Data conversion <a name="conversion"></a> 
 
@@ -566,7 +559,7 @@ targeting the processing of legacy data (from mainframe, Cobol applications).
 Developing a native Arrow reader for EBCDIC data format in C++ could be
 considered a worthwhile contribution to the Arrow project.
 
-Refer to the Appendix for additional details of the CSV reader implemented in Arrow.
+Refer to the [Appendix](#appendix) for additional details of the CSV reader implemented in Arrow.
 
 ### Data quality <a name="dataqual"></a>
 
@@ -607,14 +600,12 @@ of the processing for centralized monitoring services:
 * Total batches processed, number of records per batch
 * Statistics on processing errors
 
-Separate histogram-based monitoring applications can be developed as a postprocessing
-stage of Artemis and will be able to run quickly over large datasets since the
-input data are Arrow record batches.
-
-Automated the profiling of the distributions of the data is forseen as well as 
-input for the postprocessing stage.
-
-Further discussion on automated profiling is included in the appendix.
+Separate histogram-based monitoring applications can be developed as a
+postprocessing stage of Artemis and will be able to quickly iterate over large
+datasets since the input data are Arrow record batches. Automated profiling of
+the distributions of the data is forseen as well for input to the
+postprocessing stage data quality algorithms. Further discussion on automated
+profiling is included in the appendix.
 
 ### Services, algorithms and tools <a name="services"></a>
 
@@ -670,6 +661,7 @@ improved metadata management the messages can be cataloged in a simple
 key-value store. Applications can persist and retrieve configurations using a
 key. 
 
+**TODO**
 Diagram for simple KV store and artemis
 
 The idea of persisting the configuration as well as managing the state of
@@ -727,9 +719,11 @@ class MyAlgo(AlgoBase):
 
 Artemis uses standard python logging module as well as exception handling.
 The framework provides a logging functionality with a decorator. All algorithms can access
-a logger, using ```self.__logger.info("My message")```. Exceptions must be raised in order
-to propagate upward. As long as all exceptions can be handled appropiately, the framework
-gracefully moves into an Abort state if the exception prevents further processing.
+a logger, using ```self.__logger.info("My message")```. 
+
+Exceptions must be raised in order to propagate upward. As long as all
+exceptions can be handled appropiately, the framework gracefully moves into an
+**Abort** state if the exception prevents further processing. 
 
 ## Summary
 
@@ -852,10 +846,9 @@ range from different data partitions would need to be reconciled.
 
 ## Data Production
 
-**TODO**
-
 High-level summary of techniques for efficient data production with Arrow columnar 
-data.
+data. The following processing capabilities can be used either within Artemis or
+standalone applications can be developed using Arrow. 
 
 * Scalable batch processing
 * Efficient skimming (selection of column subsets)
@@ -864,12 +857,23 @@ data.
 
 ## Synthetic Information Technology
 
-**TODO**
+The development of synthetic information technology is inherently part of the Artemis project.
+In order to adequately test code, validate data processing, and ensure reproducibility,
+data generators are required. The use of simulated data is more cost effective and
+far safer than using real data. Large-scale testing of distributed processes can be initially
+done using simulated data. 
 
-Data generators for data application development
-    * Structural data format, e.g. csv, ebcdic, etc.
-    * Database generators, e.g. hierarchical databases. 
-    For use in developing embeddable query engines, for instance. See Arrow-3998 and TPC-H dbgen.
+Data generators for application development focus on high-quality synthetic data for
+following purposes (and priorities in terms of development):
+
+* Structural data format, e.g. csv, ebcdic, etc.
+* Primitive data types
+* Database generators, e.g. hierarchical databases.
+* Complex data types, e.g. hierarchical JSON schemas supporting sparse unions of lists.
+* Fake data of common fields encountered in social science, e.g. social security number, timestamps, banking information, etc..
+* Sampling from probility distribution function (single or multidimensional)
+
+For use in developing embeddable query engines, for instance. See Arrow-3998 and TPC-H dbgen.
 
 ## Computing infrastructure recommendations <a name="infra"></a>
 
@@ -889,6 +893,7 @@ to different latencies which would need to be considered when designing
 data ingestion, processing and data production applications. 
 
 ## Development strategies <a name="devstrategy"></a>
+
 * Dual-use development strategy for cloud-native and traditional HPC scientific computing 
 * Leveraging simulation and data syntethis production for research
 * Developing a secure HPC environment for near term research
