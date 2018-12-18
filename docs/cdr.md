@@ -186,7 +186,7 @@ software developers, including Calcite, Cassandra, Drill, Hadoop, HBase, Ibis,
 Impala, Kudu, Pandas, Parquet, Phoenix, Spark, and Storm and CERN
 making it the de-facto standard for columnar in-memory analytics.
 
-![Arrow support](docs/native_arrow_implementation.png)
+![Arrow support](docs/arrow_impl.png)
 
 Apache Arrow comprehensive data format defines primitive data types for
 scalars of fixed and variable length size as well as complex types such as
