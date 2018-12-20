@@ -121,6 +121,7 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         bow.control()
+
         cov.stop()
         cov.save()
 

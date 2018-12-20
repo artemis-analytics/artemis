@@ -85,7 +85,7 @@ class ArtemisTestCase(unittest.TestCase):
             raise
         
         generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
+                                    nbatches=2,
                                     num_cols=20,
                                     num_rows=10000)
         msggen = generator.to_msg()
@@ -105,6 +105,12 @@ class ArtemisTestCase(unittest.TestCase):
         parquetwriter = writer.parquetwriter
         parquetwriter.suffix = '.parquet'
 
+        sampler = msg.sampler
+        sampler.ndatums = 1
+        sampler.nchunks = 10
+
+        msg.max_malloc_size_bytes = 2147483648
+        
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())

@@ -383,7 +383,12 @@ class ArtemisTestCase(unittest.TestCase):
         bow.hbook.book('artemis', 'time.collect', range(10))
         bow._gen_config()
         tree = Tree('artemis')
-        bow._run()
+        try:
+            bow._run()
+        except StopIteration:
+            print("Process complete")
+        except Exception:
+            raise
 
     def test_finalize(self):
         Singleton.reset(JobProperties)
