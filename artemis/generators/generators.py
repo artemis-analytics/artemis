@@ -483,7 +483,7 @@ class GenCsvLikeArrow(AlgoBase):
 
         # Set the properties with the full configuration
         super().__init__(name, **self._defaults)
-        self.nbatches = self.properties.nbatches
+        self._nbatches = self.properties.nbatches
         self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
         self.linesep = self.properties.linesep
@@ -501,6 +501,14 @@ class GenCsvLikeArrow(AlgoBase):
                               [random.randint(0, len(self.pa_types)-1)])
         self.__logger.info("Initialized %s" % self.__class__.__name__)
         self.__logger.info(self.__class__.__dict__)
+
+    @property
+    def num_batches(self):
+        return self._nbatches
+
+    @num_batches.setter
+    def num_batches(self, n):
+        self._nbatches = n
 
     def _set_defaults(self):
         defaults = {'nbatches': 1,
@@ -579,25 +587,11 @@ class GenCsvLikeArrow(AlgoBase):
         return csv, self.col_names, expected
 
     def generate(self):
-        self.__logger.info('Generate')
-        self.__logger.info("%s: Producing Data" % (self.__class__.__name__))
-        self.__logger.debug("%s: Producing Data" % (self.__class__.__name__))
-        i = 0
-        mysum = 0
-        mysumsize = 0
-        while i < self.nbatches:
+        while self._nbatches > 0:
+            self.__logger.info("%s: Generating datum " %
+                               (self.__class__.__name__))
             data, col_names, batch = self.make_mixed_random_csv()
-            # Should be bytes.
             self.__logger.debug('%s: type data: %s' %
                                 (self.__class__.__name__, type(data)))
-            mysumsize += sys.getsizeof(data)
-            mysum += len(data)
-            i += 1
             yield data, batch
-
-        # Helped to figure out the math for an average float size.
-        self.__logger.debug('%s: Average of total: %2.1f' %
-                            (self.__class__.__name__, mysum/i))
-        # Same as previous.
-        self.__logger.debug('%s: Average of size: %2.1f' %
-                            (self.__class__.__name__, mysumsize/i))
+            self._nbatches -= 1

@@ -35,6 +35,7 @@ from artemis.core.steering import Steering
 from artemis.core.tree import Tree
 from artemis.core.algo import AlgoBase
 from artemis.core.timerstore import TimerSvc
+from artemis.core.datastore import ArrowSets
 
 # Data generators
 # from artemis.generators.generators import GenCsvLikeArrow
@@ -79,21 +80,20 @@ class Artemis():
         self._schema = {}
         self._buffer_streams = {}
 
+        # Define internal properties
+        self.MALLOC_MAX_SIZE = 0
+        self._ndatum_samples = 0
+        self._nchunk_samples = 0
+
         # List of timer histos for easy access
         self.__timers = TimerSvc()
 
-        # Temporary placeholders to managing event loop
-        self.max_requests = 0
+        # Move counters and payload processed into metadata
         self._requestcntr = 0
-        self.processed = 0
+        self._total_processed_bytes = 0
 
-        _defaults = self._set_defaults()
-        # Override the defaults from the kwargs
         for key in kwargs:
-            _defaults[key] = kwargs[key]
-
-        for key in _defaults:
-            self.properties.add_property(key, _defaults[key])
+            self.properties.add_property(key, kwargs[key])
         #######################################################################
 
         #######################################################################
@@ -102,12 +102,6 @@ class Artemis():
         #######################################################################
 
         self._filehandler = FileHandler()
-        self.max_requests = self.properties.max_requests
-
-    def _set_defaults(self):
-        # Temporary hard-coded values to get something running
-        defaults = {'max_requests': 2}
-        return defaults
 
     @property
     def datum(self):
@@ -168,8 +162,37 @@ class Artemis():
             self.abort(e)
             return False
 
-        # TODO
-        # Add exception handling
+        # In order to set the output buffer schema
+        # we need to get a schema first
+        # In order to set the timing histograms, we need to profile
+        # sample first
+        # Artemis should always run in a sampling mode first
+        # Make number of samples configurable
+        try:
+            self._sample_chunks()
+        except Exception:
+            raise
+
+        try:
+            self._rebook()
+        except Exception:
+            self.__logger.error("Cannot rebook")
+            raise
+
+        try:
+            self._init_buffers()
+        except Exception:
+            raise
+        # Clear all memory and raw data
+        try:
+            Tree().flush()
+            self.datum = None
+        except Exception:
+            self.__logger("Problem flushing")
+            raise
+
+        self.__logger.info("artemis: sampleing complete malloc %i",
+                           pa.total_allocated_bytes())
         try:
             self._run()
         except Exception as e:
@@ -178,12 +201,46 @@ class Artemis():
             self.abort(e)
             return False
 
-        # TODO
-        # Add exception handling
-        self._finalize()
+        try:
+            self._finalize()
+        except Exception:
+            raise
 
     def _launch(self):
         self.logger.info('Artemis is ready')
+
+    def _set_defaults(self):
+        # Default values that are part of the metadata
+        # Values not set in metadata are updated here
+        # Hard-coding of default job parameters
+        #
+        # Summary information such as counters are initialized
+        #
+        # Maximum memory allocation in Arrow to trigger flush
+        # Sampler settings
+
+        _summary = self.jobops.meta.summary
+        _summary.processed_bytes = 0
+        _summary.processed_ndatums = 0
+
+        _msgcfg = self.jobops.meta.config
+        if _msgcfg.max_malloc_size_bytes:
+            self.MALLOC_MAX_SIZE = _msgcfg.max_malloc_size_bytes
+        else:
+            self.__logger.info("Setting default memory allocation 2GB")
+            self.MALLOC_MAX_SIZE = 2147483648
+        if _msgcfg.HasField('sampler'):
+            if _msgcfg.sampler.ndatums:
+                self._ndatum_samples = _msgcfg.sampler.ndatums
+            else:
+                self._ndatum_samples = 1
+            if _msgcfg.sampler.nchunks:
+                self._nchunk_samples = _msgcfg.sampler.nchunks
+            else:
+                self._nchunk_samples = 10
+        else:
+            self._ndatum_samples = 1
+            self._nchunk_samples = 10
 
     def _configure(self):
         '''
@@ -208,6 +265,14 @@ class Artemis():
             self.__logger.error("Configuration not provided")
             raise AttributeError
         self.__logger.info(text_format.MessageToString(_msgcfg))
+
+        try:
+            self._set_defaults()
+        except ValueError:
+            self.__logger.info(text_format.MessageToString(_msgcfg))
+            raise
+        except Exception:
+            raise
 
         # Set up histogram store
         self.hbook = Physt_Wrapper()
@@ -243,7 +308,7 @@ class Artemis():
 
         # Data Handler is just the generator function which returns a generator
         try:
-            self.data_handler = self.generator.generate
+            self.data_handler = self.generator.generate()
         except TypeError:
             self.__logger.error("Cannot set generator")
             raise
@@ -320,6 +385,30 @@ class Artemis():
         bins = [x for x in range_positive(0., avg_*factor, 2.)]
         self.hbook.rebook('artemis', 'time.execute', bins, 'ms')
 
+        if self.generator:
+            self.generator.num_batches = self.generator.properties.nbatches
+
+    def _check_malloc(self):
+        '''
+        Check total allocated memory in Arrow
+        and call collect
+        Collect does not ensure the file flushed
+        Tuning on total allocated memory and the max output buffer
+        size before spill
+        '''
+        if pa.total_allocated_bytes() > self.MALLOC_MAX_SIZE:
+            # TODO: Insert collect for datastore/nodes/tree.
+            # TODO: Test memory release.
+            # TODO: Add histogram for number of forced collects
+            self.__logger.info("COLLECT: Total memory reached")
+            try:
+                result_, time_ = self._collect()
+            except Exception:
+                self.__logger.error("Problem collecting")
+                raise
+            self.__logger.info("Allocated %i", pa.total_allocated_bytes())
+            self.hbook.fill('artemis', 'time.collect', time_)
+
     @timethis
     def _collect(self):
         '''
@@ -329,43 +418,13 @@ class Artemis():
         Batches on leaves collected
         Input file -> Output Arrow RecordBatches
         '''
+        self.__logger.info("artemis: collect: pyarrow malloc %i",
+                           pa.total_allocated_bytes())
         _tree = Tree()  # Singleton!
 
-        _use_buffer = True
-        _use_osfile = False
-        _use_parquet = False
-        _use_csv = False
-        _msgcfg = self.jobops.meta.config
-
-        # Artemis can have multiple output formats
-        # ideally, async io
-        # each writer must have a dedicated to config
-        try:
-            for w in _msgcfg.writers:
-                if w.HasField('csvwriter'):
-                    self.__logger.info("Write to csv")
-                    _use_csv = True
-                elif w.HasField('osfilewriter'):
-                    self.__logger.info("Write to recordbatch file")
-                    _use_osfile = True
-                elif w.HasField('parquetwriter'):
-                    self.__logger.info("Write to parquet")
-                    _use_parquet = True
-                else:
-                    self.__logger.info("No writers defined, default to buffer")
-                    _use_buffer = True
-
-        except Exception:
-            self.__logger.warning('No writers defined')
-            _use_buffer = True
-
-        # TODO
-        # Improve creation of output file names with metadata
-        _fbasename = self.jobops.meta.name + \
-            '_batches_' + str(self._requestcntr)
-
+        self.__logger.info("Leaves %s", _tree.leaves)
         for leaf in _tree.leaves:
-            self.__logger.info("Leave node %s", leaf)
+            self.__logger.info("Leaf node %s", leaf)
             node = _tree.get_node_by_key(leaf)
             els = node.payload
             self.__logger.info('Batches of leaf %s', len(els))
@@ -377,105 +436,123 @@ class Artemis():
                 # Get the pyarrow schema as early as possible
                 # Store/retrieive from the metastore
                 # Do not assume each file has same schema!!!!
-
-                # TODO
-                # Configure to use in-memory buffer
-                # Output NativeFile
-                # Output Parquet
-                # Enforce schema check
-                try:
-                    self._filehandler.write(els,
-                                            _fbasename,
-                                            _schema_batch,
-                                            _use_buffer,
-                                            _use_osfile,
-                                            _use_parquet,
-                                            _use_csv)
-                except Exception:
-                    self.__logger.error("Error in writer")
-                    raise
-
                 try:
                     self._buffer_streams[node.key]._schema = _schema_batch
                     self._buffer_streams[node.key].write(els)
                 except Exception:
                     self.__logger.error("Error in buffer writer")
                     raise
-
-                self.__logger.info("Allocated after write %i",
-                                   pa.total_allocated_bytes())
             else:
                 self.__logger.info("%s", type(els[-1].get_data()))
 
+        # Batches serialized, clear the tree
+        try:
+            Tree().flush()
+        except Exception:
+            self.__logger("Problem flushing")
+            raise
+
+        self.__logger.info("Allocated after write %i",
+                           pa.total_allocated_bytes())
+        self.__logger.info
         return True
 
-    def _run(self):
+    def _init_buffers(self):
         '''
-        Event Loop
+        Create new buffer output stream and writers
         '''
-        self.__logger.info("artemis: Run")
-        self.__logger.debug('artemis: Count at run call %s' %
-                            str(self._requestcntr))
-        self.__logger.info("artemis: Run: pyarrow malloc %i",
-                           pa.total_allocated_bytes())
+        self.__logger.info("artemis: _init_buffers")
+        # Configure the output data streams
+        # Each stream associated with leaf in Tree
+        # Store consistent Arrow Table for each process chain
+        # Currently the tree does not enforce a leaf to write out
+        # record batches, so we could get spurious output buffers
+
+        # Buffer stream requires a fixed pyArrow schema!
         _tree = Tree()  # Singleton!
-        while (self._requestcntr < self.max_requests):
-            self.__logger.info("artemis: request %i malloc %i",
-                               self._requestcntr,
-                               pa.total_allocated_bytes())
-            self.hbook.fill('artemis', 'counts', self._requestcntr)
-            try:
-                self._prepare()
-            except Exception:
-                self.__logger.error("Failed data prep")
-                raise
-            # TODO
-            # Make number of samples configurable
-            for _ in range(10):
-                try:
-                    result_, time_ = self._execute_sampler()
-                    self.__timers.fill('artemis', 'execute', time_)
-                    self.__logger.info("Sampler execute time %2.2f", time_)
-                except Exception:
-                    self.__logger.error("Problem executing sample")
-                    raise
-            try:
-                self._rebook()
-            except Exception:
-                self.__logger.error("Cannot rebook")
-                raise
+        _use_csv = False
+        _msgcfg = self.jobops.meta.config
 
-            self.__logger.info("artemis: sampleing complete malloc %i",
-                               pa.total_allocated_bytes())
+        # Artemis can have multiple output formats
+        # ideally, async io
+        # each writer must have a dedicated to config
+        try:
+            for w in _msgcfg.writers:
+                if w.HasField('csvwriter'):
+                    self.__logger.info("Write to csv")
+                    _use_csv = True
+        except Exception:
+            self._logger.error("Error in writer msg")
 
-            # Configure the output data streams
-            # Each stream associated with leaf in Tree
-            # Store consistent Arrow Table for each process chain
-
+        try:
             for leaf in _tree.leaves:
                 self.__logger.info("Leave node %s", leaf)
                 node = _tree.get_node_by_key(leaf)
                 key = node.key
                 _last = node.payload[-1].get_data()
                 if isinstance(_last, pa.lib.RecordBatch):
-                    self.__logger.info("RecordBatch")
-                    self.__logger.info("Allocated %i",
-                                       pa.total_allocated_bytes())
                     self._buffer_streams[key] = BufferOutputWriter(key)
                     self._buffer_streams[key]._fbasename = \
                         self.jobops.meta.name
                     self._buffer_streams[key]._schema = _last.schema
                     self._buffer_streams[key].initialize()
+                    self._buffer_streams[key]._write_csv = _use_csv
+        except Exception:
+            self.__logger.error("Problem creating output streams")
+            raise
 
+    def _sample_chunks(self):
+        '''
+        Random sampling of chunks from a datum
+        process a few to extract schema, check for errors, get
+        timing profile
+        '''
+
+        try:
+            self._prepare()
+        except Exception:
+            self.__logger.error("Failed data prep")
+            raise
+
+        for _ in range(self._nchunk_samples):
             try:
-                Tree().flush()
+                result_, time_ = self._execute_sampler()
+                self.__timers.fill('artemis', 'execute', time_)
+                self.__logger.info("Sampler execute time %2.2f", time_)
             except Exception:
-                self.__logger("Problem flushing")
+                self.__logger.error("Problem executing sample")
+                raise
+
+    def _run(self):
+        '''
+        Event Loop
+        Prepare an input datum
+        Process each chunk, passing to Steering
+        After all chunks processed, collect to output buffers
+        Clear all data, move to next datum
+        '''
+        self.__logger.info("artemis: Run")
+        self.__logger.debug('artemis: Count at run call %s' %
+                            str(self._requestcntr))
+        self.__logger.info("artemis: Run: pyarrow malloc %i",
+                           pa.total_allocated_bytes())
+        while True:
+            self.__logger.info("artemis: request %i malloc %i",
+                               self._requestcntr,
+                               pa.total_allocated_bytes())
+            self.hbook.fill('artemis', 'counts', self._requestcntr)
+            try:
+                self._prepare()
+            except StopIteration:
+                self.__logger.info("Quit run")
+                self.datum = None
+                break
+            except Exception:
+                self.__logger.error("Failed data prep")
                 raise
 
             self.__logger.info("artemis: flush before execute %i",
                                pa.total_allocated_bytes())
-
             try:
                 result_, time_ = self._execute()
             except Exception:
@@ -487,36 +564,20 @@ class Artemis():
             self.hbook.fill('artemis', 'time.execute', time_)
             self.__logger.debug('Count after process_data %s' %
                                 str(self._requestcntr))
-            # TODO: Insert collect for datastore/nodes/tree.
-            # TODO: Test memory release.
-            try:
-                result_, time_ = self._collect()
-            except Exception:
-                self.__logger.error("Problem collecting")
-                raise
-            self.hbook.fill('artemis', 'time.collect', time_)
 
-            # Clear memory, tree, raw datum...
+            # Reset the raw datum, processing complete
             self.datum = None
-            try:
-                Tree().flush()
-            except Exception:
-                self.__logger("Problem flushing")
-                raise
-
-    def _check_requests(self):
-        self.__logger.info('Remaining data check. Status coming up.')
-        return self._requestcntr < self.max_requests
-
-    def _requests_count(self):
-        self._requestcntr += 1
 
     def _request_data(self):
         try:
-            raw, batch = next(self.data_handler())
-        except Exception:
-            self.__logger.debug("Iterator empty")
+            raw, batch = next(self.data_handler)
+        except StopIteration:
+            self.__logger.info("Request data: iterator complete")
             raise
+        except Exception:
+            self.__logger.info("Iterator empty")
+            raise
+
         # Add fileinfo to message
         # TODO
         # Create file UUID, check UUID when creating block info???
@@ -528,7 +589,8 @@ class Artemis():
         _rinfo.size_bytes = len(raw)
 
         # Update datum input count
-        self._requests_count()
+        # self._requests_count()
+        self.jobops.meta.summary.processed_ndatums += 1
 
         # Return the raw bytes
         return raw
@@ -667,6 +729,9 @@ class Artemis():
         '''
         try:
             self.datum = self._request_data()
+        except StopIteration:
+            self.__logger.info("Processing complete: StopIteration")
+            raise
         except Exception:
             raise
 
@@ -765,9 +830,14 @@ class Artemis():
             self.__logger.info("Chunk size %i, block size %i" %
                                (len(chunk), block.range.size_bytes))
             _finfo.processed.size_bytes += block.range.size_bytes
-            self.processed += len(chunk)
+            self.jobops.meta.summary.processed_bytes += len(chunk)
+            chunk = None
 
-        self.__logger.info('Processed %2.1f' % self.processed)
+            # Now check whether to fill buffers and flush tree
+            self._check_malloc()
+
+        self.__logger.info('Processed %i' %
+                           self.jobops.meta.summary.processed_bytes)
 
         if _finfo.processed.size_bytes != _finfo.raw.size_bytes:
             self.__logger.error("Processing payload not complete")
@@ -785,10 +855,42 @@ class Artemis():
             raise
         return True
 
+    def _finalize_buffer(self):
+        '''
+        Ensure the data store is empty
+        Spill any remaining arrow buffers to disk
+        '''
+        # Ensure all data has been sent to buffer
+        _store = ArrowSets()
+        if _store.is_empty() is False:
+            self.__logger.info("Collecting remaining data")
+            try:
+                result_, time_ = self._collect()
+            except Exception:
+                self.__logger.error("Problem collecting")
+                raise
+            self.__logger.info("Allocated %i", pa.total_allocated_bytes())
+            self.hbook.fill('artemis', 'time.collect', time_)
+        # Spill any remaining buffers to disk
+        for key in self._buffer_streams:
+            try:
+                self._buffer_streams[key]._finalize()
+                self.__logger.info("Buffer stream %s records: %i",
+                                   key,
+                                   self._buffer_streams[key].total_records)
+            except Exception:
+                self.__logger.error("Finalize buffer stream fails %s", key)
+                raise
+
     def _finalize(self):
         self.__logger.info("Finalizing Artemis job %s" %
                            self.jobops.meta.name)
         summary = self.jobops.meta.summary
+        self.__logger.info("Total datums requested %i",
+                           summary.processed_ndatums)
+        self.__logger.info("Total bytes processed %i",
+                           summary.processed_bytes)
+
         try:
             self.steer.finalize()
         except Exception:
@@ -799,6 +901,12 @@ class Artemis():
         mu_blocksize = self.hbook.get_histogram('artemis', 'blocksize').mean()
         self.__logger.info("Mean payload %2.2f MB" % mu_payload)
         self.__logger.info("Mean blocksize %2.2f MB" % mu_blocksize)
+
+        try:
+            self._finalize_buffer()
+        except Exception:
+            self.__logger.error("Error finalizing buffers")
+            raise
 
         for key in self.__timers.keys:
             if 'artemis' not in key:
@@ -825,13 +933,6 @@ class Artemis():
             self.__logger.error("Cannot write hbook")
         except Exception:
             raise
-
-        for key in self._buffer_streams:
-            try:
-                self._buffer_streams[key]._finalize()
-            except Exception:
-                self.__logger.error("Finalize buffer stream fails %s", key)
-                raise
 
         self.__logger.info("Processed file summary")
         for f in self.jobops.meta.data:

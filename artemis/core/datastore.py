@@ -28,3 +28,8 @@ class ArrowSets(metaclass=Singleton):
 
     def contains(self, key):
         return key in self.arrow_dict
+
+    def is_empty(self):
+        if not bool(self.arrow_dict):
+            return True
+        return False
