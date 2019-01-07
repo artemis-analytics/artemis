@@ -17,7 +17,7 @@ class Logger():
     class to retain common logging properties
     '''
 
-    FMT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    FMT = '%(name)s - %(funcName)s - %(levelname)s - %(message)s'
     DEFAULT_LEVEL = logging.INFO
     CONFIGURED_LEVEL = DEFAULT_LEVEL
 

@@ -518,7 +518,7 @@ class Artemis():
             try:
                 result_, time_ = self._execute_sampler()
                 self.__timers.fill('artemis', 'execute', time_)
-                self.__logger.info("Sampler execute time %2.2f", time_)
+                self.__logger.debug("Sampler execute time %2.2f", time_)
             except Exception:
                 self.__logger.error("Problem executing sample")
                 raise
@@ -763,8 +763,9 @@ class Artemis():
         # Use a single instance of random
         # should be configured at job start
         iblock = random.randint(0, len(_finfo.blocks) - 1)
-        self.__logger.info("Selected random block %i with size %2.2f",
-                           iblock, _finfo.blocks[iblock].range.size_bytes)
+        self.__logger.debug("Selected random block %i with size %2.2f",
+                            iblock,
+                            _finfo.blocks[iblock].range.size_bytes)
 
         try:
             chunk = self._request_block(file_, iblock, meta)
@@ -827,8 +828,9 @@ class Artemis():
                 self.steer.execute(chunk)  # Make chunk immutable
             except Exception:
                 raise
-            self.__logger.info("Chunk size %i, block size %i" %
-                               (len(chunk), block.range.size_bytes))
+            self.__logger.debug("Chunk size %i, block size %i",
+                                len(chunk),
+                                block.range.size_bytes)
             _finfo.processed.size_bytes += block.range.size_bytes
             self.jobops.meta.summary.processed_bytes += len(chunk)
             chunk = None
