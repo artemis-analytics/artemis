@@ -171,7 +171,7 @@ class Steering(AlgoBase):
         Prepares payload for algorithms
         Steers algorithm execution
         '''
-        self.__logger.info('Execute %s' % self.name)
+        self.__logger.debug('Execute %s' % self.name)
 
         for key in self._menu:
             algos = self._menu[key]

@@ -152,12 +152,17 @@ class CsvParserAlgo(AlgoBase):
             self.__logger.error("PyArrow parsing fails")
             raise
 
+        if rbatch.equals(tbatch) is False:
+            self.__logger.error("Batches not validated")
+        else:
+            self.__logger.debug("Batches equal %s", rbatch.equals(tbatch))
+
         self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
         self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
-        self.__logger.info("Batches equal %s", rbatch.equals(tbatch))
+
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
-        self.__logger.info("Element Data type %s", type(element.get_data()))
+        self.__logger.debug("Element Data type %s", type(element.get_data()))
 
     def finalize(self):
         self.__logger.info("Completed CsvParsing")
