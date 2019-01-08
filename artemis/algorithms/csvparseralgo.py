@@ -50,13 +50,18 @@ class CsvParserAlgo(AlgoBase):
         self.hbook.book(self.name, 'time.pyarrowparse', bins, 'ms')
 
     def rebook(self):
+
         for key in self.__timers.keys:
-            if 'steer' not in key:
+            if 'steer' in key:
                 continue
+            if self.name not in key:
+                continue
+            self.__logger.info("Rebook %s", key)
             name = key.split('.')[-1]
             avg_, std_ = self.__timers.stats(self.name, name)
             bins = [x for x in range_positive(0., avg_ + 5*std_, 2.)]
-            self.hbook.rebook('steer', name, bins, 'ms')
+            self.hbook.rebook(self.name, 'time.pyparse', bins, 'ms')
+            self.hbook.rebook(self.name, 'time.pyarrowparse', bins, 'ms')
 
     @timethis
     def py_parsing(self, schema, columns, length, block):
