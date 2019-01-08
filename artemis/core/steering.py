@@ -25,8 +25,6 @@ class Steering(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ Steering' % self.name)
-        self.__logger.debug('%s: __init__ Steering' % self.name)
-        self.__logger.warning('%s: __init__ Steering' % self.name)
         self._chunk_cntr = 0
         # Execution graph
         self._menu = OrderedDict()

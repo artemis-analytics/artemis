@@ -45,7 +45,9 @@ class FileHandlerTool(ToolBase):
         self._delimiter = bytes(self.properties.delimiter, 'utf8')
 
     def initialize(self):
-        self.__logger.info(self.properties.to_dict())
+        self.__logger.info("%s properties: %s",
+                           self.__class__.__name__,
+                           self.properties)
         self.encode_delimiter()
         self._offset_header = self.properties.offset_header
 

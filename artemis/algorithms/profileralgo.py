@@ -24,7 +24,6 @@ class ProfilerAlgo(AlgoBase):
         self.jobops = None
 
     def initialize(self):
-        self.__logger.info(self.__logger)
         self.jobops = JobProperties()
         self.__logger.info('%s: Initialized ProfilerAlgo' % self.name)
 

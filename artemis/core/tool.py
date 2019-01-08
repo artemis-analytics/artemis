@@ -54,7 +54,7 @@ class ToolBase(metaclass=AbcAlgoBase):
         # Configure logging
         Logger.configure(self, **kwargs)
 
-        self.__logger.info('__init__ ToolBase')
+        self.__logger.debug('__init__ ToolBase')
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
@@ -78,7 +78,7 @@ class ToolBase(metaclass=AbcAlgoBase):
 
     @staticmethod
     def from_msg(logger, msg):
-        logger.info('Loading Algo from msg %s', msg.name)
+        logger.info('Loading Tool from msg %s', msg.name)
         try:
             module = importlib.import_module(msg.module)
         except ImportError:
