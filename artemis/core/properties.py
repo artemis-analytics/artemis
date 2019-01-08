@@ -11,6 +11,7 @@ Property classes
 """
 
 from collections import OrderedDict
+from pprint import pformat
 
 from artemis.core.singleton import Singleton
 from artemis.io.protobuf.artemis_pb2 import Properties as Properties_pb
@@ -24,6 +25,9 @@ class Properties():
     def __init__(self, lock=False):
         self.lock = lock
         self.properties = dict()
+
+    def __str__(self):
+        return pformat(self.properties)
 
     def add_property(self, name, value):
         # Retain dictionary of properties

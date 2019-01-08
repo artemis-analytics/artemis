@@ -43,7 +43,7 @@ class Reader():
             self.read = self.read_csv_from_bytes
         else:
             self.read = self.read_data_from_bytes
-        self.__logger.info("Initialized reader %s", self.read)
+        self.__logger.info("Initialized reader ")
 
     def open_from_buffer(self, data):
         try:
