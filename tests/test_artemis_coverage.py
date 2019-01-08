@@ -22,7 +22,8 @@ from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
-
+from artemis.io.filehandler import FileHandlerTool
+from artemis.io.writer import BufferOutputWriter
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 
@@ -76,7 +77,7 @@ class ArtemisTestCase(unittest.TestCase):
 
     def tearDown(self):
         Singleton.reset(JobProperties)
-    
+
     def test_proto(self):
         cov = coverage.Coverage()
         cov.start()
@@ -93,6 +94,16 @@ class ArtemisTestCase(unittest.TestCase):
                                     num_rows=10000)
         msggen = generator.to_msg()
 
+        filetool = FileHandlerTool('filehandler',
+                                   blocksize=2**16,
+                                   skip_header=True,
+                                   loglevel='INFO')
+        filetoolcfg = filetool.to_msg()
+        defaultwriter = BufferOutputWriter('bufferwriter', 
+                                           BUFFER_MAX_SIZE=2147483648,  
+                                           write_csv=True)
+        defwtrcfg = defaultwriter.to_msg()
+        
         msg = artemis_pb2.JobConfig()
         msg.input.generator.config.CopyFrom(msggen)
         msg.menu.CopyFrom(msgmenu)
@@ -107,7 +118,11 @@ class ArtemisTestCase(unittest.TestCase):
         writer = msg.writers.add()
         parquetwriter = writer.parquetwriter
         parquetwriter.suffix = '.parquet'
+        defwrtmsg = msg.tools.add()
+        defwrtmsg.CopyFrom(defwtrcfg)
 
+        filetoolmsg = msg.tools.add()
+        filetoolmsg.CopyFrom(filetoolcfg)
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())

@@ -3,12 +3,13 @@ Dedicated Writer classes to manage output data streams
 """
 import pyarrow as pa
 
+from artemis.core.tool import ToolBase
 from artemis.logger import Logger
 from artemis.decorators import timethis
 
 
 @Logger.logged
-class BufferOutputWriter():
+class BufferOutputWriter(ToolBase):
     '''
     Manage output data with an in-memory buffer
     buffer is flushed to disk when a max buffer size
@@ -17,8 +18,14 @@ class BufferOutputWriter():
     '''
 
     def __init__(self, name, **kwargs):
+        defaults = self._set_defaults()
+        # Override the defaults from the kwargs
+        for key in kwargs:
+            defaults[key] = kwargs[key]
+        super().__init__(name, **defaults)
+
         self.BUFFER_MAX_SIZE = 2147483648  # 2 GB
-        self._name = name
+        # self._name = name
         self._write_csv = True
 
         self._cache = None  # cache for a pa.RecordBatch
@@ -31,6 +38,12 @@ class BufferOutputWriter():
         self._nrecords = 0  # total record count
         self._filecounter = 0
         self._fname = ''
+
+    def _set_defaults(self):
+        defaults = {'BUFFER_MAX_SIZE': 2147483648,  # 2 GB
+                    'write_csv': True}
+
+        return defaults
 
     @property
     def total_records(self):
@@ -186,7 +199,7 @@ class BufferOutputWriter():
 
     def _new_filename(self):
         self._fname = self._fbasename + \
-                      '_' + self._name + \
+                      '_' + self.name + \
                       '_' + str(self._filecounter) + '.arrow'
 
     def _write_buffer(self):

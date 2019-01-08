@@ -18,7 +18,6 @@ owns the stores needed by the user algorithms
 from pprint import pformat
 import sys
 import io
-import random
 
 # Externals
 import pyarrow as pa
@@ -36,6 +35,7 @@ from artemis.core.tree import Tree
 from artemis.core.algo import AlgoBase
 from artemis.core.timerstore import TimerSvc
 from artemis.core.datastore import ArrowSets
+from artemis.core.tool import ToolStore
 
 # Data generators
 # from artemis.generators.generators import GenCsvLikeArrow
@@ -87,6 +87,7 @@ class Artemis():
 
         # List of timer histos for easy access
         self.__timers = TimerSvc()
+        self.__tools = ToolStore()
 
         # Move counters and payload processed into metadata
         self._requestcntr = 0
@@ -215,7 +216,7 @@ class Artemis():
         # Hard-coding of default job parameters
         #
         # Summary information such as counters are initialized
-        #
+        # Summary information must be reset if rebook called
         # Maximum memory allocation in Arrow to trigger flush
         # Sampler settings
 
@@ -289,6 +290,13 @@ class Artemis():
             self.__logger.error("Cannot configure generator")
             raise
 
+        # Add tools
+        for toolcfg in _msgcfg.tools:
+            self.__logger.info("Add Tool %s", toolcfg.name)
+            self.__tools.add(self.__logger, toolcfg)
+            if toolcfg.name == 'filehandler':
+                self.__tools.get('filehandler').initialize()
+
     def _gen_config(self):
         self.__logger.info('Loading generator from protomsg')
         _msggen = self.jobops.meta.config.input.generator.config
@@ -303,8 +311,6 @@ class Artemis():
         except Exception:
             self.__logger.error("Cannot initialize algo %s" % 'generator')
             raise
-        self.__logger.debug("from_dict: instance {}".
-                            format(self.generator.to_dict()))
 
         # Data Handler is just the generator function which returns a generator
         try:
@@ -387,6 +393,14 @@ class Artemis():
 
         if self.generator:
             self.generator.num_batches = self.generator.properties.nbatches
+            self.data_handler = self.generator.generate()
+            self.__logger.info("Expected batches to generate %i",
+                               self.generator.num_batches)
+
+        # Reset all meta data needed for processing all job info
+        _summary = self.jobops.meta.summary
+        _summary.processed_bytes = 0
+        _summary.processed_ndatums = 0
 
     def _check_malloc(self):
         '''
@@ -437,8 +451,9 @@ class Artemis():
                 # Store/retrieive from the metastore
                 # Do not assume each file has same schema!!!!
                 try:
-                    self._buffer_streams[node.key]._schema = _schema_batch
-                    self._buffer_streams[node.key].write(els)
+                    self.__tools.get("writer_"+node.key)._schema = \
+                        _schema_batch
+                    self.__tools.get("writer_"+node.key).write(els)
                 except Exception:
                     self.__logger.error("Error in buffer writer")
                     raise
@@ -472,6 +487,10 @@ class Artemis():
         _tree = Tree()  # Singleton!
         _use_csv = False
         _msgcfg = self.jobops.meta.config
+        _wrtcfg = None
+        for toolcfg in _msgcfg.tools:
+            if toolcfg.name == "bufferwriter":
+                _wrtcfg = toolcfg
 
         # Artemis can have multiple output formats
         # ideally, async io
@@ -491,7 +510,14 @@ class Artemis():
                 key = node.key
                 _last = node.payload[-1].get_data()
                 if isinstance(_last, pa.lib.RecordBatch):
+                    _wrtcfg.name = "writer_" + key
                     self._buffer_streams[key] = BufferOutputWriter(key)
+                    self.__logger.info("Add Tool %s", _wrtcfg.name)
+                    self.__tools.add(self.__logger, _wrtcfg)
+                    self.__tools.get(_wrtcfg.name)._schema = _last.schema
+                    self.__tools.get(_wrtcfg.name)._fbasename = \
+                        self.jobops.meta.name
+                    self.__tools.get(_wrtcfg.name).initialize()
                     self._buffer_streams[key]._fbasename = \
                         self.jobops.meta.name
                     self._buffer_streams[key]._schema = _last.schema
@@ -499,6 +525,13 @@ class Artemis():
                     self._buffer_streams[key]._write_csv = _use_csv
         except Exception:
             self.__logger.error("Problem creating output streams")
+            raise
+
+        # Batches serialized, clear the tree
+        try:
+            Tree().flush()
+        except Exception:
+            self.__logger("Problem flushing")
             raise
 
     def _sample_chunks(self):
@@ -608,6 +641,13 @@ class Artemis():
                                                  _chunk,
                                                  block.range.offset_bytes,
                                                  meta)
+
+        altchunk = self.__tools.get("filehandler").\
+            readinto_block(file_,
+                           _chunk,
+                           block.range.offset_bytes,
+                           meta)
+        assert altchunk == chunk
         return chunk
 
     @timethis
@@ -618,7 +658,8 @@ class Artemis():
         Returns a python list for reading back chunk
         '''
         _finfo = self.jobops.meta.data[-1]
-        header, meta, off_head = self._filehandler.strip_header(file_)
+        header, meta, off_head = \
+            self.__tools.get("filehandler").prepare(file_)
         _finfo.schema.size_bytes = off_head
         _finfo.schema.header = header
         for col in meta:
@@ -637,24 +678,13 @@ class Artemis():
         Need to place a check to ensure
         the correct FileInfo instance is used
         '''
-        _parser = self.jobops.meta.config.parser
-        if _parser.HasField("csvparser"):
-            blocks = self._filehandler.\
-                    get_blocks(file_,
-                               _parser.csvparser.block_size,
-                               bytes(_parser.csvparser.delimiter, 'utf8'),
-                               _parser.csvparser.skip_header,
-                               offset)
-
-        else:
-            self.__logger.error("Csv Parser not available")
-            raise AttributeError
+        blocks = self.__tools.get("filehandler").execute(file_)
 
         # Prepare the block meta data
         # FileInfo should already be available
         # Get last FileInfo
         _finfo = self.jobops.meta.data[-1]
-        for block in blocks:
+        for i, block in enumerate(blocks):
             msg = _finfo.blocks.add()
             msg.range.offset_bytes = block[0]
             msg.range.size_bytes = block[1]
@@ -762,10 +792,15 @@ class Artemis():
         # TODO add a configurable seed
         # Use a single instance of random
         # should be configured at job start
-        iblock = random.randint(0, len(_finfo.blocks) - 1)
-        self.__logger.debug("Selected random block %i with size %2.2f",
-                            iblock,
-                            _finfo.blocks[iblock].range.size_bytes)
+        if self.generator:
+            iblock = self.generator.\
+                random_state.randint(0, len(_finfo.blocks) - 1)
+            self.__logger.debug("Selected random block %i with size %2.2f",
+                                iblock,
+                                _finfo.blocks[iblock].range.size_bytes)
+        else:
+            self.__logger.error("Generator not configured, abort sampling")
+            raise ValueError
 
         try:
             chunk = self._request_block(file_, iblock, meta)
@@ -888,10 +923,6 @@ class Artemis():
         self.__logger.info("Finalizing Artemis job %s" %
                            self.jobops.meta.name)
         summary = self.jobops.meta.summary
-        self.__logger.info("Total datums requested %i",
-                           summary.processed_ndatums)
-        self.__logger.info("Total bytes processed %i",
-                           summary.processed_bytes)
 
         try:
             self.steer.finalize()
@@ -901,8 +932,6 @@ class Artemis():
 
         mu_payload = self.hbook.get_histogram('artemis', 'payload').mean()
         mu_blocksize = self.hbook.get_histogram('artemis', 'blocksize').mean()
-        self.__logger.info("Mean payload %2.2f MB" % mu_payload)
-        self.__logger.info("Mean blocksize %2.2f MB" % mu_blocksize)
 
         try:
             self._finalize_buffer()
@@ -916,7 +945,6 @@ class Artemis():
             name = key.split('.')[-1]
             mu = self.hbook.get_histogram('artemis', 'time.'+name).mean()
             std = self.hbook.get_histogram('artemis', 'time.'+name).std()
-            self.__logger.info("%s timing: %2.4f" % (key, mu))
 
             # Add to the msg
             msgtime = summary.timers.add()
@@ -936,13 +964,24 @@ class Artemis():
         except Exception:
             raise
 
+        self.__logger.info("Job Summary")
+        self.__logger.info("=================================")
         self.__logger.info("Processed file summary")
         for f in self.jobops.meta.data:
             self.__logger.info(text_format.MessageToString(f))
 
+        self.__logger.info("Processed data summary")
+        self.__logger.info("Mean payload %2.2f MB", mu_payload)
+        self.__logger.info("Mean blocksize %2.2f MB", mu_blocksize)
+        self.__logger.info("Total datums requested %i",
+                           summary.processed_ndatums)
+        self.__logger.info("Total bytes processed %i",
+                           summary.processed_bytes)
+
         self.__logger.info("Timer Summary")
         for t in self.jobops.meta.summary.timers:
-            self.__logger.info(text_format.MessageToString(t))
+            self.__logger.info("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
+        self.__logger.info("=================================")
 
     def abort(self, *args, **kwargs):
         self.jobops.meta.state = artemis_pb2.JOB_ABORT
