@@ -37,7 +37,7 @@ class Logger():
         else:
             # Set the effective level from the root logger
             numeric_level = logging.getLogger().getEffectiveLevel()
-            print('Root logger level ', numeric_level)
+            # print('Root logger level ', numeric_level)
 
         Logger.CONFIGURED_LEVEL = numeric_level
 
@@ -82,8 +82,8 @@ class Logger():
         '''
         # level = Logger.loglevel(**kwargs)
         _logname = '_' + obj.__class__.__name__ + '__logger'
-        logging.getLogger().info('Setting the log level for %s' %
-                                 obj.__class__.__name__)
+        logging.getLogger().debug('Setting the log level for %s' %
+                                  obj.__class__.__name__)
         getattr(obj, _logname).setLevel(Logger.CONFIGURED_LEVEL)
 
     @staticmethod

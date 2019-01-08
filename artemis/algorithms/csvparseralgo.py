@@ -31,14 +31,10 @@ class CsvParserAlgo(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
-        self.__logger.debug('%s: __init__ CsvParserAlgo' % self.name)
-        self.__logger.warning('%s: __init__ CsvParserAlgo' % self.name)
         self.reader = None
         self.jobops = None
 
     def initialize(self):
-        self.__logger.info(self.__logger)
-        self.__logger.info(self._CsvParserAlgo__logger)
         self.reader = Reader()
         self.jobops = JobProperties()
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)

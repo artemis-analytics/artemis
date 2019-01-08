@@ -15,7 +15,6 @@ owns the stores needed by the user algorithms
 """
 # Python libraries
 # import logging
-from pprint import pformat
 import sys
 import io
 
@@ -250,8 +249,9 @@ class Artemis():
         Create the histogram store
         '''
         self.__logger.info('Configure')
-        self.__logger.info('Job Properties %s',
-                           pformat(self.properties.to_dict()))
+        self.__logger.info("%s properties: %s",
+                           self.__class__.__name__,
+                           self.properties)
         if hasattr(self.properties, 'protomsg'):
             _msgcfg = self.jobops.meta.config
             try:
@@ -377,6 +377,7 @@ class Artemis():
         Rebook histograms for timers or profiles
         after random sampling of data chunk
         '''
+        self.__logger.info("Rebook")
         self.hbook.rebook_all(excludes=['artemis.time.prepblks',
                                         'artemis.time.prepschema'])
         try:
@@ -540,7 +541,7 @@ class Artemis():
         process a few to extract schema, check for errors, get
         timing profile
         '''
-
+        self.__logger.info("Sample chunks for preprocess profiling")
         try:
             self._prepare()
         except Exception:

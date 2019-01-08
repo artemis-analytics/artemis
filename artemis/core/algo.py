@@ -74,7 +74,7 @@ class AlgoBase(metaclass=AbcAlgoBase):
         # Configure logging
         Logger.configure(self, **kwargs)
 
-        self.__logger.info('__init__ AlgoBase')
+        self.__logger.debug('__init__ AlgoBase')
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
