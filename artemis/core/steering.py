@@ -30,6 +30,7 @@ class Steering(AlgoBase):
         self._menu = OrderedDict()
         self.jobops = JobProperties()
         self.__timers = TimerSvc()
+        self._algo_instances = {}
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
@@ -46,16 +47,16 @@ class Steering(AlgoBase):
 
         # Initialize algorithms
         # Look up instance to add to execution graph
-        algo_instances = {}
+        self._algo_instances = {}
         for algo in msg.algos:
             try:
-                algo_instances[algo.name] = \
+                self._algo_instances[algo.name] = \
                         AlgoBase.from_msg(self.__logger, algo)
             except Exception:
                 self.__logger.error('Initializing from protobuf %s', algo.name)
                 raise
             try:
-                algo_instances[algo.name].initialize()
+                self._algo_instances[algo.name].initialize()
             except Exception:
                 self.__logger.error("Cannot initialize algo %s" % algo.name)
                 raise
@@ -81,7 +82,7 @@ class Steering(AlgoBase):
                 if node.name == 'initial':
                     algos.append('iorequest')
                     continue
-                algos.append(algo_instances[algo])
+                algos.append(self._algo_instances[algo])
             self._menu[node.name] = tuple(algos)
 
         self._seq_tree.update_parents()
@@ -113,28 +114,21 @@ class Steering(AlgoBase):
         # self.hbook.book(self.name, 'nblocks', range(100))
         # self.hbook.book(self.name, 'block_size', range(100))
 
-        # FIXME
-        # Rebooking timer histograms due to same algo instances in multiple
-        # menu sequences
-        # need to just get list of algos once
-
-        for key in self._menu:
-            for algo in self._menu[key]:
-                if isinstance(algo, str):
-                    self.__logger.debug('Not an algo: %s' % algo)
-                else:
-                    self.__timers.book(self.name, algo.name)
-                    bins = [x for x in range_positive(0., 100., 2.)]
-                    try:
-                        self.hbook.book(self.name, 'time.'+algo.name,
-                                        bins, 'ms')
-                    except Exception:
-                        self.__logger.error('Cannot book steering')
-                        raise
-                    try:
-                        algo.book()
-                    except Exception:
-                        self.__logger.error('Cannot book %s' % algo.name)
+        for key in self._algo_instances:
+            algo = self._algo_instances[key]
+            self.__logger.info("Book %s", algo.name)
+            self.__timers.book(self.name, algo.name)
+            bins = [x for x in range_positive(0., 100., 2.)]
+            try:
+                self.hbook.book(self.name, 'time.'+algo.name,
+                                bins, 'ms')
+            except Exception:
+                self.__logger.error('Cannot book steering')
+                raise
+            try:
+                algo.book()
+            except Exception:
+                self.__logger.error('Cannot book %s' % algo.name)
 
     def rebook(self):
         '''
