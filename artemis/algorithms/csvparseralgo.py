@@ -60,8 +60,7 @@ class CsvParserAlgo(AlgoBase):
             name = key.split('.')[-1]
             avg_, std_ = self.__timers.stats(self.name, name)
             bins = [x for x in range_positive(0., avg_ + 5*std_, 2.)]
-            self.hbook.rebook(self.name, 'time.pyparse', bins, 'ms')
-            self.hbook.rebook(self.name, 'time.pyarrowparse', bins, 'ms')
+            self.hbook.rebook(self.name, 'time.'+name, bins, 'ms')
 
     @timethis
     def py_parsing(self, schema, columns, length, block):
@@ -106,7 +105,6 @@ class CsvParserAlgo(AlgoBase):
         except Exception:
             self.__logger.error("Cannot convert arrays to batch")
             raise
-
         return rbatch
 
     @timethis
@@ -114,7 +112,7 @@ class CsvParserAlgo(AlgoBase):
         # create pyarrow buffer from raw bytes
         buf_ = pa.py_buffer(block)
         try:
-            table = read_csv(buf_, ReadOptions())
+            table = read_csv(buf_, ReadOptions(block_size=2**25))
         except Exception:
             self.__logger.error("Problem converting csv to table")
             raise
@@ -139,19 +137,19 @@ class CsvParserAlgo(AlgoBase):
 
         try:
             rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
-            self.__timers.fill(self.name, 'pyparse', time_)
-            self.hbook.fill(self.name, 'time.pyparse', time_)
         except Exception:
             self.__logger.error("Python parsing fails")
             raise
+        self.__timers.fill(self.name, 'pyparse', time_)
+        self.hbook.fill(self.name, 'time.pyparse', time_)
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)
-            self.__timers.fill(self.name, 'pyarrowparse', time_)
-            self.hbook.fill(self.name, 'time.pyarrowparse', time_)
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
+        self.__timers.fill(self.name, 'pyarrowparse', time_)
+        self.hbook.fill(self.name, 'time.pyarrowparse', time_)
 
         if rbatch.equals(tbatch) is False:
             self.__logger.error("Batches not validated")
