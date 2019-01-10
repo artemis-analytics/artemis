@@ -27,6 +27,10 @@ from .singleton import Singleton
 
 
 class ToolStore(metaclass=Singleton):
+    # TODO
+    # Check for existence of tool
+    # Use dict class functionality, i.e. derive from dict
+
     def __init__(self):
         self.tools = {}
 

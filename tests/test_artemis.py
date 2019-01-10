@@ -23,7 +23,7 @@ from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
 from artemis.io.filehandler import FileHandlerTool
 from artemis.io.writer import BufferOutputWriter
-
+from artemis.tools.csvtool import CsvTool
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 
@@ -97,6 +97,9 @@ class ArtemisTestCase(unittest.TestCase):
                                    skip_header=True,
                                    loglevel='INFO')
         filetoolcfg = filetool.to_msg()
+        
+        csvtool = CsvTool('csvtool', block_size=2**24)
+        csvtoolcfg = csvtool.to_msg()
 
         defaultwriter = BufferOutputWriter('bufferwriter', 
                                            BUFFER_MAX_SIZE=2147483648,  
@@ -129,6 +132,11 @@ class ArtemisTestCase(unittest.TestCase):
         
         defwrtmsg = msg.tools.add()
         defwrtmsg.CopyFrom(defwtrcfg)
+
+        csvtoolmsg = msg.tools.add()
+        csvtoolmsg.CopyFrom(csvtoolcfg)
+        print(text_format.MessageToString(csvtoolmsg))
+
 
         try:
             with open(self.prtcfg, "wb") as f:
