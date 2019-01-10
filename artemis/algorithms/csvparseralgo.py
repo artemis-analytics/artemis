@@ -10,13 +10,6 @@
 Algorithm which configures a reader
 given a bytes object
 """
-from ast import literal_eval
-import csv
-import io
-
-import pyarrow as pa
-from pyarrow.csv import read_csv, ReadOptions
-
 from artemis.core.algo import AlgoBase
 from artemis.io.reader import Reader
 from artemis.core.properties import JobProperties
@@ -24,6 +17,7 @@ from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.utils.utils import range_positive
 from artemis.core.timerstore import TimerSvc
+from artemis.core.tool import ToolStore
 
 
 class CsvParserAlgo(AlgoBase):
@@ -33,6 +27,11 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
         self.reader = None
         self.jobops = None
+        self.__tools = ToolStore()
+        # TODO
+        # Add any required tools to list of algo properties
+        # All tools must be loaded in the ToolStore
+        # Check for existence of tool
 
     def initialize(self):
         self.reader = Reader()
@@ -65,66 +64,23 @@ class CsvParserAlgo(AlgoBase):
     @timethis
     def py_parsing(self, schema, columns, length, block):
         try:
-            with io.TextIOWrapper(io.BytesIO(block)) as file_:
-                reader = csv.reader(file_)
-                try:
-                    next(reader)
-                except Exception:
-                    self.__logger.error("Cannot read inserted header")
-                    raise
-                try:
-                    for row in reader:
-                        # print(row)
-                        length += 1
-                        for i, item in enumerate(row):
-                            if item == 'nan':
-                                item = 'None'
-                            try:
-                                columns[i].append(literal_eval(item))
-                            except Exception:
-                                self.__logger.error("Line %i row %s" %
-                                                    (i, row))
-                                raise
-                except Exception:
-                    self.__logger.error('Error reading line %i' % length)
-                    raise
-        except IOError:
-            raise
+            batch = self.__tools.get("csvtool").\
+                    execute_pyparsing(schema,
+                                      columns,
+                                      length,
+                                      block)
         except Exception:
+            self.__logger.error("Python parsing fails")
             raise
-
-        array = []
-        for column in columns:
-            try:
-                array.append(pa.array(column))
-            except Exception:
-                self.__logger.error("Cannot convert list to pyarrow arrow")
-                raise
-        try:
-            rbatch = pa.RecordBatch.from_arrays(array, schema)
-        except Exception:
-            self.__logger.error("Cannot convert arrays to batch")
-            raise
-        return rbatch
+        return batch
 
     @timethis
     def pyarrow_parsing(self, block):
-        # create pyarrow buffer from raw bytes
-        buf_ = pa.py_buffer(block)
         try:
-            table = read_csv(buf_, ReadOptions(block_size=2**25))
+            batch = self.__tools.get('csvtool').execute(block)
         except Exception:
-            self.__logger.error("Problem converting csv to table")
             raise
-        # We actually want a batch
-        # batch can be converted to table but not vice-verse, we get batches
-        # Should always be length 1 though (chunksize can be set however)
-        batches = table.to_batches()
-        if len(batches) != 1:
-            self.__logger.error("Table has more than 1 RecordBatches")
-            raise Exception
-
-        return batches[-1]
+        return batch
 
     def execute(self, element):
 
