@@ -166,6 +166,14 @@ message FileInfo {
     RawInfo processed = 5;
 }
 
+message RecordBatchFileInfo {
+    string name = 1;
+    int32 num_columns = 2;
+    int32 num_rows = 3;
+    SchemaInfo schema = 4;
+    int32 num_batches = 5;
+}
+
 enum JobState {
     JOB_STARTING = 0;
     JOB_RUNNING = 1;
@@ -185,6 +193,7 @@ message Summary {
     uint64 processed_bytes = 2;
     repeated Timer timers = 3;
     int32 processed_ndatums = 4;
+    repeated RecordBatchFileInfo tables = 5; 
 }
 
 message JobInfo {

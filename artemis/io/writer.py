@@ -7,6 +7,8 @@ from artemis.core.tool import ToolBase
 from artemis.logger import Logger
 from artemis.decorators import timethis
 
+from artemis.io.protobuf.artemis_pb2 import RecordBatchFileInfo
+
 
 @Logger.logged
 class BufferOutputWriter(ToolBase):
@@ -24,20 +26,23 @@ class BufferOutputWriter(ToolBase):
             defaults[key] = kwargs[key]
         super().__init__(name, **defaults)
 
-        self.BUFFER_MAX_SIZE = 2147483648  # 2 GB
-        # self._name = name
-        self._write_csv = True
+        self.BUFFER_MAX_SIZE = self.properties.BUFFER_MAX_SIZE
+        self._write_csv = self.properties.write_csv
 
         self._cache = None  # cache for a pa.RecordBatch
+        self._buffer = None  # in-memory buffer
         self._sink = None  # pa.BufferOutputStream
         self._writer = None  # pa.RecordBatchFileWriter
         self._schema = None  # pa.schema
-        self._fbasename = None
+        self._fbasename = None  # file basename for dataset
         self._sizeof_batches = 0
         self._nbatches = 0  # batches per file
-        self._nrecords = 0  # total record count
-        self._filecounter = 0
+        self._nrecords = 0  # records per file
+        self._total_records = 0  # total records written
+        self._total_batches = 0  # total number of batches written
+        self._filecounter = 0  # total files
         self._fname = ''
+        self._finfo = []  # Store list of metadata info objects
 
     def _set_defaults(self):
         defaults = {'BUFFER_MAX_SIZE': 2147483648,  # 2 GB
@@ -47,12 +52,94 @@ class BufferOutputWriter(ToolBase):
 
     @property
     def total_records(self):
-        return self._nrecords
+        return self._total_records
+
+    @property
+    def total_batches(self):
+        return self._total_batches
+
+    @property
+    def total_files(self):
+        return self._filecounter
 
     def initialize(self):
+        self._buffer = None
         self._sink = pa.BufferOutputStream()
         self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
         self._new_filename()
+
+    def _validate_metainfo(self):
+        '''
+        Validate payload in Arrow table
+        - number batches in file
+        - number of rows
+        - number of columns
+        - schema
+        '''
+        try:
+            reader = pa.open_file(self._buffer)
+        except Exception:
+            raise
+        self.__logger.info("Batches in file %i", reader.num_record_batches)
+        if self._nbatches != reader.num_record_batches:
+            self.__logger.error("Num batches: counter %i payload %i",
+                                self._nbatches,
+                                reader.num_record_batches)
+            raise ValueError
+
+        sum_records = 0
+        for ibatch in range(reader.num_record_batches):
+            sum_records += reader.get_batch(ibatch).num_rows
+
+        if self._nrecords != sum_records:
+            self.__logger.error("Num records: counter %i payload %i",
+                                self._nrecords,
+                                sum_records)
+            raise ValueError
+
+        self._total_records += self._nrecords
+        self._total_batches += self._nbatches
+
+    def _set_metainfo(self):
+        metainfo = RecordBatchFileInfo()
+        metainfo.name = self._fname
+        metainfo.num_rows = self._nrecords
+        metainfo.num_batches = self._nbatches
+        self._finfo.append(metainfo)
+
+    def _finalize_file(self):
+        '''
+        '''
+        try:
+            self._writer.close()
+        except Exception:
+            self.__logger.error('Cannot close writer')
+            raise
+        try:
+            self._write_buffer()
+        except Exception:
+            self.__logger.error('Cannot write buffer to disk')
+            raise
+        try:
+            self._write_file()
+        except Exception:
+            self.__logger.error('Cannot write buffer to disk')
+            raise
+        try:
+            self._validate_metainfo()
+        except Exception:
+            self.__logger.error("Problem validating metadata")
+            raise
+        try:
+            self._set_metainfo()
+        except Exception:
+            self.__logger.error("Problem setting metadata info")
+            raise
+        try:
+            self._reset()
+        except Exception:
+            self.__logger.error("Problem resetting internals for next stream")
+            raise
 
     def _finalize(self):
         '''
@@ -60,22 +147,142 @@ class BufferOutputWriter(ToolBase):
         Close final buffer
         Gather statistics
         '''
-        self.__logger.info("Finalize final file")
-        self.__logger.info("Batchs in final file %i" % self._nbatches)
+        self.__logger.info("Finalize final file %s", self._fname)
+        self.__logger.info("Number of batches %i" % self._nbatches)
+        self.__logger.info("Number of records %i ", self._nrecords)
         if self._nbatches == 0:
             self.__logger.info("No batches")
             self._writer.close()
             return True
+
         try:
-            self._writer.close()
+            self._finalize_file()
         except Exception:
-            self.__logger.error("Cannot close final writer")
             raise
+
+        return True
+
+    def expected_sizeof(self, batch):
+        _sum = 0
+        _sum = pa.get_record_batch_size(batch)
+        _sum += self._sizeof_batches
+        return _sum
+
+    def _reset(self):
+        '''
+        reset for new stream
+        '''
+        self._filecounter += 1
+        self._new_filename()
+        self._new_sink()
+        self._sizeof_batches = 0
+        self._nbatches = 0
+        self._nrecords = 0
+
+    def _new_sink(self):
+        '''
+        return a new BufferOutputStream
+        '''
+        self.__logger.info("Request new BufferOutputStream")
+        self._buffer = None  # Clear the buffer cache
+        self._sink = pa.BufferOutputStream()
+
+    def _new_filename(self):
+        self._fname = self._fbasename + \
+                      '_' + self.name + \
+                      '_' + str(self._filecounter) + '.arrow'
+
+    def _write_buffer(self):
         try:
-            self._write_buffer()
+            self._buffer = self._sink.getvalue()
+            self.__logger.info("Size of buffer %i", self._buffer.size)
         except Exception:
-            self.__logger.error("Cannot flush final buffer")
+            self.__logger.error("Cannot flush stream")
             raise
+
+    def _write_file(self):
+        with pa.OSFile(self._fname, 'wb') as f:
+            try:
+                f.write(self._buffer)
+            except IOError:
+                self.__logger_error("Error writing OSFile %s", self._fname())
+                raise
+        if self._write_csv is True:
+            BufferOutputWriter.to_csv(self._buffer, self._fname + '.csv')
+
+    def _new_writer(self):
+        '''
+        return a new writer
+        requires closing the current writer
+        flushing the buffer
+        writing the buffer to file
+        '''
+        self.__logger.info("Finalize file %s", self._fname)
+        self.__logger.info("N Batches %i Size %i",
+                           self._nbatches, self._sizeof_batches)
+
+        try:
+            self._finalize_file()
+        except Exception:
+            raise
+
+        self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
+
+    def _can_write(self, batch):
+        _size = self.expected_sizeof(batch)
+        if _size > self.BUFFER_MAX_SIZE:
+            self.__logger.info("Request new writer")
+            self.__logger.info("Current size %i, estimated %i",
+                               self._sizeof_batches, _size)
+            try:
+                self._new_writer()
+            except Exception:
+                self.__logger.error("Failed to create new writer")
+                raise
+        else:
+            self.__logger.debug("Continue filling buffer")
+
+    @timethis
+    def write(self, payload):
+        '''
+        Manages writing a collection of batches
+        caches a batch if beyond the max buffer size
+
+        this should function as a consumer of batches
+        RecordBatches are given as a generator to ensure
+        all batches are pushed to a buffer
+        '''
+        for i, element in enumerate(payload):
+            self.__logger.debug("Processing Element %i", i)
+            batch = element.get_data()
+            if not isinstance(batch, pa.lib.RecordBatch):
+                self.__logger.warning("Batch is of type %s", type(batch))
+                continue
+            if batch.schema != self._schema:
+                self.__logger.warning("Batch ignored, incorrect scema")
+                continue
+            try:
+                self._can_write(batch)
+            except Exception:
+                self.__logger.error("Failed sizeof check")
+                raise
+            try:
+                self.__logger.debug("Write to sink")
+                self._nrecords += batch.num_rows
+                self._nbatches += 1
+                self._sizeof_batches += pa.get_record_batch_size(batch)
+                self.__logger.debug("Records %i Batches %i size %i",
+                                    self._nrecords,
+                                    self._nbatches,
+                                    self._sizeof_batches)
+                self._writer.write_batch(batch)
+            except Exception:
+                self.__logger.error("Cannot write a batch")
+                raise
+        self.__logger.debug("Records %i Batches %i size %i",
+                            self._nrecords,
+                            self._nbatches,
+                            self._sizeof_batches)
         return True
 
     @staticmethod
@@ -183,114 +390,3 @@ class BufferOutputWriter(ToolBase):
 
         if path_or_buf is None:
             return formatter.path_or_buf.getvalue()
-
-    def expected_sizeof(self, batch):
-        _sum = 0
-        _sum = pa.get_record_batch_size(batch)
-        _sum += self._sizeof_batches
-        return _sum
-
-    def _new_sink(self):
-        '''
-        return a new BufferOutputStream
-        '''
-        self.__logger.info("Request new BufferOutputStream")
-        self._sink = pa.BufferOutputStream()
-
-    def _new_filename(self):
-        self._fname = self._fbasename + \
-                      '_' + self.name + \
-                      '_' + str(self._filecounter) + '.arrow'
-
-    def _write_buffer(self):
-        try:
-            buf = self._sink.getvalue()
-            self.__logger.info("Size of buffer %i", buf.size)
-        except Exception:
-            self.__logger.error("Cannot flush stream")
-            raise
-        with pa.OSFile(self._fname, 'wb') as f:
-            try:
-                f.write(buf)
-            except IOError:
-                self.__logger_error("Error writing OSFile %s", self._fname())
-                raise
-        if self._write_csv is True:
-            BufferOutputWriter.to_csv(buf, self._fname + '.csv')
-
-    def _new_writer(self):
-        '''
-        return a new writer
-        requires closing the current writer
-        flushing the buffer
-        writing the buffer to file
-        '''
-        self.__logger.info("Finalize file %s", self._fname)
-        self.__logger.info("N Batches %i Size %i",
-                           self._nbatches, self._sizeof_batches)
-        try:
-            self._writer.close()
-        except Exception:
-            self.__logger.error('Cannot close writer')
-            raise
-        try:
-            self._write_buffer()
-        except Exception:
-            self.__logger.error('Cannot write buffer to disk')
-            raise
-        self._filecounter += 1
-        self._new_filename()
-        self._new_sink()
-        self._sizeof_batches = 0
-        self._nbatches = 0
-        self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
-
-    def _can_write(self, batch):
-        _size = self.expected_sizeof(batch)
-        if _size > self.BUFFER_MAX_SIZE:
-            self.__logger.info("Request new writer")
-            self.__logger.info("Current size %i, estimated %i",
-                               self._sizeof_batches, _size)
-            try:
-                self._new_writer()
-            except Exception:
-                self.__logger.error("Failed to create new writer")
-                raise
-        else:
-            self.__logger.debug("Continue filling buffer")
-
-    @timethis
-    def write(self, payload):
-        '''
-        Manages writing a collection of batches
-        caches a batch if beyond the max buffer size
-
-        this should function as a consumer of batches
-        RecordBatches are given as a generator to ensure
-        all batches are pushed to a buffer
-        '''
-        for i, element in enumerate(payload):
-            self.__logger.debug("Processing Element %i", i)
-            batch = element.get_data()
-            self._nrecords += batch.num_rows
-            if not isinstance(batch, pa.lib.RecordBatch):
-                self.__logger.warning("Batch is of type %s", type(batch))
-                continue
-            if batch.schema != self._schema:
-                self.__logger.warning("Batch ignored, incorrect scema")
-                continue
-            try:
-                self._can_write(batch)
-            except Exception:
-                self.__logger.error("Failed sizeof check")
-                raise
-            try:
-                self.__logger.debug("Write to sink")
-                self._writer.write_batch(batch)
-            except Exception:
-                self.__logger.error("Cannot write a batch")
-                raise
-            self._nbatches += 1
-            self._sizeof_batches += pa.get_record_batch_size(batch)
-
-        return True
