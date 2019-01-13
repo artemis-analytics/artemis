@@ -87,7 +87,7 @@ class ArtemisTestCase(unittest.TestCase):
             raise
 
         generator = GenCsvLikeArrow('generator',
-                                    nbatches=2,
+                                    nbatches=10,
                                     num_cols=20,
                                     num_rows=10000)
         msggen = generator.to_msg()
@@ -101,8 +101,9 @@ class ArtemisTestCase(unittest.TestCase):
         csvtool = CsvTool('csvtool', block_size=2**24)
         csvtoolcfg = csvtool.to_msg()
 
-        defaultwriter = BufferOutputWriter('bufferwriter', 
-                                           BUFFER_MAX_SIZE=2147483648,  
+        defaultwriter = BufferOutputWriter('bufferwriter',
+                                           BUFFER_MAX_SIZE=10485760,
+                                           #BUFFER_MAX_SIZE=2147483648,  
                                            write_csv=True)
         defwtrcfg = defaultwriter.to_msg()
 

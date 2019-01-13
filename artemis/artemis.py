@@ -14,13 +14,11 @@ owns the stores needed by the user algorithms
     objects
 """
 # Python libraries
-# import logging
 import sys
 import io
 
 # Externals
 import pyarrow as pa
-# import pyarrow.parquet as pq
 
 # Framework
 from artemis.logger import Logger
@@ -36,18 +34,10 @@ from artemis.core.timerstore import TimerSvc
 from artemis.core.datastore import ArrowSets
 from artemis.core.tool import ToolStore
 
-# Data generators
-# from artemis.generators.generators import GenCsvLikeArrow
-
 # IO
-from artemis.io.reader import FileHandler
-from artemis.io.writer import BufferOutputWriter
 from artemis.core.physt_wrapper import Physt_Wrapper
 
 # Protobuf
-# from artemis.io.protobuf.artemis_pb2 import JobConfig as JobConfig_pb
-# from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
-# from artemis.io.protobuf.artemis_pb2 import JobState as JobState_pb
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 # Utils
@@ -77,7 +67,6 @@ class Artemis():
         self.data_handler = None
         self._raw = None
         self._schema = {}
-        self._buffer_streams = {}
 
         # Define internal properties
         self.MALLOC_MAX_SIZE = 0
@@ -88,10 +77,6 @@ class Artemis():
         self.__timers = TimerSvc()
         self.__tools = ToolStore()
 
-        # Move counters and payload processed into metadata
-        self._requestcntr = 0
-        self._total_processed_bytes = 0
-
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
         #######################################################################
@@ -100,8 +85,6 @@ class Artemis():
         # Logging
         Logger.configure(self, **kwargs)
         #######################################################################
-
-        self._filehandler = FileHandler()
 
     @property
     def datum(self):
@@ -204,6 +187,12 @@ class Artemis():
         try:
             self._finalize()
         except Exception:
+            raise
+
+        try:
+            self._finalize_buffer()
+        except Exception:
+            self.__logger.error("Error finalizing buffers")
             raise
 
     def _launch(self):
@@ -402,6 +391,7 @@ class Artemis():
         _summary = self.jobops.meta.summary
         _summary.processed_bytes = 0
         _summary.processed_ndatums = 0
+        del self.jobops.meta.data[:]  # Remove all the fileinfo msgs
 
     def _check_malloc(self):
         '''
@@ -443,6 +433,7 @@ class Artemis():
             node = _tree.get_node_by_key(leaf)
             els = node.payload
             self.__logger.info('Batches of leaf %s', len(els))
+            _name = "writer_"+node.key
             if isinstance(els[-1].get_data(), pa.lib.RecordBatch):
                 self.__logger.info("RecordBatch")
                 self.__logger.info("Allocated %i", pa.total_allocated_bytes())
@@ -455,13 +446,16 @@ class Artemis():
                     self.__tools.get("writer_"+node.key)._schema = \
                         _schema_batch
                     self.__tools.get("writer_"+node.key).write(els)
+                    self.__logger.info("Records %i Batches %i",
+                                       self.__tools.get(_name)._nrecords,
+                                       self.__tools.get(_name)._nbatches)
                 except Exception:
                     self.__logger.error("Error in buffer writer")
                     raise
             else:
                 self.__logger.info("%s", type(els[-1].get_data()))
 
-        # Batches serialized, clear the tree
+        # Batches serialized, clear the tree to flush memory
         try:
             Tree().flush()
         except Exception:
@@ -486,23 +480,11 @@ class Artemis():
 
         # Buffer stream requires a fixed pyArrow schema!
         _tree = Tree()  # Singleton!
-        _use_csv = False
         _msgcfg = self.jobops.meta.config
         _wrtcfg = None
         for toolcfg in _msgcfg.tools:
             if toolcfg.name == "bufferwriter":
                 _wrtcfg = toolcfg
-
-        # Artemis can have multiple output formats
-        # ideally, async io
-        # each writer must have a dedicated to config
-        try:
-            for w in _msgcfg.writers:
-                if w.HasField('csvwriter'):
-                    self.__logger.info("Write to csv")
-                    _use_csv = True
-        except Exception:
-            self._logger.error("Error in writer msg")
 
         try:
             for leaf in _tree.leaves:
@@ -512,18 +494,12 @@ class Artemis():
                 _last = node.payload[-1].get_data()
                 if isinstance(_last, pa.lib.RecordBatch):
                     _wrtcfg.name = "writer_" + key
-                    self._buffer_streams[key] = BufferOutputWriter(key)
                     self.__logger.info("Add Tool %s", _wrtcfg.name)
                     self.__tools.add(self.__logger, _wrtcfg)
                     self.__tools.get(_wrtcfg.name)._schema = _last.schema
                     self.__tools.get(_wrtcfg.name)._fbasename = \
                         self.jobops.meta.name
                     self.__tools.get(_wrtcfg.name).initialize()
-                    self._buffer_streams[key]._fbasename = \
-                        self.jobops.meta.name
-                    self._buffer_streams[key]._schema = _last.schema
-                    self._buffer_streams[key].initialize()
-                    self._buffer_streams[key]._write_csv = _use_csv
         except Exception:
             self.__logger.error("Problem creating output streams")
             raise
@@ -566,15 +542,17 @@ class Artemis():
         Clear all data, move to next datum
         '''
         self.__logger.info("artemis: Run")
-        self.__logger.debug('artemis: Count at run call %s' %
-                            str(self._requestcntr))
+        self.__logger.debug('artemis: Count at run call %i',
+                            self.jobops.meta.summary.processed_ndatums)
+
         self.__logger.info("artemis: Run: pyarrow malloc %i",
                            pa.total_allocated_bytes())
         while True:
             self.__logger.info("artemis: request %i malloc %i",
-                               self._requestcntr,
+                               self.jobops.meta.summary.processed_ndatums,
                                pa.total_allocated_bytes())
-            self.hbook.fill('artemis', 'counts', self._requestcntr)
+            self.hbook.fill('artemis', 'counts',
+                            self.jobops.meta.summary.processed_ndatums)
             try:
                 self._prepare()
             except StopIteration:
@@ -596,8 +574,6 @@ class Artemis():
             self.__logger.info("artemis: execute complete malloc %i",
                                pa.total_allocated_bytes())
             self.hbook.fill('artemis', 'time.execute', time_)
-            self.__logger.debug('Count after process_data %s' %
-                                str(self._requestcntr))
 
             # Reset the raw datum, processing complete
             self.datum = None
@@ -616,14 +592,13 @@ class Artemis():
         # TODO
         # Create file UUID, check UUID when creating block info???
         _finfo = self.jobops.meta.data.add()
-        _finfo.name = 'file_' + str(self._requestcntr)
+        _finfo.name = 'file_' + str(self.jobops.meta.summary.processed_ndatums)
 
         # Update the raw metadata
         _rinfo = _finfo.raw
         _rinfo.size_bytes = len(raw)
 
         # Update datum input count
-        # self._requests_count()
         self.jobops.meta.summary.processed_ndatums += 1
 
         # Return the raw bytes
@@ -638,17 +613,11 @@ class Artemis():
         block = self.jobops.meta.data[-1].blocks[block_id]
         _chunk = bytearray(block.range.size_bytes)
 
-        chunk = self._filehandler.readinto_block(file_,
-                                                 _chunk,
-                                                 block.range.offset_bytes,
-                                                 meta)
-
-        altchunk = self.__tools.get("filehandler").\
+        chunk = self.__tools.get("filehandler").\
             readinto_block(file_,
                            _chunk,
                            block.range.offset_bytes,
                            meta)
-        assert altchunk == chunk
         return chunk
 
     @timethis
@@ -910,15 +879,38 @@ class Artemis():
             self.__logger.info("Allocated %i", pa.total_allocated_bytes())
             self.hbook.fill('artemis', 'time.collect', time_)
         # Spill any remaining buffers to disk
-        for key in self._buffer_streams:
+        # Set the output file metadata
+        summary = self.jobops.meta.summary
+        _wnames = []
+        for leaf in Tree().leaves:
+            self.__logger.info("Leave node %s", leaf)
+            node = Tree().get_node_by_key(leaf)
+            key = node.key
+            _wnames.append("writer_" + node.key)
+
+        for key in _wnames:
             try:
-                self._buffer_streams[key]._finalize()
-                self.__logger.info("Buffer stream %s records: %i",
-                                   key,
-                                   self._buffer_streams[key].total_records)
+                writer = self.__tools.get(key)
+            except KeyError:
+                continue
+            try:
+                writer._finalize()
             except Exception:
                 self.__logger.error("Finalize buffer stream fails %s", key)
                 raise
+
+            self.__logger.info("File summary statistics")
+            for table in writer._finfo:
+                tableinfo = summary.tables.add()
+                tableinfo.CopyFrom(table)
+                self.__logger.info(text_format.MessageToString(tableinfo))
+
+            self.__logger.info("Dataset summary statistics")
+            self.__logger.info("%s Records: %i Batches: %i Files: %i",
+                               writer.name,
+                               writer.total_records,
+                               writer.total_batches,
+                               writer.total_files)
 
     def _finalize(self):
         self.__logger.info("Finalizing Artemis job %s" %
@@ -933,12 +925,6 @@ class Artemis():
 
         mu_payload = self.hbook.get_histogram('artemis', 'payload').mean()
         mu_blocksize = self.hbook.get_histogram('artemis', 'blocksize').mean()
-
-        try:
-            self._finalize_buffer()
-        except Exception:
-            self.__logger.error("Error finalizing buffers")
-            raise
 
         for key in self.__timers.keys:
             if 'artemis' not in key:
