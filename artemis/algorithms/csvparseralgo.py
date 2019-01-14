@@ -11,7 +11,6 @@ Algorithm which configures a reader
 given a bytes object
 """
 from artemis.core.algo import AlgoBase
-from artemis.io.reader import Reader
 from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
@@ -25,7 +24,6 @@ class CsvParserAlgo(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
-        self.reader = None
         self.jobops = None
         self.__tools = ToolStore()
         # TODO
@@ -34,7 +32,6 @@ class CsvParserAlgo(AlgoBase):
         # Check for existence of tool
 
     def initialize(self):
-        self.reader = Reader()
         self.jobops = JobProperties()
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
 
