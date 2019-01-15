@@ -96,6 +96,18 @@ Artemis deployment is handled via setup.sh. You must supply the version (with th
 
 Example: `bash setup.sh -t unpack -v artemis-0.0.1`
 
+# Artemis Release and Tag Management
+
+During a new Artemis release, the commit that will be released needs to be 
+tagged with the new version tag, of the format X.Y.Z.
+- X is a major version, and should only be incremented when major features are added to Artemis.
+- Y is a minor version, it should be incremented when minor features are added to Artemis.
+When a new X version is released, Y is returned to 0.
+- Z is a fix version, it should be incremented when releases for Artemis are only to fix bugs
+or correct small errors. When a new X or Y version is released, Z is returned to 0.
+
+It is important to update the setup.py file with the new Artemis version.
+
 # Development environment
 Following uses pyenv for python version management.
 
