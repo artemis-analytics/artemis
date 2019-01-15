@@ -36,9 +36,12 @@ class Test_MF_Reader(unittest.TestCase):
 
         chunk = idata[counter:csize]
         ncounter = 0
-        while ncounter < nrecords:
-            odata[ncounter].append(chunk[counter:schema[ncounter]])
-            ncounter = ncounter + 1
-            counter = counter + schema[ncounter]
 
+        while ncounter < nrecords:
+            print('Counter')
+            print(counter)
+            odata[ncounter].append(chunk[counter:(counter + schema[ncounter])])
+            counter = counter + schema[ncounter]
+            ncounter = ncounter + 1
+            print('Data')
             print(odata)
