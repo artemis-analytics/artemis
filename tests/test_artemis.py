@@ -21,7 +21,9 @@ from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.generators.generators import GenCsvLikeArrow
-
+from artemis.io.filehandler import FileHandlerTool
+from artemis.io.writer import BufferOutputWriter
+from artemis.tools.csvtool import CsvTool
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 
@@ -83,12 +85,27 @@ class ArtemisTestCase(unittest.TestCase):
             msgmenu = self.testmenu.to_msg()
         except Exception:
             raise
-        
+
         generator = GenCsvLikeArrow('generator',
-                                    nbatches=2,
+                                    nbatches=10,
                                     num_cols=20,
                                     num_rows=10000)
         msggen = generator.to_msg()
+
+        filetool = FileHandlerTool('filehandler',
+                                   blocksize=2**16,
+                                   skip_header=True,
+                                   loglevel='INFO')
+        filetoolcfg = filetool.to_msg()
+        
+        csvtool = CsvTool('csvtool', block_size=2**24)
+        csvtoolcfg = csvtool.to_msg()
+
+        defaultwriter = BufferOutputWriter('bufferwriter',
+                                           BUFFER_MAX_SIZE=10485760,
+                                           #BUFFER_MAX_SIZE=2147483648,  
+                                           write_csv=True)
+        defwtrcfg = defaultwriter.to_msg()
 
         msg = artemis_pb2.JobConfig()
         msg.input.generator.config.CopyFrom(msggen)
@@ -111,6 +128,17 @@ class ArtemisTestCase(unittest.TestCase):
 
         msg.max_malloc_size_bytes = 2147483648
         
+        filetoolmsg = msg.tools.add()
+        filetoolmsg.CopyFrom(filetoolcfg)
+        
+        defwrtmsg = msg.tools.add()
+        defwrtmsg.CopyFrom(defwtrcfg)
+
+        csvtoolmsg = msg.tools.add()
+        csvtoolmsg.CopyFrom(csvtoolcfg)
+        print(text_format.MessageToString(csvtoolmsg))
+
+
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -120,8 +148,6 @@ class ArtemisTestCase(unittest.TestCase):
             raise
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
-                      blocksize=2**16,
-                      skip_header=True,
                       loglevel='INFO')
         bow.control()
 

@@ -24,7 +24,6 @@ class ProfilerAlgo(AlgoBase):
         self.jobops = None
 
     def initialize(self):
-        self.__logger.info(self.__logger)
         self.jobops = JobProperties()
         self.__logger.info('%s: Initialized ProfilerAlgo' % self.name)
 
@@ -44,7 +43,7 @@ class ProfilerAlgo(AlgoBase):
         if len(schema) != num_cols:
             self.__logger.error("Expected schema length not found in table")
         else:
-            self.__logger.info("Records %s", num_rows)
+            self.__logger.debug("Records %s", num_rows)
 
         # Redundant, it is the same object as the input!
         element.add_data(raw_)

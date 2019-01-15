@@ -496,11 +496,15 @@ class GenCsvLikeArrow(AlgoBase):
 
         self._builtin_generator = BuiltinsGenerator(self.seed)
         self.types = []
+        _tr = len(self.pa_types)-1
         for _ in range(self.num_cols):
             self.types.append(self.pa_types
-                              [random.randint(0, len(self.pa_types)-1)])
-        self.__logger.info("Initialized %s" % self.__class__.__name__)
-        self.__logger.info(self.__class__.__dict__)
+                              [self._builtin_generator.rnd.randint(0, _tr)])
+
+        self.__logger.info("Initialized %s", self.__class__.__name__)
+        self.__logger.info("%s properties: %s",
+                           self.__class__.__name__,
+                           self.properties)
 
     @property
     def num_batches(self):
@@ -509,6 +513,13 @@ class GenCsvLikeArrow(AlgoBase):
     @num_batches.setter
     def num_batches(self, n):
         self._nbatches = n
+
+    @property
+    def random_state(self):
+        '''
+        return the builtin numpy random state
+        '''
+        return self._builtin_generator.rnd
 
     def _set_defaults(self):
         defaults = {'nbatches': 1,
@@ -532,7 +543,7 @@ class GenCsvLikeArrow(AlgoBase):
         # Numpy generates column wise
         # Above we generate row-wise
         # Transpose to rows for csv
-        arr = np.random.RandomState(self.seed).\
+        arr = self._builtin_generator.rnd.\
                 randint(0, 1000, size=(self.num_cols, self.num_rows))
 
         # Simulates the write of csv file

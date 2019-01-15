@@ -18,7 +18,7 @@ import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
 
 from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow
-from artemis.io.reader import FileHandler
+from artemis.io.filehandler import FileHandlerTool
 logging.getLogger().setLevel(logging.INFO)
 
 
@@ -28,7 +28,8 @@ class ReaderTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        self._handler = FileHandler()
+        self._handler = FileHandlerTool('tool')
+        self._handler.initialize()
 
     def tearDown(self):
         pass
@@ -41,7 +42,7 @@ class ReaderTestCase(unittest.TestCase):
         buf = io.BytesIO(data)
         file_ = pa.PythonFile(buf, mode='r')
 
-        header, meta, offset = self._handler.strip_header(file_)
+        header, meta, offset = self._handler.prepare(file_)
 
         assert meta == names
      
@@ -50,46 +51,46 @@ class ReaderTestCase(unittest.TestCase):
         data = delimiter.join([b'123', b'456', b'789'])
         f = io.BytesIO(data)
 
-        assert self._handler.read_block(f, 1, 2) == b'23'
-        assert self._handler.read_block(f, 0, 1, delimiter=b'\n') == b'123\n'
-        assert self._handler.read_block(f, 0, 2, delimiter=b'\n') == b'123\n'
-        assert self._handler.read_block(f, 0, 3, delimiter=b'\n') == b'123\n'
-        assert self._handler.read_block(f, 0, 5, delimiter=b'\n') == b'123\n456\n'
-        assert self._handler.read_block(f, 0, 8, delimiter=b'\n') == b'123\n456\n789'
-        assert self._handler.read_block(f, 0, 100, delimiter=b'\n') == b'123\n456\n789'
-        assert self._handler.read_block(f, 1, 1, delimiter=b'\n') == b''
-        assert self._handler.read_block(f, 1, 5, delimiter=b'\n') == b'456\n'
-        assert self._handler.read_block(f, 1, 8, delimiter=b'\n') == b'456\n789'
+        assert self._handler._read_block(f, 1, 2) == b'23'
+        assert self._handler._read_block(f, 0, 1, delimiter=b'\n') == b'123\n'
+        assert self._handler._read_block(f, 0, 2, delimiter=b'\n') == b'123\n'
+        assert self._handler._read_block(f, 0, 3, delimiter=b'\n') == b'123\n'
+        assert self._handler._read_block(f, 0, 5, delimiter=b'\n') == b'123\n456\n'
+        assert self._handler._read_block(f, 0, 8, delimiter=b'\n') == b'123\n456\n789'
+        assert self._handler._read_block(f, 0, 100, delimiter=b'\n') == b'123\n456\n789'
+        assert self._handler._read_block(f, 1, 1, delimiter=b'\n') == b''
+        assert self._handler._read_block(f, 1, 5, delimiter=b'\n') == b'456\n'
+        assert self._handler._read_block(f, 1, 8, delimiter=b'\n') == b'456\n789'
 
         for ols in [[(0, 3), (3, 3), (6, 3), (9, 2)],
                     [(0, 4), (4, 4), (8, 4)]]:
-            out = [self._handler.read_block(f, o, l, b'\n') for o, l in ols]
+            out = [self._handler._read_block(f, o, l, b'\n') for o, l in ols]
             assert b"".join(filter(None, out)) == data
 
     def test_seek_delimiter_endline(self):
         f = io.BytesIO(b'123\n456\n789')
 
         # if at zero, stay at zero
-        self._handler.seek_delimiter(f, b'\n', 5)
+        self._handler._seek_delimiter(f, b'\n', 5)
         assert f.tell() == 0
 
         # choose the first block
         for bs in [1, 5, 100]:
             f.seek(1)
-            self._handler.seek_delimiter(f, b'\n', blocksize=bs)
+            self._handler._seek_delimiter(f, b'\n', blocksize=bs)
             assert f.tell() == 4
 
         # handle long delimiters well, even with short blocksizes
         f = io.BytesIO(b'123abc456abc789')
         for bs in [1, 2, 3, 4, 5, 6, 10]:
             f.seek(1)
-            self._handler.seek_delimiter(f, b'abc', blocksize=bs)
+            self._handler._seek_delimiter(f, b'abc', blocksize=bs)
             assert f.tell() == 6
 
         # End at the end
         f = io.BytesIO(b'123\n456')
         f.seek(5)
-        self._handler.seek_delimiter(f, b'\n', 5)
+        self._handler._seek_delimiter(f, b'\n', 5)
         assert f.tell() == 7  
     
     def test_get_blocks(self):
@@ -102,7 +103,7 @@ class ReaderTestCase(unittest.TestCase):
         buf = io.BytesIO(data)
         file_ = pa.PythonFile(buf, mode='r')
         
-        header, meta, off_head = self._handler.strip_header(file_)
+        header, meta, off_head = self._handler.prepare(file_)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
@@ -111,9 +112,9 @@ class ReaderTestCase(unittest.TestCase):
         
         blocksum = 0
 
-        blocks = self._handler.get_blocks(file_, 6, b'\r\n', False, off_head)
-
-        blocksum = sum(blocks[1])
+        blocks = self._handler.execute(file_) 
+        for blk in blocks:
+            blocksum += blk[1]
         try:
             assert blocksum == length
         except AssertionError:
@@ -132,15 +133,14 @@ class ReaderTestCase(unittest.TestCase):
         buf = io.BytesIO(data)
         file_ = pa.PythonFile(buf, mode='r')
         
-        header, meta, off_head = self._handler.strip_header(file_)
+        header, meta, off_head = self._handler.prepare(file_)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
         buf = io.BytesIO(data)
         file_ = pa.PythonFile(buf, mode='r')
 
-        # offsets, lengths = self._handler.get_blocks(file_, 6, b'\r\n', off_head)
-        blocks = self._handler.get_blocks(file_, 6, b'\r\n', False, off_head)
+        blocks = self._handler.execute(file_)
         chunks = [bytearray(block[1]) for block in blocks]
         for i, block in enumerate(blocks):
             self._handler.readinto_block(file_, chunks[i], block[0])
@@ -162,7 +162,7 @@ class ReaderTestCase(unittest.TestCase):
         buf = io.BytesIO(data)
         file_ = pa.PythonFile(buf, mode='r')
         
-        header, meta, off_head = self._handler.strip_header(file_)
+        header, meta, off_head = self._handler.prepare(file_)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
@@ -170,7 +170,7 @@ class ReaderTestCase(unittest.TestCase):
         file_ = pa.PythonFile(buf, mode='r')
 
         # offsets, lengths = self._handler.get_blocks(file_, 6, b'\r\n', off_head)
-        blocks = self._handler.get_blocks(file_, 2**16, b'\r\n', False, off_head)
+        blocks = self._handler.execute(file_) 
         chunks = [bytearray(block[1]) for block in blocks]
         for i, block in enumerate(blocks):
             self._handler.readinto_block(file_, chunks[i], block[0])

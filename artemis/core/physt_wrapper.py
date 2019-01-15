@@ -52,7 +52,7 @@ class Physt_Wrapper(metaclass=Singleton):
             bins = self.hbook[key].binning
             self.hbook[key] = Histogram1D(bins,
                                           stats={"sum": 0.0, "sum2": 0.0})
-            self.logger.info('Rebook %s %s', key, self.hbook[key])
+            self.logger.debug('Rebook %s %s', key, self.hbook[key])
 
     def rebook(self, algname, name, bins, axis_name=None):
         name_ = '.'

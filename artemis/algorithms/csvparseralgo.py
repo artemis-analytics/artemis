@@ -10,20 +10,13 @@
 Algorithm which configures a reader
 given a bytes object
 """
-from ast import literal_eval
-import csv
-import io
-
-import pyarrow as pa
-from pyarrow.csv import read_csv, ReadOptions
-
 from artemis.core.algo import AlgoBase
-from artemis.io.reader import Reader
 from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.utils.utils import range_positive
 from artemis.core.timerstore import TimerSvc
+from artemis.core.tool import ToolStore
 
 
 class CsvParserAlgo(AlgoBase):
@@ -31,15 +24,14 @@ class CsvParserAlgo(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
-        self.__logger.debug('%s: __init__ CsvParserAlgo' % self.name)
-        self.__logger.warning('%s: __init__ CsvParserAlgo' % self.name)
-        self.reader = None
         self.jobops = None
+        self.__tools = ToolStore()
+        # TODO
+        # Add any required tools to list of algo properties
+        # All tools must be loaded in the ToolStore
+        # Check for existence of tool
 
     def initialize(self):
-        self.__logger.info(self.__logger)
-        self.__logger.info(self._CsvParserAlgo__logger)
-        self.reader = Reader()
         self.jobops = JobProperties()
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
 
@@ -54,78 +46,38 @@ class CsvParserAlgo(AlgoBase):
         self.hbook.book(self.name, 'time.pyarrowparse', bins, 'ms')
 
     def rebook(self):
+
         for key in self.__timers.keys:
-            if 'steer' not in key:
+            if 'steer' in key:
                 continue
+            if self.name not in key:
+                continue
+            self.__logger.info("Rebook %s", key)
             name = key.split('.')[-1]
             avg_, std_ = self.__timers.stats(self.name, name)
             bins = [x for x in range_positive(0., avg_ + 5*std_, 2.)]
-            self.hbook.rebook('steer', name, bins, 'ms')
+            self.hbook.rebook(self.name, 'time.'+name, bins, 'ms')
 
     @timethis
     def py_parsing(self, schema, columns, length, block):
         try:
-            with io.TextIOWrapper(io.BytesIO(block)) as file_:
-                reader = csv.reader(file_)
-                try:
-                    next(reader)
-                except Exception:
-                    self.__logger.error("Cannot read inserted header")
-                    raise
-                try:
-                    for row in reader:
-                        # print(row)
-                        length += 1
-                        for i, item in enumerate(row):
-                            if item == 'nan':
-                                item = 'None'
-                            try:
-                                columns[i].append(literal_eval(item))
-                            except Exception:
-                                self.__logger.error("Line %i row %s" %
-                                                    (i, row))
-                                raise
-                except Exception:
-                    self.__logger.error('Error reading line %i' % length)
-                    raise
-        except IOError:
-            raise
+            batch = self.__tools.get("csvtool").\
+                    execute_pyparsing(schema,
+                                      columns,
+                                      length,
+                                      block)
         except Exception:
+            self.__logger.error("Python parsing fails")
             raise
-
-        array = []
-        for column in columns:
-            try:
-                array.append(pa.array(column))
-            except Exception:
-                self.__logger.error("Cannot convert list to pyarrow arrow")
-                raise
-        try:
-            rbatch = pa.RecordBatch.from_arrays(array, schema)
-        except Exception:
-            self.__logger.error("Cannot convert arrays to batch")
-            raise
-
-        return rbatch
+        return batch
 
     @timethis
     def pyarrow_parsing(self, block):
-        # create pyarrow buffer from raw bytes
-        buf_ = pa.py_buffer(block)
         try:
-            table = read_csv(buf_, ReadOptions())
+            batch = self.__tools.get('csvtool').execute(block)
         except Exception:
-            self.__logger.error("Problem converting csv to table")
             raise
-        # We actually want a batch
-        # batch can be converted to table but not vice-verse, we get batches
-        # Should always be length 1 though (chunksize can be set however)
-        batches = table.to_batches()
-        if len(batches) != 1:
-            self.__logger.error("Table has more than 1 RecordBatches")
-            raise Exception
-
-        return batches[-1]
+        return batch
 
     def execute(self, element):
 
@@ -138,26 +90,31 @@ class CsvParserAlgo(AlgoBase):
 
         try:
             rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
-            self.__timers.fill(self.name, 'pyparse', time_)
-            self.hbook.fill(self.name, 'time.pyparse', time_)
         except Exception:
             self.__logger.error("Python parsing fails")
             raise
+        self.__timers.fill(self.name, 'pyparse', time_)
+        self.hbook.fill(self.name, 'time.pyparse', time_)
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)
-            self.__timers.fill(self.name, 'pyarrowparse', time_)
-            self.hbook.fill(self.name, 'time.pyarrowparse', time_)
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
+        self.__timers.fill(self.name, 'pyarrowparse', time_)
+        self.hbook.fill(self.name, 'time.pyarrowparse', time_)
+
+        if rbatch.equals(tbatch) is False:
+            self.__logger.error("Batches not validated")
+        else:
+            self.__logger.debug("Batches equal %s", rbatch.equals(tbatch))
 
         self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
         self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
-        self.__logger.info("Batches equal %s", rbatch.equals(tbatch))
+
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
-        self.__logger.info("Element Data type %s", type(element.get_data()))
+        self.__logger.debug("Element Data type %s", type(element.get_data()))
 
     def finalize(self):
         self.__logger.info("Completed CsvParsing")
