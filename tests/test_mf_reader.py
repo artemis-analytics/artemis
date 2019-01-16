@@ -24,7 +24,7 @@ class Test_MF_Reader(unittest.TestCase):
         rsize = 20
         nrecords = 3
         csize = rsize * nrecords
-        idata = "012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m012345678iabcd01234m"
+        idata = "012345678aabcd01234m012345678babcd01234m012345678cabcd01234m012345678dabcd01234m012345678eabcd01234m012345678fabcd01234m012345678aabcd01234m012345678babcd01234m012345678cabcd01234m012345678dabcd01234m012345678eabcd01234m012345678fabcd01234m012345678aabcd01234m012345678babcd01234m012345678cabcd01234m"
         isize = len(idata)
         schema = [10,4,6]
         odata = []
@@ -32,22 +32,27 @@ class Test_MF_Reader(unittest.TestCase):
         for field in schema:
             odata.append([])
 
-        nsize = 0
-        counter = 0
         icounter = 0
+        ccounter = 0
+        ncounter = 0
+        fcounter = 0
 
         while icounter < isize:
-            while nsize < csize:
-                print('Nsize: ' + str(nsize))
-                chunk = idata[counter:rsize]
-                ncounter = 0
-                print('Counter: ' + str(counter))
-                rcounter = 0
+            cdata = idata[icounter:(icounter + csize)]
+            print('Data')
+            print(cdata)
+            while ccounter < csize:
+                rdata = cdata[ccounter: (ccounter + rsize)]
+                print('Record')
+                print(rdata)
                 while ncounter < nrecords:
-                    odata[ncounter].append(chunk[rcounter:(rcounter + schema[ncounter])])
-                    rcounter = rcounter + schema[ncounter]
-                    ncounter = ncounter + 1
-                    print('Data')
+                    odata[ncounter].append(rdata[fcounter:(fcounter + schema[ncounter])])
+                    print('Field')
                     print(odata)
-                nsize = nsize + rsize
+                    fcounter = fcounter + schema[ncounter]
+                    ncounter = ncounter + 1
+                ncounter = 0
+                fcounter = 0
+                ccounter = ccounter + rsize
             icounter = icounter + csize
+            ccounter = 0
