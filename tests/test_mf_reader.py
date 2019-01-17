@@ -51,10 +51,10 @@ class Test_MF_Reader(unittest.TestCase):
                     record = rdata[fcounter:(fcounter + schema[ncounter])] # Extract fields.
                     if data_types[ncounter] == 'signedint':
                         if record[-1:] in pos_chars:
-                            record = record.replace(record[-1:], pos_chars[record[-1:]])
+                            record = int(record.replace(record[-1:], pos_chars[record[-1:]]))
                         else:
                             record = record.replace(record[-1:], neg_chars[record[-1:]])
-                            record = '-' + record
+                            record = int('-' + record)
                         odata[ncounter].append(record)
                     elif data_types[ncounter] == 'string':
                         odata[ncounter].append(record)
@@ -66,8 +66,13 @@ class Test_MF_Reader(unittest.TestCase):
             icounter = icounter + csize
             ccounter = 0
 
+        counter = 0
         for my_list in odata:
-            arrowodata.append(pa.array(my_list))
+            if data_types[counter] == 'signedint':
+                arrowodata.append(pa.array(my_list))
+            else:
+                arrowodata.append(pa.array(my_list))
+            counter = counter + 1
 
         print('Output data lists.')
         print(odata)
