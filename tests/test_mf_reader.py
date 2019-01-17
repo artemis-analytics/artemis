@@ -12,6 +12,9 @@ from collections import OrderedDict, namedtuple
 
 import pyarrow as pa
 
+from artemis.tools.mftool import MfTool
+from artemis.core.tool import ToolBase
+
 class Test_MF_Reader(unittest.TestCase):
 
     def setUp(self):
@@ -79,3 +82,6 @@ class Test_MF_Reader(unittest.TestCase):
 
         print('Output data arrow arrays.')
         print(arrowodata)
+
+    def test_tool_mf_reader(self):
+        MfTool.execute('testself', 'testblock')
