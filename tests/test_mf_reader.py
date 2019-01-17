@@ -10,6 +10,8 @@
 import unittest
 from collections import OrderedDict, namedtuple
 
+import pyarrow as pa
+
 class Test_MF_Reader(unittest.TestCase):
 
     def setUp(self):
@@ -28,6 +30,10 @@ class Test_MF_Reader(unittest.TestCase):
         isize = len(idata)
         schema = [10,4,6]
         odata = []
+        arrowodata = []
+        data_types = ['signedint', 'string', 'signedint']
+        pos_chars = {'{':'0', 'a':'1', 'b':'2', 'c':'3', 'd':'4', 'e':'5', 'f':'6', 'g':'7', 'h':'8', 'i':'9'}
+        neg_chars = {'j':'0', 'k':'1', 'l':'2', 'm':'3', 'n':'4', 'o':'5', 'p':'6', 'q':'7', 'r':'8', 's':'9'}
 
         for field in schema:
             odata.append([])
@@ -38,17 +44,20 @@ class Test_MF_Reader(unittest.TestCase):
         fcounter = 0
 
         while icounter < isize:
-            cdata = idata[icounter:(icounter + csize)]
-            print('Data')
-            print(cdata)
+            cdata = idata[icounter:(icounter + csize)] # Extract chunks.
             while ccounter < csize:
-                rdata = cdata[ccounter: (ccounter + rsize)]
-                print('Record')
-                print(rdata)
+                rdata = cdata[ccounter: (ccounter + rsize)] # Extract records.
                 while ncounter < nrecords:
-                    odata[ncounter].append(rdata[fcounter:(fcounter + schema[ncounter])])
-                    print('Field')
-                    print(odata)
+                    record = rdata[fcounter:(fcounter + schema[ncounter])] # Extract fields.
+                    if data_types[ncounter] == 'signedint':
+                        if record[-1:] in pos_chars:
+                            record = record.replace(record[-1:], pos_chars[record[-1:]])
+                        else:
+                            record = record.replace(record[-1:], neg_chars[record[-1:]])
+                            record = '-' + record
+                        odata[ncounter].append(record)
+                    elif data_types[ncounter] == 'string':
+                        odata[ncounter].append(record)
                     fcounter = fcounter + schema[ncounter]
                     ncounter = ncounter + 1
                 ncounter = 0
@@ -56,3 +65,12 @@ class Test_MF_Reader(unittest.TestCase):
                 ccounter = ccounter + rsize
             icounter = icounter + csize
             ccounter = 0
+
+        for my_list in odata:
+            arrowodata.append(pa.array(my_list))
+
+        print('Output data lists.')
+        print(odata)
+
+        print('Output data arrow arrays.')
+        print(arrowodata)
