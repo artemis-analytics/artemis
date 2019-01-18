@@ -136,7 +136,7 @@ class CsvParserAlgo(AlgoBase):
                 print(mu, std)
             except KeyError:
                 self.__logger.error("Cannot retrieve %s ", _name)
-            self.__logger.debug("%s timing: %2.4f" % (key, mu))
+            self.__logger.info("%s timing: %2.4f" % (key, mu))
 
             # Add to the msg
             msgtime = summary.timers.add()

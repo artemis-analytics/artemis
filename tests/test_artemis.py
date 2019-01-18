@@ -138,6 +138,7 @@ class ArtemisTestCase(unittest.TestCase):
         csvtoolmsg.CopyFrom(csvtoolcfg)
         print(text_format.MessageToString(csvtoolmsg))
 
+
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())

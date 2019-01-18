@@ -965,10 +965,9 @@ class Artemis():
         self.__logger.info("Total bytes processed %i",
                            summary.processed_bytes)
 
-        self.__logger.debug("Timer Summary")
+        self.__logger.info("Timer Summary")
         for t in self.jobops.meta.summary.timers:
-            self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
-        self.__logger.info("This is a test of your greater survival")
+            self.__logger.info("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
         self.__logger.info("=================================")
 
     def abort(self, *args, **kwargs):
