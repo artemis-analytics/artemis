@@ -41,29 +41,12 @@ variables:
   HELM_VERSION: 2.8.1
 
   PROJECT_NAME: stcdatascience/artemis
-  IMAGE_NAME: registry.k8s.cloud.statcan.ca/stcdatascience/artemis:validation
+
 stages:
-  - prepare
   - review  
   - test
   - document
   - package
-  - build
-  - validate
-
-prepare:
-    stage: prepare
-    image: $IMAGE_NAME 
-    script:
-        - python tests/test_artemis.py
-        - echo "$IMAGE_NAME"
-        - echo "Please run this"
-        - echo "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
-        - cp test.log valid.log
-    only:
-        - branches
-    artifacts:
-        paths: [valid.log]
 
 review:
   stage: review
@@ -78,10 +61,25 @@ review:
 
 test:
   stage: test
-  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:latest
+  image: centos/python-36-centos7:latest
   variables:
     DOCKER_DRIVER: overlay2
   script:
+      # - yum -y install epel-release
+      # - yum -y install python36
+      # - yum -y install python36-devel
+      # - yum -y install python36-setuptools
+      # - easy_install-3.6 pip
+    - which python
+    - python -m pip --version  
+    - pip install setuptools 
+    - pip install numpy
+    - pip install pandas  #  required by pyarrow
+    - pip install scipy
+    - pip install cython
+    - pip install pyarrow 
+    - pip install packaging #  required by physt
+    - pip install protobuf
     - pip install coverage
     - python setup.py install
     - coverage3 run --source=artemis/ -m unittest
@@ -110,50 +108,29 @@ document:
 
 package:
   stage: package
-  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:latest
-  dependencies:
-      - prepare
+  image: centos/python-36-centos7:latest
   variables:
     DOCKER_DRIVER: overlay2
   script:
+    - which python
+    - python -m pip --version  
+    - pip install setuptools 
+    - pip install numpy
+    - pip install pandas  #  required by pyarrow
+    - pip install scipy
+    - pip install cython
+    - pip install pyarrow 
+    - pip install packaging #  required by physt
+    - pip install protobuf
+    - pip install coverage
     - pip install wheel
     - python setup.py install
     - bash package.sh -d artemis_build
   artifacts:
       paths:
           - artemis_build/artemis.tar.gz
-  allow_failure: true
   only:
       - tags
-      - validationci
-
-build:
-    stage: build
-    image: sylus/gitlab-ci
-    services:
-        - docker:stable-dind
-    variables:
-        DOCKER_DRIVER: overlay2
-    script:
-        - echo "Building ${PROJECT_NAME}"
-        - setup_docker
-        - build
-    only:
-        - branches
-
-validate:
-    stage: validate
-    image: $IMAGE_NAME 
-    dependencies:
-        - prepare
-    variables:
-        DOCKER_DRIVER: overlay2
-    script:
-        - python tests/test_artemis.py
-        - diff test.log valid.log
-    allow_failure: true
-    only:
-        - branches
 # ---------------------------------------------------------------------------
 
 .auto_devops: &auto_devops |
@@ -457,8 +434,6 @@ validate:
       echo "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
       docker tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
       docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
-      docker tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_REGISTRY/$PROJECT_NAME:validation"
-      docker push "$CI_REGISTRY/$PROJECT_NAME:validation"
       echo ""
     fi
   }

@@ -220,7 +220,7 @@ class Steering(AlgoBase):
             _name = _name.join([self.name, 'time', key])
             mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
             std = self.hbook.get_histogram(self.name, 'time.'+key).std()
-            self.__logger.debug("%s timing: %2.4f" % (key, mu))
+            self.__logger.info("%s timing: %2.4f" % (key, mu))
             msgtime = summary.timers.add()
             msgtime.name = _name
             msgtime.time = mu
