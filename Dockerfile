@@ -1,4 +1,4 @@
-FROM registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:v1
+FROM registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:latest
 
 MAINTAINER Dominic Parent <dominic.parent@canada.ca>
 
@@ -10,4 +10,3 @@ ADD tests ./tests
 ADD setup.py ./setup.py
 
 RUN python setup.py install
-RUN python -m unittest
