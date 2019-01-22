@@ -41,7 +41,7 @@ variables:
   HELM_VERSION: 2.8.1
 
   PROJECT_NAME: stcdatascience/artemis
-  IMAGE_NAME: registry.k8s.cloud.statcan.ca/stcdatascience/artemis:master
+  IMAGE_NAME: registry.k8s.cloud.statcan.ca/stcdatascience/artemis/master:master
 
 stages:
   - prepare
@@ -138,6 +138,7 @@ build:
         - build
     only:
         - branches
+        - tags
 
 validate:
     stage: validate
