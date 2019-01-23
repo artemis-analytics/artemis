@@ -607,6 +607,7 @@ class GenCsvLikeArrow(AlgoBase):
             yield data, batch
             self._nbatches -= 1
 
+
 class GenMF():
     '''
     Generator for mainframe style data.
@@ -619,17 +620,22 @@ class GenMF():
 
         if dataset['utype'] == 'int':
             for i in range(size):
-                dpoint = str(random.randint(dataset['min_val'], dataset['max_val']))
+                dpoint = str(random.randint(dataset['min_val'],
+                                            dataset['max_val']))
                 print('Data pointi: ' + dpoint)
                 dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
                 print('Data pointiw: ' + dpoint)
                 rand_col.append(dpoint)
         else:
-            source = string.ascii_lowercase + string.ascii_uppercase + string.digits + string.punctuation
+            source = string.ascii_lowercase\
+                   + string.ascii_uppercase\
+                   + string.digits\
+                   + string.punctuation
             for i in range(size):
-                dpoint = ''.join(random.choice(source) for _ in range(dataset['length']))
+                dpoint = ''.join(random.choice(source)
+                                 for _ in range(dataset['length']))
                 print('Data pointc: ' + dpoint)
-                dpoint = (' ' * (dataset['length'] -len(dpoint))) + dpoint
+                dpoint = (' ' * (dataset['length'] - len(dpoint))) + dpoint
                 print('Data pointcw: ' + dpoint)
                 rand_col.append(dpoint)
 
