@@ -41,7 +41,7 @@ variables:
   HELM_VERSION: 2.8.1
 
   PROJECT_NAME: stcdatascience/artemis
-  IMAGE_NAME: registry.k8s.cloud.statcan.ca/stcdatascience/artemis:validation
+  IMAGE_NAME: registry.k8s.cloud.statcan.ca/stcdatascience/artemis/master:master
 
 stages:
   - prepare
@@ -57,12 +57,10 @@ prepare:
     image: $IMAGE_NAME 
     script:
         - python tests/test_artemis.py
-        - echo "$IMAGE_NAME"
-        - echo "Please run this"
-        - echo "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
         - cp test.log valid.log
     only:
         - branches
+    allow_failure: true
     artifacts:
         paths: [valid.log]
 
@@ -124,10 +122,8 @@ package:
   artifacts:
       paths:
           - artemis_build/artemis.tar.gz
-  allow_failure: true
   only:
       - tags
-      - validationci
 
 build:
     stage: build
@@ -142,6 +138,7 @@ build:
         - build
     only:
         - branches
+        - tags
 
 validate:
     stage: validate
@@ -459,8 +456,6 @@ validate:
       echo "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
       docker tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
       docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
-      docker tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_REGISTRY/$PROJECT_NAME:validation"
-      docker push "$CI_REGISTRY/$PROJECT_NAME:validation"
       echo ""
     fi
   }
