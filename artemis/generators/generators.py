@@ -606,3 +606,49 @@ class GenCsvLikeArrow(AlgoBase):
                                 (self.__class__.__name__, type(data)))
             yield data, batch
             self._nbatches -= 1
+
+class GenMF():
+    '''
+    Generator for mainframe style data.
+
+    Generates specific number of records and columns.
+    '''
+
+    def gen_column(self, dataset, size):
+        rand_col = []
+
+        if dataset['utype'] == 'int':
+            for i in range(size):
+                dpoint = str(random.randint(dataset['min_val'], dataset['max_val']))
+                print('Data pointi: ' + dpoint)
+                dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
+                print('Data pointiw: ' + dpoint)
+                rand_col.append(dpoint)
+        else:
+            source = string.ascii_lowercase + string.ascii_uppercase + string.digits + string.punctuation
+            for i in range(size):
+                dpoint = ''.join(random.choice(source) for _ in range(dataset['length']))
+                print('Data pointc: ' + dpoint)
+                dpoint = (' ' * (dataset['length'] -len(dpoint))) + dpoint
+                print('Data pointcw: ' + dpoint)
+                rand_col.append(dpoint)
+
+        print(rand_col)
+        return rand_col
+
+    def gen_chunk(self, schema, size):
+        chunk = ''
+        cols = []
+
+        for dataset in schema:
+            cols.append(GenMF.gen_column('test', dataset, size))
+
+        i = 0
+
+        while i < size:
+            for column in cols:
+                chunk = chunk + column[i]
+            i = i + 1
+
+        print('Chunk:')
+        print(chunk)
