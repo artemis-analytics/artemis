@@ -617,11 +617,24 @@ class GenMF():
 
     def gen_column(self, dataset, size):
         rand_col = []
+        pos_char = {'0': '{', '1': 'a', '2': 'b', '3': 'c', '4': 'd',
+                    '5': 'e', '6': 'f', '7': 'g', '8': 'h', '9': 'i'}
+        neg_char = {'0': 'j', '1': 'k', '2': 'l', '3': 'm', '4': 'n',
+                    '5': 'o', '6': 'p', '7': 'q', '8': 'r', '9': 's'}
 
         if dataset['utype'] == 'int':
             for i in range(size):
-                dpoint = str(random.randint(dataset['min_val'],
-                                            dataset['max_val']))
+                dpoint = random.randint(dataset['min_val'],
+                                            dataset['max_val'])
+                if dpoint < 0:
+                    dpoint = str(dpoint)
+                    dpoint = dpoint.replace('-', '')
+                    dpoint = dpoint.replace(dpoint[-1],
+                                            neg_char[dpoint[-1:]])
+                else:
+                    dpoint = str(dpoint)
+                    dpoint = dpoint.replace(dpoint[-1],
+                                            pos_char[dpoint[-1:]])
                 print('Data pointi: ' + dpoint)
                 dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
                 print('Data pointiw: ' + dpoint)

@@ -16,34 +16,25 @@ from artemis.core.tool import ToolBase
 
 class MfTool(ToolBase):
 
-    def execute(self, block):
-        rsize = 20
-        nrecords = 3
-        csize = rsize * nrecords
-        idata = "012345678aabcd01234m012345678babcd01234m"\
-            + "012345678cabc 01234m012345678dabcd01234m"\
-            + "012345678eabcd01234m012345678fabcd01234m"\
-            + "012345678aabc 01234m012345678babcd01234m"\
-            + "012345678cabcd01234m012345678dabcd01234m"\
-            + "012345678eabc 01234m012345678fabcd01234m"\
-            + "012345678aabcd01234m012345678babcd01234m"\
-            + "012345678cabc 01234m"
+    def execute(self, ds_schema, block):
+        idata = block
         isize = len(idata)
         print(isize)
-        schema = [10, 4, 6]
         odata = []
         arrowodata = []
-        data_types = ['int', 'str']
-        intconf0 = {'utype':'int', 'length':10}
-        intconf1 = {'utype':'int', 'length':6}
-        strconf0 = {'utype':'str', 'length':4}
-        test_ds = [intconf0, strconf0, intconf1]
+        test_ds = ds_schema
+        nrecords = len(test_ds)
+        rsize = 0
+        for ds in test_ds:
+            rsize = rsize + ds['length']
+        csize = rsize * nrecords
+
         pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
                     'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
         neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
                     'o': '5', 'p': '6', 'q': '7', 'r': '8', 's': '9'}
 
-        for field in schema:
+        for field in test_ds:
             odata.append([])
 
         icounter = 0
@@ -59,8 +50,8 @@ class MfTool(ToolBase):
                 rdata = cdata[ccounter: (ccounter + rsize)]
                 while ncounter < nrecords:
                     # Extract field.
-                    record = rdata[fcounter:(fcounter + schema[ncounter])]
-                    if data_types[ncounter] == 'int':
+                    record = rdata[fcounter:(fcounter + test_ds[ncounter]['length'])]
+                    if test_ds[ncounter]['utype'] == 'int':
                         if record[-1:] in pos_char:
                             record = int(record.replace(record[-1:],
                                                         pos_char[record[-1:]]))
@@ -69,9 +60,9 @@ class MfTool(ToolBase):
                                                     neg_char[record[-1:]])
                             record = int('-' + record)
                         odata[ncounter].append(record)
-                    elif data_types[ncounter] == 'str':
+                    elif test_ds[ncounter]['utype'] == 'str':
                         odata[ncounter].append(record.strip())
-                    fcounter = fcounter + schema[ncounter]
+                    fcounter = fcounter + test_ds[ncounter]['length']
                     ncounter = ncounter + 1
                 ncounter = 0
                 fcounter = 0
@@ -79,13 +70,8 @@ class MfTool(ToolBase):
             icounter = icounter + csize
             ccounter = 0
 
-        counter = 0
         for my_list in odata:
-            if data_types[counter] == 'signedint':
-                arrowodata.append(pa.array(my_list))
-            else:
-                arrowodata.append(pa.array(my_list))
-            counter = counter + 1
+            arrowodata.append(pa.array(my_list))
 
         print('Output data lists.')
         print(odata)
