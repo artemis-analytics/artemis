@@ -21,19 +21,23 @@ class MfTool(ToolBase):
         nrecords = 3
         csize = rsize * nrecords
         idata = "012345678aabcd01234m012345678babcd01234m"\
-            + "012345678cabcd01234m012345678dabcd01234m"\
+            + "012345678cabc 01234m012345678dabcd01234m"\
             + "012345678eabcd01234m012345678fabcd01234m"\
-            + "012345678aabcd01234m012345678babcd01234m"\
+            + "012345678aabc 01234m012345678babcd01234m"\
             + "012345678cabcd01234m012345678dabcd01234m"\
-            + "012345678eabcd01234m012345678fabcd01234m"\
+            + "012345678eabc 01234m012345678fabcd01234m"\
             + "012345678aabcd01234m012345678babcd01234m"\
-            + "012345678cabcd01234m"
+            + "012345678cabc 01234m"
         isize = len(idata)
         print(isize)
         schema = [10, 4, 6]
         odata = []
         arrowodata = []
-        data_types = ['signedint', 'string', 'signedint']
+        data_types = ['int', 'str']
+        intconf0 = {'utype':'int', 'length':10}
+        intconf1 = {'utype':'int', 'length':6}
+        strconf0 = {'utype':'str', 'length':4}
+        test_ds = [intconf0, strconf0, intconf1]
         pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
                     'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
         neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
@@ -56,7 +60,7 @@ class MfTool(ToolBase):
                 while ncounter < nrecords:
                     # Extract field.
                     record = rdata[fcounter:(fcounter + schema[ncounter])]
-                    if data_types[ncounter] == 'signedint':
+                    if data_types[ncounter] == 'int':
                         if record[-1:] in pos_char:
                             record = int(record.replace(record[-1:],
                                                         pos_char[record[-1:]]))
@@ -65,8 +69,8 @@ class MfTool(ToolBase):
                                                     neg_char[record[-1:]])
                             record = int('-' + record)
                         odata[ncounter].append(record)
-                    elif data_types[ncounter] == 'string':
-                        odata[ncounter].append(record)
+                    elif data_types[ncounter] == 'str':
+                        odata[ncounter].append(record.strip())
                     fcounter = fcounter + schema[ncounter]
                     ncounter = ncounter + 1
                 ncounter = 0

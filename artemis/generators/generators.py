@@ -635,7 +635,7 @@ class GenMF():
                 dpoint = ''.join(random.choice(source)
                                  for _ in range(dataset['length']))
                 print('Data pointc: ' + dpoint)
-                dpoint = (' ' * (dataset['length'] - len(dpoint))) + dpoint
+                dpoint = dpoint + (' ' * (dataset['length'] - len(dpoint)))
                 print('Data pointcw: ' + dpoint)
                 rand_col.append(dpoint)
 
