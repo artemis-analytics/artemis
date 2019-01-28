@@ -625,7 +625,7 @@ class GenMF():
         if dataset['utype'] == 'int':
             for i in range(size):
                 dpoint = random.randint(dataset['min_val'],
-                                            dataset['max_val'])
+                                        dataset['max_val'])
                 if dpoint < 0:
                     dpoint = str(dpoint)
                     dpoint = dpoint.replace('-', '')

@@ -50,7 +50,8 @@ class MfTool(ToolBase):
                 rdata = cdata[ccounter: (ccounter + rsize)]
                 while ncounter < nrecords:
                     # Extract field.
-                    record = rdata[fcounter:(fcounter + test_ds[ncounter]['length'])]
+                    record = rdata[fcounter:
+                                  (fcounter + test_ds[ncounter]['length'])]
                     if test_ds[ncounter]['utype'] == 'int':
                         if record[-1:] in pos_char:
                             record = int(record.replace(record[-1:],
