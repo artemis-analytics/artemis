@@ -38,4 +38,5 @@ class Test_MF_Reader(unittest.TestCase):
                  + "012345678eabc 01234m012345678fabcd01234m"\
                  + "012345678aabcd01234m012345678babcd01234m"\
                  + "012345678cabc 01234n"
-        MfTool.execute('testself', self.schema, self.block)
+        mfreader = MfTool(self.schema)
+        mfreader.execute(self.schema, self.block)

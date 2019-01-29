@@ -16,25 +16,26 @@ from artemis.core.tool import ToolBase
 
 class MfTool(ToolBase):
 
+    def __init__(self, ds_schema):
+        self.ds_schema = ds_schema
+        self.nrecords = len(ds_schema)
+        self.pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
+                         'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
+        self.neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
+                         'o': '5', 'p': '6', 'q': '7', 'r': '8', 's': '9'}
+        self.rsize = 0
+        for ds in self.ds_schema:
+            self.rsize = self.rsize + ds['length']
+        
+
     def execute(self, ds_schema, block):
-        idata = block
-        isize = len(idata)
+        isize = len(block)
         print(isize)
         odata = []
         arrowodata = []
-        test_ds = ds_schema
-        nrecords = len(test_ds)
-        rsize = 0
-        for ds in test_ds:
-            rsize = rsize + ds['length']
-        csize = rsize * nrecords
+        nrecords = len(self.ds_schema)
 
-        pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
-                    'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
-        neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
-                    'o': '5', 'p': '6', 'q': '7', 'r': '8', 's': '9'}
-
-        for field in test_ds:
+        for field in self.ds_schema:
             odata.append([])
 
         icounter = 0
@@ -42,34 +43,29 @@ class MfTool(ToolBase):
         ncounter = 0
         fcounter = 0
 
-        while icounter < isize:
-            # Extract chunk.
-            cdata = idata[icounter:(icounter + csize)]
-            while ccounter < csize:
-                # Extract record.
-                rdata = cdata[ccounter: (ccounter + rsize)]
-                while ncounter < nrecords:
-                    # Extract field.
-                    record = rdata[fcounter:
-                                   (fcounter + test_ds[ncounter]['length'])]
-                    if test_ds[ncounter]['utype'] == 'int':
-                        if record[-1:] in pos_char:
-                            record = int(record.replace(record[-1:],
-                                                        pos_char[record[-1:]]))
-                        else:
-                            record = record.replace(record[-1:],
-                                                    neg_char[record[-1:]])
-                            record = int('-' + record)
-                        odata[ncounter].append(record)
-                    elif test_ds[ncounter]['utype'] == 'str':
-                        odata[ncounter].append(record.strip())
-                    fcounter = fcounter + test_ds[ncounter]['length']
-                    ncounter = ncounter + 1
-                ncounter = 0
-                fcounter = 0
-                ccounter = ccounter + rsize
-            icounter = icounter + csize
-            ccounter = 0
+        while ccounter < isize:
+            # Extract record.
+            rdata = block[ccounter: (ccounter + self.rsize)]
+            while ncounter < nrecords:
+                # Extract field.
+                field = rdata[fcounter:
+                               (fcounter + self.ds_schema[ncounter]['length'])]
+                if self.ds_schema[ncounter]['utype'] == 'int':
+                    if field[-1:] in self.pos_char:
+                        field = int(field.replace(field[-1:],
+                                                    self.pos_char[field[-1:]]))
+                    else:
+                        field = field.replace(field[-1:],
+                                                self.neg_char[field[-1:]])
+                        field = int('-' + field)
+                    odata[ncounter].append(field)
+                elif self.ds_schema[ncounter]['utype'] == 'str':
+                    odata[ncounter].append(field.strip())
+                fcounter = fcounter + self.ds_schema[ncounter]['length']
+                ncounter = ncounter + 1
+            ncounter = 0
+            fcounter = 0
+            ccounter = ccounter + self.rsize
 
         for my_list in odata:
             arrowodata.append(pa.array(my_list))
