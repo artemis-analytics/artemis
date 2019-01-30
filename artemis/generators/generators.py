@@ -615,6 +615,14 @@ class GenMF():
     Generates specific number of records and columns.
     '''
 
+    def __init__(self, ds_schema, size):
+        self.ds_schema = ds_schema
+        self.size = size
+        self.pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
+                         'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
+        self.neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
+                         'o': '5', 'p': '6', 'q': '7', 'r': '8', 's': '9'}
+
     def gen_column(self, dataset, size):
         rand_col = []
         pos_char = {'0': '{', '1': 'a', '2': 'b', '3': 'c', '4': 'd',
@@ -639,6 +647,13 @@ class GenMF():
                 dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
                 print('Data pointiw: ' + dpoint)
                 rand_col.append(dpoint)
+        elif dataset['utype'] == 'uint':
+            for i in range(size):
+                dpoint = random.randint(dataset['min_val'],
+                                        dataset['max_val'])
+                dpoint = str(dpoint)
+                print('Data pointu: ' + dpoint)
+                dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
         else:
             source = string.ascii_lowercase\
                    + string.ascii_uppercase\
@@ -655,16 +670,16 @@ class GenMF():
         print(rand_col)
         return rand_col
 
-    def gen_chunk(self, schema, size):
+    def gen_chunk(self):
         chunk = ''
         cols = []
 
-        for dataset in schema:
-            cols.append(GenMF.gen_column('test', dataset, size))
+        for dataset in self.ds_schema:
+            cols.append(GenMF.gen_column('test', dataset, self.size))
 
         i = 0
 
-        while i < size:
+        while i < self.size:
             for column in cols:
                 chunk = chunk + column[i]
             i = i + 1

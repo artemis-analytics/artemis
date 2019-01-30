@@ -46,6 +46,7 @@ class Test_MF_Gen(unittest.TestCase):
                    intconf6, strconf4, strconf5, strconf6, intconf7,
                    strconf7, strconf8, intconf8, intconf9, strconf9]
         size = 10
+        test_gen = GenMF(test_ds, size)
         GenMF.gen_column('test', intconf0, size)
         GenMF.gen_column('test', strconf0, size)
-        GenMF.gen_chunk('test', test_ds, size)
+        test_gen.gen_chunk()
