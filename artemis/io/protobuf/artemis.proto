@@ -22,6 +22,7 @@ package artemis;
 
 // import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
 import "histogram.proto";
 
 message Property {
@@ -194,6 +195,7 @@ message Summary {
     repeated Timer timers = 3;
     int32 processed_ndatums = 4;
     repeated RecordBatchFileInfo tables = 5; 
+    google.protobuf.Duration job_time = 6;
 }
 
 message JobInfo {
@@ -205,4 +207,5 @@ message JobInfo {
     JobState state = 6;
     JobConfig config = 7;
     Properties properties = 8;
+    string job_id = 9;
 }

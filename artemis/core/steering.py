@@ -28,13 +28,12 @@ class Steering(AlgoBase):
         self._chunk_cntr = 0
         # Execution graph
         self._menu = OrderedDict()
-        self.jobops = JobProperties()
         self.__timers = TimerSvc()
         self._algo_instances = {}
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
-        self._seq_tree = Tree(self.jobops.meta.name)
+        self._seq_tree = Tree(self._jp.meta.name)
         self.from_msg()
 
     def from_msg(self):
@@ -42,7 +41,7 @@ class Steering(AlgoBase):
         Configure steering from a protobuf msg
         '''
         self.__logger.info('Loading menu from protobuf')
-        msg = self.jobops.meta.config.menu
+        msg = self._jp.meta.config.menu
         self.__logger.info('Initializing Tree and Algos')
 
         # Initialize algorithms
@@ -203,7 +202,7 @@ class Steering(AlgoBase):
 
     def finalize(self):
         self.__logger.info("Completed steering")
-        summary = self.jobops.meta.summary
+        summary = self._jp.meta.summary
         for key in self._menu:
             for algo in self._menu[key]:
                 if isinstance(algo, str):

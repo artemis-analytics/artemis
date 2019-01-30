@@ -16,6 +16,7 @@ owns the stores needed by the user algorithms
 # Python libraries
 import sys
 import io
+import uuid
 
 # Externals
 import pyarrow as pa
@@ -54,12 +55,13 @@ class Artemis():
         #######################################################################
         # Properties
         self.properties = Properties()
-        self.jobops = JobProperties()
+        self._jp = JobProperties()
 
         # Set defaults if not configured
-        self.jobops.meta.name = name
-        self.jobops.meta.started.GetCurrentTime()
-        self.jobops.meta.state = artemis_pb2.JOB_STARTING
+        self._jp.meta.name = name
+        self._jp.meta.job_id = str(uuid.uuid4())
+        self._jp.meta.started.GetCurrentTime()
+        self._update_state(artemis_pb2.JOB_STARTING)
 
         # Define the internal objects for Artemis
         self.steer = None
@@ -106,7 +108,7 @@ class Artemis():
         '''
         Stateful Job processing via pytransitions
         '''
-        self.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        self._jp.meta.state = artemis_pb2.JOB_RUNNING
         self._launch()
 
         # Configure Artemis job
@@ -194,6 +196,9 @@ class Artemis():
         except Exception:
             self.__logger.error("Error finalizing buffers")
             raise
+    
+    def _update_state(self, state):
+        self._jp.meta.state = state
 
     def _launch(self):
         self.logger.info('Artemis is ready')
@@ -208,11 +213,11 @@ class Artemis():
         # Maximum memory allocation in Arrow to trigger flush
         # Sampler settings
 
-        _summary = self.jobops.meta.summary
+        _summary = self._jp.meta.summary
         _summary.processed_bytes = 0
         _summary.processed_ndatums = 0
 
-        _msgcfg = self.jobops.meta.config
+        _msgcfg = self._jp.meta.config
         if _msgcfg.max_malloc_size_bytes:
             self.MALLOC_MAX_SIZE = _msgcfg.max_malloc_size_bytes
         else:
@@ -242,7 +247,7 @@ class Artemis():
                            self.__class__.__name__,
                            self.properties)
         if hasattr(self.properties, 'protomsg'):
-            _msgcfg = self.jobops.meta.config
+            _msgcfg = self._jp.meta.config
             try:
                 with open(self.properties.protomsg, 'rb') as f:
                     _msgcfg.ParseFromString(f.read())
@@ -288,7 +293,7 @@ class Artemis():
 
     def _gen_config(self):
         self.__logger.info('Loading generator from protomsg')
-        _msggen = self.jobops.meta.config.input.generator.config
+        _msggen = self._jp.meta.config.input.generator.config
         self.__logger.info(text_format.MessageToString(_msggen))
         try:
             self.generator = AlgoBase.from_msg(self.__logger, _msggen)
@@ -316,7 +321,7 @@ class Artemis():
         # Exceptions?
         self.__logger.info("{}: Lock".format('artemis'))
         self.properties.lock = True
-        self.jobops.meta.properties.CopyFrom(self.properties.to_msg())
+        self._jp.meta.properties.CopyFrom(self.properties.to_msg())
         try:
             self.steer.lock()
         except Exception:
@@ -374,7 +379,7 @@ class Artemis():
         except Exception:
             raise
 
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
         avg_, std_ = self.__timers.stats('artemis', 'execute')
         factor = 2 * len(_finfo.blocks)
 
@@ -388,10 +393,10 @@ class Artemis():
                                self.generator.num_batches)
 
         # Reset all meta data needed for processing all job info
-        _summary = self.jobops.meta.summary
+        _summary = self._jp.meta.summary
         _summary.processed_bytes = 0
         _summary.processed_ndatums = 0
-        del self.jobops.meta.data[:]  # Remove all the fileinfo msgs
+        del self._jp.meta.data[:]  # Remove all the fileinfo msgs
 
     def _check_malloc(self):
         '''
@@ -480,7 +485,7 @@ class Artemis():
 
         # Buffer stream requires a fixed pyArrow schema!
         _tree = Tree()  # Singleton!
-        _msgcfg = self.jobops.meta.config
+        _msgcfg = self._jp.meta.config
         _wrtcfg = None
         for toolcfg in _msgcfg.tools:
             if toolcfg.name == "bufferwriter":
@@ -498,7 +503,7 @@ class Artemis():
                     self.__tools.add(self.__logger, _wrtcfg)
                     self.__tools.get(_wrtcfg.name)._schema = _last.schema
                     self.__tools.get(_wrtcfg.name)._fbasename = \
-                        self.jobops.meta.name
+                        self._jp.meta.name
                     self.__tools.get(_wrtcfg.name).initialize()
         except Exception:
             self.__logger.error("Problem creating output streams")
@@ -543,16 +548,16 @@ class Artemis():
         '''
         self.__logger.info("artemis: Run")
         self.__logger.debug('artemis: Count at run call %i',
-                            self.jobops.meta.summary.processed_ndatums)
+                            self._jp.meta.summary.processed_ndatums)
 
         self.__logger.info("artemis: Run: pyarrow malloc %i",
                            pa.total_allocated_bytes())
         while True:
             self.__logger.info("artemis: request %i malloc %i",
-                               self.jobops.meta.summary.processed_ndatums,
+                               self._jp.meta.summary.processed_ndatums,
                                pa.total_allocated_bytes())
             self.hbook.fill('artemis', 'counts',
-                            self.jobops.meta.summary.processed_ndatums)
+                            self._jp.meta.summary.processed_ndatums)
             try:
                 self._prepare()
             except StopIteration:
@@ -591,15 +596,15 @@ class Artemis():
         # Add fileinfo to message
         # TODO
         # Create file UUID, check UUID when creating block info???
-        _finfo = self.jobops.meta.data.add()
-        _finfo.name = 'file_' + str(self.jobops.meta.summary.processed_ndatums)
+        _finfo = self._jp.meta.data.add()
+        _finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
 
         # Update the raw metadata
         _rinfo = _finfo.raw
         _rinfo.size_bytes = len(raw)
 
         # Update datum input count
-        self.jobops.meta.summary.processed_ndatums += 1
+        self._jp.meta.summary.processed_ndatums += 1
 
         # Return the raw bytes
         return raw
@@ -610,7 +615,7 @@ class Artemis():
         Access random blocks
         requies passing the meta (python), needs to moved to proto
         '''
-        block = self.jobops.meta.data[-1].blocks[block_id]
+        block = self._jp.meta.data[-1].blocks[block_id]
         _chunk = bytearray(block.range.size_bytes)
 
         chunk = self.__tools.get("filehandler").\
@@ -627,7 +632,7 @@ class Artemis():
 
         Returns a python list for reading back chunk
         '''
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
         header, meta, off_head = \
             self.__tools.get("filehandler").prepare(file_)
         _finfo.schema.size_bytes = off_head
@@ -653,7 +658,7 @@ class Artemis():
         # Prepare the block meta data
         # FileInfo should already be available
         # Get last FileInfo
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
         for i, block in enumerate(blocks):
             msg = _finfo.blocks.add()
             msg.range.offset_bytes = block[0]
@@ -675,7 +680,7 @@ class Artemis():
 
         # requestdata prepares the input and adds the FileInfo msg
         # Get the last in list
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
 
         stream = io.BytesIO(raw)
 
@@ -748,7 +753,7 @@ class Artemis():
         '''
 
         # Get the last in list
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
 
         meta = []
         for column in _finfo.schema.columns:
@@ -810,7 +815,7 @@ class Artemis():
 
         # requestdata prepares the input and adds the FileInfo msg
         # Get the last in list
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
 
         meta = []
         for column in _finfo.schema.columns:
@@ -837,14 +842,14 @@ class Artemis():
                                 len(chunk),
                                 block.range.size_bytes)
             _finfo.processed.size_bytes += block.range.size_bytes
-            self.jobops.meta.summary.processed_bytes += len(chunk)
+            self._jp.meta.summary.processed_bytes += len(chunk)
             chunk = None
 
             # Now check whether to fill buffers and flush tree
             self._check_malloc()
 
         self.__logger.info('Processed %i' %
-                           self.jobops.meta.summary.processed_bytes)
+                           self._jp.meta.summary.processed_bytes)
 
         if _finfo.processed.size_bytes != _finfo.raw.size_bytes:
             self.__logger.error("Processing payload not complete")
@@ -861,6 +866,19 @@ class Artemis():
             self.__logger.error("Problem closing stream")
             raise
         return True
+
+    def _finalize_jobstate(self, state):
+        self._update_state(state)
+        self._jp.meta.finished.GetCurrentTime()
+        duration = self._jp.meta.summary.job_time 
+        duration.seconds = self._jp.meta.finished.seconds - self._jp.meta.started.seconds 
+        duration.nanos = self._jp.meta.finished.nanos - self._jp.meta.started.nanos 
+        if duration.seconds < 0 and duration.nanos > 0:
+            duration.seconds += 1
+            duration.nanos -= 1000000000
+        elif duration.seconds > 0 and duration.nanos < 0:
+            duration.seconds -= 1
+            duration.nanos += 1000000000
 
     def _finalize_buffer(self):
         '''
@@ -880,7 +898,7 @@ class Artemis():
             self.hbook.fill('artemis', 'time.collect', time_)
         # Spill any remaining buffers to disk
         # Set the output file metadata
-        summary = self.jobops.meta.summary
+        summary = self._jp.meta.summary
         _wnames = []
         for leaf in Tree().leaves:
             self.__logger.info("Leave node %s", leaf)
@@ -914,8 +932,8 @@ class Artemis():
 
     def _finalize(self):
         self.__logger.info("Finalizing Artemis job %s" %
-                           self.jobops.meta.name)
-        summary = self.jobops.meta.summary
+                           self._jp.meta.name)
+        summary = self._jp.meta.summary
 
         try:
             self.steer.finalize()
@@ -940,12 +958,12 @@ class Artemis():
             msgtime.std = std
 
         summary.collection.CopyFrom(self.hbook.to_message())
-        jobinfoname = self.jobops.meta.name + '_meta.dat'
-        self.jobops.meta.state = artemis_pb2.JOB_SUCCESS
-        self.jobops.meta.finished.GetCurrentTime()
+        jobinfoname = self._jp.meta.name + '_meta.dat'
+        self._finalize_jobstate(artemis_pb2.JOB_SUCCESS)
+        
         try:
             with open(jobinfoname, "wb") as f:
-                f.write(self.jobops.meta.SerializeToString())
+                f.write(self._jp.meta.SerializeToString())
         except IOError:
             self.__logger.error("Cannot write hbook")
         except Exception:
@@ -953,8 +971,11 @@ class Artemis():
 
         self.__logger.info("Job Summary")
         self.__logger.info("=================================")
+        self.__logger.info("Job %s", self._jp.meta.name)
+        self.__logger.info("Job id %s", self._jp.meta.job_id)
+        self.__logger.info("Total job time %s", text_format.MessageToString(self._jp.meta.summary.job_time))
         self.__logger.info("Processed file summary")
-        for f in self.jobops.meta.data:
+        for f in self._jp.meta.data:
             self.__logger.info(text_format.MessageToString(f))
 
         self.__logger.info("Processed data summary")
@@ -966,20 +987,20 @@ class Artemis():
                            summary.processed_bytes)
 
         self.__logger.debug("Timer Summary")
-        for t in self.jobops.meta.summary.timers:
+        for t in self._jp.meta.summary.timers:
             self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
         self.__logger.info("This is a test of your greater survival")
         self.__logger.info("=================================")
 
     def abort(self, *args, **kwargs):
-        self.jobops.meta.state = artemis_pb2.JOB_ABORT
+        self._jp.meta.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")
         self.__logger.error("Reason %s" % args[0])
-        self.jobops.meta.finished.GetCurrentTime()
+        self._jp.meta.finished.GetCurrentTime()
         jobinfoname = self.jobname + '_meta.dat'
         try:
             with open(jobinfoname, "wb") as f:
-                f.write(self.jobops.meta.SerializeToString())
+                f.write(self._jp.meta.SerializeToString())
         except IOError:
             self.__logger.error("Cannot write hbook")
         except Exception:
