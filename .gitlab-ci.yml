@@ -88,9 +88,11 @@ test:
     - coverage html
     - echo "Coverage report:"
     - grep "pc_cov" htmlcov/index.html | grep -e "[0123456879]*%" -o
+    - python tests/test_artemis.py
   artifacts:
       paths:
           - htmlcov/
+          - test.log
       expire_in: 1 week
   only:
     - branches
@@ -142,13 +144,13 @@ build:
 
 validate:
     stage: validate
-    image: $IMAGE_NAME 
+    image: ryanmwhitephd/alpine-scipy:73bdef0
     dependencies:
         - prepare
+        - test
     variables:
         DOCKER_DRIVER: overlay2
     script:
-        - python tests/test_artemis.py
         - diff test.log valid.log
     allow_failure: true
     only:
@@ -456,6 +458,8 @@ validate:
       echo "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
       docker tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
       docker push "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_BRANCH"
+      docker tag "$CI_APPLICATION_REPOSITORY:$CI_APPLICATION_TAG" "$CI_APPLICATION_REPOSITORY:build"
+      docker push "$CI_APPLICATION_REPOSITORY:build"
       echo ""
     fi
   }

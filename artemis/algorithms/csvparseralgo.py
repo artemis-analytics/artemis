@@ -24,7 +24,6 @@ class CsvParserAlgo(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
-        self.jobops = None
         self.__tools = ToolStore()
         # TODO
         # Add any required tools to list of algo properties
@@ -32,7 +31,6 @@ class CsvParserAlgo(AlgoBase):
         # Check for existence of tool
 
     def initialize(self):
-        self.jobops = JobProperties()
         self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
 
     def book(self):
@@ -82,7 +80,7 @@ class CsvParserAlgo(AlgoBase):
     def execute(self, element):
 
         raw_ = element.get_data()
-        _finfo = self.jobops.meta.data[-1]
+        _finfo = self._jp.meta.data[-1]
         schema = [x.name for x in _finfo.schema.columns]
         self.__logger.debug('Expected header %s' % schema)
         columns = [[] for _ in range(len(schema))]
@@ -118,7 +116,7 @@ class CsvParserAlgo(AlgoBase):
 
     def finalize(self):
         self.__logger.info("Completed CsvParsing")
-        summary = self.jobops.meta.summary
+        summary = self._jp.meta.summary
 
         for key in self.__timers.keys:
             if self.name in key:

@@ -127,7 +127,7 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
         print('Launching')
         bow._launch()
         print('End Launch')
@@ -174,7 +174,7 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
         print('Configuring')
         bow._configure()
 
@@ -220,7 +220,7 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
         print('Locking')
         bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         bow._lock()
@@ -267,7 +267,7 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
         bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         print('Initializing')
         bow._initialize()
@@ -314,7 +314,7 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
         bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         print('Booking')
         bow.hbook = Physt_Wrapper()
@@ -362,8 +362,8 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
-        _msgcfg = bow.jobops.meta.config
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
+        _msgcfg = bow._jp.meta.config
         with open(bow.properties.protomsg, 'rb') as f:
             _msgcfg.ParseFromString(f.read())
         bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
@@ -432,8 +432,8 @@ class ArtemisTestCase(unittest.TestCase):
                       skip_header=True,
                       loglevel='INFO')
         print('State change -> RUNNING')
-        bow.jobops.meta.state = artemis_pb2.JOB_RUNNING
-        _msgcfg = bow.jobops.meta.config
+        bow._jp.meta.state = artemis_pb2.JOB_RUNNING
+        _msgcfg = bow._jp.meta.config
         with open(bow.properties.protomsg, 'rb') as f:
             _msgcfg.ParseFromString(f.read())
         bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
