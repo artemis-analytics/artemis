@@ -15,7 +15,7 @@ import importlib
 from pprint import pformat
 
 from artemis.logger import Logger
-from artemis.core.properties import Properties
+from artemis.core.properties import Properties, JobProperties
 from artemis.io.protobuf.artemis_pb2 import Algo as Algo_pb
 
 # TODO Create an interface class to AlgoBase to expose the run,
@@ -80,6 +80,8 @@ class AlgoBase(metaclass=AbcAlgoBase):
         self.properties = Properties()
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
+
+        self._jp = JobProperties()
 
     def __init_subclass__(cls, **kwargs):
         '''
