@@ -28,7 +28,10 @@ class MfTool(ToolBase):
             self.rsize = self.rsize + ds['length']
         
 
-    def execute(self, ds_schema, block):
+    def execute(self, block):
+
+        block = block.decode('cp500')
+
         isize = len(block)
         print(isize)
         odata = []
@@ -77,3 +80,5 @@ class MfTool(ToolBase):
 
         print('Output data arrow arrays.')
         print(arrowodata)
+
+        return arrowodata

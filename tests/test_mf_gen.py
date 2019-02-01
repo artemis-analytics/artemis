@@ -21,6 +21,10 @@ class Test_MF_Gen(unittest.TestCase):
         pass
 
     def test_dev(self):
+        '''
+        Code to test development of generator.
+        '''
+        # Field configuration.
         intconf0 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
         intconf1 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
         intconf2 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
@@ -41,12 +45,18 @@ class Test_MF_Gen(unittest.TestCase):
         strconf7 = {'utype':'str', 'length':10}
         strconf8 = {'utype':'str', 'length':10}
         strconf9 = {'utype':'str', 'length':10}
+        # Dataset configuration.
         test_ds = [intconf0, intconf1, strconf0, intconf2, strconf1, 
                    strconf2, intconf3, intconf4, intconf5, strconf3, 
                    intconf6, strconf4, strconf5, strconf6, intconf7,
                    strconf7, strconf8, intconf8, intconf9, strconf9]
+        # Number of records.
         size = 10
+        # Create GenMF object, properly configured.
         test_gen = GenMF(test_ds, size)
+        # Test for data column generation with different types.
         GenMF.gen_column('test', intconf0, size)
         GenMF.gen_column('test', strconf0, size)
+        GenMF.gen_column('test', intconf9, size)
+        # Test for entire chunk.
         test_gen.gen_chunk()

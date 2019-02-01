@@ -654,6 +654,7 @@ class GenMF():
                 dpoint = str(dpoint)
                 print('Data pointu: ' + dpoint)
                 dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
+                print('Data pointuw: ' + dpoint)
                 rand_col.append(dpoint)
         else:
             source = string.ascii_lowercase\
@@ -685,5 +686,11 @@ class GenMF():
                 chunk = chunk + column[i]
             i = i + 1
 
+
         print('Chunk:')
         print(chunk)
+        chunk = chunk.encode(encoding='cp500')
+        print('Chunk ebcdic:')
+        print(chunk)
+
+        return chunk
