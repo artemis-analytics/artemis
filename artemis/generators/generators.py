@@ -616,38 +616,52 @@ class GenMF():
     '''
 
     def __init__(self, ds_schema, size):
+        '''
+        Generator parameters. Configured once per instantiation.
+        '''
         self.ds_schema = ds_schema
         self.size = size
+        # Specific characters used for encoding signed integers.
         self.pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
                          'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
         self.neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
                          'o': '5', 'p': '6', 'q': '7', 'r': '8', 's': '9'}
 
     def gen_column(self, dataset, size):
+        '''
+        Creates a column of data. The number of records is size.
+        '''
         rand_col = []
+        # Specific characters used for encoding signed integers.
         pos_char = {'0': '{', '1': 'a', '2': 'b', '3': 'c', '4': 'd',
                     '5': 'e', '6': 'f', '7': 'g', '8': 'h', '9': 'i'}
         neg_char = {'0': 'j', '1': 'k', '2': 'l', '3': 'm', '4': 'n',
                     '5': 'o', '6': 'p', '7': 'q', '8': 'r', '9': 's'}
 
+        # Create data of specific unit types.
         if dataset['utype'] == 'int':
+            # Creates a column of "size" records of integers.
             for i in range(size):
                 dpoint = random.randint(dataset['min_val'],
                                         dataset['max_val'])
                 if dpoint < 0:
+                    # Convert negative integers.
                     dpoint = str(dpoint)
                     dpoint = dpoint.replace('-', '')
                     dpoint = dpoint.replace(dpoint[-1],
                                             neg_char[dpoint[-1:]])
                 else:
+                    # Convert positive integers.
                     dpoint = str(dpoint)
                     dpoint = dpoint.replace(dpoint[-1],
                                             pos_char[dpoint[-1:]])
+                # Print to be converted to logger if appropriate.
                 print('Data pointi: ' + dpoint)
                 dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
                 print('Data pointiw: ' + dpoint)
                 rand_col.append(dpoint)
         elif dataset['utype'] == 'uint':
+            # Creates a column of "size" records of unsigned ints.
             for i in range(size):
                 dpoint = random.randint(dataset['min_val'],
                                         dataset['max_val'])
@@ -657,6 +671,8 @@ class GenMF():
                 print('Data pointuw: ' + dpoint)
                 rand_col.append(dpoint)
         else:
+            # Creates a column of "size" records of strings.
+            # Characters allowed in the string.
             source = string.ascii_lowercase\
                    + string.ascii_uppercase\
                    + string.digits\
@@ -673,22 +689,28 @@ class GenMF():
         return rand_col
 
     def gen_chunk(self):
+        '''
+        Generates a chunk of data as per configured instance.
+        '''
         chunk = ''
         cols = []
 
+        # Creates a column of data for each field.
         for dataset in self.ds_schema:
             cols.append(GenMF.gen_column('test', dataset, self.size))
 
         i = 0
 
+        # Goes through the columns to create records.
         while i < self.size:
             for column in cols:
                 chunk = chunk + column[i]
             i = i + 1
 
-
         print('Chunk:')
         print(chunk)
+        # Encode data chunk in cp500.
+        # Might want to make this configurable.
         chunk = chunk.encode(encoding='cp500')
         print('Chunk ebcdic:')
         print(chunk)
