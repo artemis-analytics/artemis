@@ -654,6 +654,7 @@ class GenMF():
                 dpoint = str(dpoint)
                 print('Data pointu: ' + dpoint)
                 dpoint = ('0' * (dataset['length'] - len(dpoint))) + dpoint
+                rand_col.append(dpoint)
         else:
             source = string.ascii_lowercase\
                    + string.ascii_uppercase\

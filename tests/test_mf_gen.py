@@ -30,7 +30,7 @@ class Test_MF_Gen(unittest.TestCase):
         intconf6 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
         intconf7 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
         intconf8 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
-        intconf9 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10}
+        intconf9 = {'utype':'uint', 'length':10, 'min_val':0, 'max_val':10}
         strconf0 = {'utype':'str', 'length':10}
         strconf1 = {'utype':'str', 'length':10}
         strconf2 = {'utype':'str', 'length':10}

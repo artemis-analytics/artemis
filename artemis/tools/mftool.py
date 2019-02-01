@@ -61,6 +61,8 @@ class MfTool(ToolBase):
                     odata[ncounter].append(field)
                 elif self.ds_schema[ncounter]['utype'] == 'str':
                     odata[ncounter].append(field.strip())
+                elif self.ds_schema[ncounter]['utype'] == 'uint':
+                    odata[ncounter].append(int(field))
                 fcounter = fcounter + self.ds_schema[ncounter]['length']
                 ncounter = ncounter + 1
             ncounter = 0

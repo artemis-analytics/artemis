@@ -27,16 +27,16 @@ class Test_MF_Reader(unittest.TestCase):
 
     def test_mf_reader(self):
         intconf0 = {'utype':'int', 'length':10}
-        intconf1 = {'utype':'int', 'length':6}
+        intconf1 = {'utype':'uint', 'length':6}
         strconf0 = {'utype':'str', 'length':4}
         self.schema = [intconf0, strconf0, intconf1]
-        self.block = "012345678aabcd01234m012345678babcd01234m"\
-                 + "012345678cabc 01234m012345678dabcd01234m"\
-                 + "012345678eabcd01234m012345678fabcd01234m"\
-                 + "012345678aabc 01234m012345678babcd01234m"\
-                 + "012345678cabcd01234m012345678dabcd01234m"\
-                 + "012345678eabc 01234m012345678fabcd01234m"\
-                 + "012345678aabcd01234m012345678babcd01234m"\
-                 + "012345678cabc 01234n"
+        self.block = "012345678aabcd012345012345678babcd012345"\
+                 + "012345678cabc 012345012345678dabcd012345"\
+                 + "012345678eabcd012345012345678fabcd012345"\
+                 + "012345678aabc 012345012345678babcd012345"\
+                 + "012345678cabcd012345012345678dabcd012345"\
+                 + "012345678eabc 012345012345678fabcd012345"\
+                 + "012345678aabcd012345012345678babcd012345"\
+                 + "012345678cabc 012345"
         mfreader = MfTool(self.schema)
         mfreader.execute(self.schema, self.block)
