@@ -11,7 +11,6 @@ Algorithm which configures a reader
 given a bytes object
 """
 from artemis.core.algo import AlgoBase
-from artemis.core.properties import JobProperties
 from artemis.decorators import timethis
 from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.utils.utils import range_positive

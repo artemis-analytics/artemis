@@ -122,9 +122,9 @@ class Chain():
         # Item in a complete dag, represents a complete business process
         # that can be easily scheduled from simply the item
         self._item = item  # type: str
-        self._root = []  # type: List[str]
-        self._leaf = ""  # type: List[str]
-        self._sequences = []  # type: List[Sequence]
+        self._root = []  # type: list[str]
+        self._leaf = ""  # type: list[str]
+        self._sequences = []  # type: list[Sequence]
 
         if not isinstance(root, list):
             self.__logger.error('%s: Chain input must be list' %

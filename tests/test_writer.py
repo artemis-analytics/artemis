@@ -52,6 +52,7 @@ class WritterTestCase(unittest.TestCase):
         writer = BufferOutputWriter('test')
         writer.BUFFER_MAX_SIZE = 1024
         writer._fbasename = 'test'
+        writer._path = '/tmp'
         writer._schema = batch.schema
         writer.initialize()
 

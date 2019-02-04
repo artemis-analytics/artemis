@@ -16,6 +16,7 @@ Scanning for line delimiter
 Extracting meta data from a header
 """
 import io
+import pathlib
 
 from artemis.core.tool import ToolBase
 
@@ -229,3 +230,31 @@ class FileHandlerTool(ToolBase):
         # Seek back to start
         file_.seek(0)
         return blocks
+
+
+class FileFactory():
+    '''
+    Some ideas taken from github.com/claudep/tabimport
+    Abstract away the stream type
+    Assumes everything is a file read in as bytes
+    '''
+    def __new__(cls, datafile):
+        format = cls._sniff_format(datafile)
+
+        if format == 'raw':
+            return io.BytesIO(datafile)
+        elif format == 'file':
+            return open(datafile, 'rb')
+        elif format == 'path':
+            return open(datafile, 'rb')
+
+    @classmethod
+    def _sniff_format(cls, dfile):
+        if isinstance(dfile, str):
+            # format = dfile.rsplit('.', 1)[-1]
+            format = 'file'
+        elif isinstance(dfile, bytes):
+            format = 'raw'
+        elif isinstance(dfile, pathlib.PosixPath):
+            format = 'path'
+        return format

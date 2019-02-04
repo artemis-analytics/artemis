@@ -60,7 +60,7 @@ class MfTool(ToolBase):
             while ncounter < nrecords:
                 # Extract field.
                 field = rdata[fcounter:
-                             (fcounter + self.ds_schema[ncounter]['length'])]
+                              (fcounter + self.ds_schema[ncounter]['length'])]
                 # Processes each field according to the datatype.
                 if self.ds_schema[ncounter]['utype'] == 'int':
                     # Replacing the end character with a proper digit requires

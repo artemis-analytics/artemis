@@ -13,11 +13,12 @@ import unittest
 import logging
 import csv
 import io
+import tempfile
 from ast import literal_eval
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
 
-from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow
+from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow, FileGenerator
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -263,7 +264,6 @@ class GeneratorTestCase(unittest.TestCase):
         file_obj = pa.OSFile('test.dat')
         reader = pa.open_file(file_obj)
         print(reader.num_record_batches)
-
      
     def test_pyarrow_read_mixed_csv(self):
         generator = GenCsvLikeArrow('test')
@@ -296,8 +296,24 @@ class GeneratorTestCase(unittest.TestCase):
             print("Inferred schema")
             print(table.schema)
         return table
+    
+    def test_writecsv(self):
+        generator = GenCsvLikeArrow('test', nbatches=3, suffix='.csv', prefix='test', path='/tmp')
+        generator.write()
+
+    def test_filegenerator(self):
+        generator = GenCsvLikeArrow('test', nbatches=3, suffix='.csv', prefix='test', path='/tmp')
+        generator.write()
+        generator = FileGenerator('test', path='/tmp', glob='*.csv')
+        for item in generator.generate():
+            print(item)
+
+        iter_ = generator.generate()
+        print(next(iter_))
+
 
 
 if __name__ == "__main__":
     unittest.main()
+
 
