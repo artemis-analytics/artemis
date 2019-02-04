@@ -10,6 +10,7 @@
 
 """
 import logging
+import os
 
 
 class Logger():
@@ -49,7 +50,11 @@ class Logger():
             name = 'test'
         else:
             name = kwargs['jobname']
+        print(kwargs)
+        print(name)
         logging_fname = name + '.log'
+        if 'path' in kwargs:
+            logging_fname = os.path.join(kwargs['path'], logging_fname)
         fh = logging.FileHandler(logging_fname, 'w')
         fh.setFormatter(logging.Formatter(Logger.FMT))
         fh.setLevel(Logger.CONFIGURED_LEVEL)
@@ -95,6 +100,6 @@ class Logger():
     def configure(obj, **kwargs):
         Logger.loglevel(**kwargs)
         Logger.setloglevel(obj, **kwargs)
-        if obj.__class__.__name__ is 'Artemis':
+        if obj.__class__.__name__ == 'Artemis':
             Logger.logfilehandler(**kwargs)
             Logger.setexternals()

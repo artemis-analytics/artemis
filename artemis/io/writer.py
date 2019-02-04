@@ -1,6 +1,8 @@
 """
 Dedicated Writer classes to manage output data streams
 """
+import os
+
 import pyarrow as pa
 
 from artemis.core.tool import ToolBase
@@ -35,6 +37,7 @@ class BufferOutputWriter(ToolBase):
         self._writer = None  # pa.RecordBatchFileWriter
         self._schema = None  # pa.schema
         self._fbasename = None  # file basename for dataset
+        self._path = ''  # absolute path for output
         self._sizeof_batches = 0
         self._nbatches = 0  # batches per file
         self._nrecords = 0  # records per file
@@ -188,9 +191,14 @@ class BufferOutputWriter(ToolBase):
         self._sink = pa.BufferOutputStream()
 
     def _new_filename(self):
-        self._fname = self._fbasename + \
+        _fname = self._fbasename + \
                       '_' + self.name + \
                       '_' + str(self._filecounter) + '.arrow'
+        if self._path == '':
+            self._fname = _fname
+        else:
+            path = os.path.abspath(self._path)
+            self._fname = os.path.join(path, _fname)
 
     def _write_buffer(self):
         try:
@@ -205,7 +213,7 @@ class BufferOutputWriter(ToolBase):
             try:
                 f.write(self._buffer)
             except IOError:
-                self.__logger_error("Error writing OSFile %s", self._fname())
+                self.__logger_error("Error writing OSFile %s", self._fname)
                 raise
         if self._write_csv is True:
             BufferOutputWriter.to_csv(self._buffer, self._fname + '.csv')

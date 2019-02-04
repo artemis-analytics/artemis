@@ -15,6 +15,8 @@ import itertools
 import codecs
 import decimal
 import unicodedata
+import tempfile
+import pathlib
 
 import random
 from array import array
@@ -606,6 +608,60 @@ class GenCsvLikeArrow(AlgoBase):
                                 (self.__class__.__name__, type(data)))
             yield data, batch
             self._nbatches -= 1
+            self.__logger.debug("Batch %i", self._nbatches)
+
+    def write(self):
+        self.__logger.info("Batch %i", self._nbatches)
+        iter_ = self.generate()
+        while True:
+            try:
+                raw, batch = next(iter_)
+            except StopIteration:
+                self.__logger.info("Request data: iterator complete")
+                break
+            except Exception:
+                self.__logger.info("Iterator empty")
+                raise
+
+            filename = tempfile.mktemp(suffix=self.properties.suffix,
+                                       prefix=self.properties.prefix,
+                                       dir=self.properties.path)
+            self.__logger.info("Write file %s", filename)
+            with open(filename, 'wb') as f:
+                f.write(raw)
+
+
+class FileGenerator(AlgoBase):
+    '''
+    Use a path and globbing pattern
+    return a generator over the files
+    '''
+    def __init__(self, name, **kwargs):
+
+        self._defaults = self._set_defaults()
+        # Override the defaults from the kwargs
+        for key in kwargs:
+            self._defaults[key] = kwargs[key]
+        # Set the properties with the full configuration
+        super().__init__(name, **self._defaults)
+
+        self._path = self.properties.path
+        self._glob = self.properties.glob
+        self._seed = self.properties.seed
+        self._builtin_generator = BuiltinsGenerator(self._seed)
+        self.__logger.info("Path %s", self._path)
+        self.__logger.info("Glob %s", self._glob)
+
+    @property
+    def random_state(self):
+        return self._builtin_generator.rnd
+
+    def _set_defaults(self):
+        defaults = {'seed': 42}
+        return defaults
+
+    def generate(self):
+        return pathlib.Path(self._path).glob(self._glob)
 
 
 class GenMF():

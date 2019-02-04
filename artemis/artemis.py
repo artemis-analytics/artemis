@@ -15,8 +15,9 @@ owns the stores needed by the user algorithms
 """
 # Python libraries
 import sys
-import io
+import os
 import uuid
+import pathlib
 
 # Externals
 import pyarrow as pa
@@ -37,6 +38,7 @@ from artemis.core.tool import ToolStore
 
 # IO
 from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.io.filehandler import FileFactory
 
 # Protobuf
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
@@ -62,6 +64,8 @@ class Artemis():
         self._jp.meta.job_id = str(uuid.uuid4())
         self._jp.meta.started.GetCurrentTime()
         self._update_state(artemis_pb2.JOB_STARTING)
+        self._job_id = None
+        self._path = ''
 
         # Define the internal objects for Artemis
         self.steer = None
@@ -79,10 +83,18 @@ class Artemis():
         self.__timers = TimerSvc()
         self.__tools = ToolStore()
 
+        # TODO
+        # Improve consistency of setting path, filesnames, etc...
+        self._set_job_id()
+
+        # Required for setting the log file
+        if 'jobname' not in kwargs.keys():
+            kwargs['jobname'] = self._job_id
+
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
         #######################################################################
-
+        self._set_path()
         #######################################################################
         # Logging
         Logger.configure(self, **kwargs)
@@ -99,6 +111,10 @@ class Artemis():
         gets updated in the event loop, so acts as a temporary datastore
         '''
         return self._raw
+
+    @property
+    def job_id(self):
+        return self._job_id
 
     @datum.setter
     def datum(self, raw):
@@ -155,26 +171,37 @@ class Artemis():
         # Make number of samples configurable
         try:
             self._sample_chunks()
-        except Exception:
-            raise
+        except Exception as e:
+            self.logger.error('Caught error in sample_chunks')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
 
         try:
             self._rebook()
-        except Exception:
-            self.__logger.error("Cannot rebook")
-            raise
+        except Exception as e:
+            self.logger.error('Caught error in rebook')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
 
         try:
             self._init_buffers()
-        except Exception:
-            raise
+        except Exception as e:
+            self.logger.error('Caught error in init_buffers')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
+
         # Clear all memory and raw data
         try:
             Tree().flush()
             self.datum = None
-        except Exception:
-            self.__logger("Problem flushing")
-            raise
+        except Exception as e:
+            self.logger.error('Caught error in Tree.flush')
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
 
         self.__logger.info("artemis: sampleing complete malloc %i",
                            pa.total_allocated_bytes())
@@ -188,17 +215,53 @@ class Artemis():
 
         try:
             self._finalize()
-        except Exception:
-            raise
+        except Exception as e:
+            self.logger.error("Unexcepted error caught in finalize")
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
 
         try:
             self._finalize_buffer()
-        except Exception:
-            self.__logger.error("Error finalizing buffers")
-            raise
-    
+        except Exception as e:
+            self.logger.error("Unexcepted error caught in finalizing errors")
+            self.__logger.error("Reason: %s" % e)
+            self.abort(e)
+            return False
+
+    def _set_path(self, **kwargs):
+        if hasattr(self.properties, 'path'):
+            if os.path.exists(self.properties.path) is False:
+                raise IOError
+            self._path = os.path.abspath(self.properties.path)
+        else:
+            self._path = ''
+
+    def _set_job_id(self):
+        '''
+        Creates unique basename for output data
+        '''
+        _bname = self._jp.meta.name
+        _id = self._jp.meta.job_id
+        self._job_id = _bname + '-' + _id
+
     def _update_state(self, state):
         self._jp.meta.state = state
+
+    def _get_raw_size(self, raw):
+        '''
+        Given raw data payload
+        determine size
+        Supports
+        bytes (when running simulation)
+        pathlib.PosixPath (when obtaining files from FileGenerator)
+        '''
+        if isinstance(raw, bytes):
+            return len(raw)
+        elif isinstance(raw, pathlib.PosixPath):
+            return os.path.getsize(raw)
+        else:
+            raise TypeError
 
     def _launch(self):
         self.logger.info('Artemis is ready')
@@ -246,6 +309,8 @@ class Artemis():
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
+        self.__logger.info("Job ID %s", self._job_id)
+        self.__logger.info("Job path %s", self._path)
         if hasattr(self.properties, 'protomsg'):
             _msgcfg = self._jp.meta.config
             try:
@@ -330,6 +395,7 @@ class Artemis():
 
     def _initialize(self):
         self.__logger.info("{}: Initialize".format('artemis'))
+
         try:
             self.steer.initialize()
         except Exception:
@@ -502,8 +568,8 @@ class Artemis():
                     self.__logger.info("Add Tool %s", _wrtcfg.name)
                     self.__tools.add(self.__logger, _wrtcfg)
                     self.__tools.get(_wrtcfg.name)._schema = _last.schema
-                    self.__tools.get(_wrtcfg.name)._fbasename = \
-                        self._jp.meta.name
+                    self.__tools.get(_wrtcfg.name)._fbasename = self._job_id
+                    self.__tools.get(_wrtcfg.name)._path = self._path
                     self.__tools.get(_wrtcfg.name).initialize()
         except Exception:
             self.__logger.error("Problem creating output streams")
@@ -522,7 +588,8 @@ class Artemis():
         process a few to extract schema, check for errors, get
         timing profile
         '''
-        self.__logger.info("Sample chunks for preprocess profiling")
+        self.__logger.info("Sample nchunks for preprocess profiling %i",
+                           self._nchunk_samples)
         try:
             self._prepare()
         except Exception:
@@ -589,9 +656,12 @@ class Artemis():
         except StopIteration:
             self.__logger.info("Request data: iterator complete")
             raise
-        except Exception:
-            self.__logger.info("Iterator empty")
-            raise
+        except TypeError:
+            try:
+                raw = next(self.data_handler)
+            except StopIteration:
+                self.__logger.info("Request data: iterator complete")
+                raise
 
         # Add fileinfo to message
         # TODO
@@ -601,7 +671,11 @@ class Artemis():
 
         # Update the raw metadata
         _rinfo = _finfo.raw
-        _rinfo.size_bytes = len(raw)
+        try:
+            _rinfo.size_bytes = self._get_raw_size(raw)
+        except TypeError:
+            self.__logger.warning("Cannot determine type from raw datum")
+            _rinfo.size_bytes = 0
 
         # Update datum input count
         self._jp.meta.summary.processed_ndatums += 1
@@ -682,7 +756,7 @@ class Artemis():
         # Get the last in list
         _finfo = self._jp.meta.data[-1]
 
-        stream = io.BytesIO(raw)
+        stream = FileFactory(raw)
 
         file_ = pa.PythonFile(stream, mode='r')
 
@@ -707,12 +781,18 @@ class Artemis():
             raise
 
         # Monitoring
-        self.hbook.fill('artemis', 'payload', bytes_to_mb(len(raw)))
+        try:
+            _fsize = self._get_raw_size(raw)
+        except TypeError:
+            self.__logger.warning("Cannot determine type from raw datum")
+            _fsize = 0
+
+        self.hbook.fill('artemis', 'payload', bytes_to_mb(_fsize))
         self.hbook.fill('artemis', 'nblocks', len(_finfo.blocks))
 
         self.__logger.info("Blocks")
         self.__logger.info("Size in bytes %2.3f in MB %2.3f" %
-                           (len(raw), bytes_to_mb(len(raw))))
+                           (_fsize, bytes_to_mb(_fsize)))
 
         _finfo.processed.size_bytes = _finfo.schema.size_bytes
 
@@ -759,7 +839,7 @@ class Artemis():
         for column in _finfo.schema.columns:
             meta.append(column.name)
 
-        stream = io.BytesIO(self.datum)
+        stream = FileFactory(self.datum)
 
         file_ = pa.PythonFile(stream, mode='r')
 
@@ -821,7 +901,7 @@ class Artemis():
         for column in _finfo.schema.columns:
             meta.append(column.name)
 
-        stream = io.BytesIO(self.datum)
+        stream = FileFactory(self.datum)
 
         file_ = pa.PythonFile(stream, mode='r')
 
@@ -870,9 +950,11 @@ class Artemis():
     def _finalize_jobstate(self, state):
         self._update_state(state)
         self._jp.meta.finished.GetCurrentTime()
-        duration = self._jp.meta.summary.job_time 
-        duration.seconds = self._jp.meta.finished.seconds - self._jp.meta.started.seconds 
-        duration.nanos = self._jp.meta.finished.nanos - self._jp.meta.started.nanos 
+        duration = self._jp.meta.summary.job_time
+        duration.seconds = self._jp.meta.finished.seconds -\
+            self._jp.meta.started.seconds
+        duration.nanos = self._jp.meta.finished.nanos -\
+            self._jp.meta.started.nanos
         if duration.seconds < 0 and duration.nanos > 0:
             duration.seconds += 1
             duration.nanos -= 1000000000
@@ -958,9 +1040,11 @@ class Artemis():
             msgtime.std = std
 
         summary.collection.CopyFrom(self.hbook.to_message())
-        jobinfoname = self._jp.meta.name + '_meta.dat'
+        jobinfoname = self._job_id + '_meta.dat'
+        if hasattr(self.properties, 'path'):
+            jobinfoname = os.path.join(self._path, jobinfoname)
         self._finalize_jobstate(artemis_pb2.JOB_SUCCESS)
-        
+
         try:
             with open(jobinfoname, "wb") as f:
                 f.write(self._jp.meta.SerializeToString())
@@ -973,7 +1057,9 @@ class Artemis():
         self.__logger.info("=================================")
         self.__logger.info("Job %s", self._jp.meta.name)
         self.__logger.info("Job id %s", self._jp.meta.job_id)
-        self.__logger.info("Total job time %s", text_format.MessageToString(self._jp.meta.summary.job_time))
+        self.__logger.info("Total job time %s",
+                           text_format.MessageToString(
+                                self._jp.meta.summary.job_time))
         self.__logger.info("Processed file summary")
         for f in self._jp.meta.data:
             self.__logger.info(text_format.MessageToString(f))

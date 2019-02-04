@@ -11,9 +11,6 @@
 """
 import unittest
 import logging
-import os
-import sys
-import uuid
 from google.protobuf import text_format
 
 from artemis.core.dag import Sequence, Chain, Menu
@@ -23,7 +20,7 @@ from artemis.algorithms.profileralgo import ProfilerAlgo
 from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
-from artemis.generators.generators import GenCsvLikeArrow
+from artemis.generators.generators import GenCsvLikeArrow, FileGenerator
 from artemis.io.filehandler import FileHandlerTool
 from artemis.io.writer import BufferOutputWriter
 from artemis.tools.csvtool import CsvTool
@@ -81,7 +78,11 @@ class ArtemisTestCase(unittest.TestCase):
     def tearDown(self):
         Singleton.reset(JobProperties)
     
-    def test_proto(self):
+    def test_fileio(self):
+        '''
+        Write csv to disk
+        Read back in artemis
+        '''
         Singleton.reset(JobProperties)
         self.prtcfg = 'arrowproto_proto.dat'
         try:
@@ -92,8 +93,18 @@ class ArtemisTestCase(unittest.TestCase):
         generator = GenCsvLikeArrow('generator',
                                     nbatches=10,
                                     num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
+                                    num_rows=10000,
+                                    suffix='.csv',
+                                    prefix='testio',
+                                    path='/tmp')
+        generator.write()
+
+        filegen = FileGenerator('generator',
+                                path='/tmp',
+                                glob='*.csv',
+                                nbatches=0)
+
+        msggen = filegen.to_msg()
 
         filetool = FileHandlerTool('filehandler',
                                    blocksize=2**16,
@@ -106,16 +117,10 @@ class ArtemisTestCase(unittest.TestCase):
 
         defaultwriter = BufferOutputWriter('bufferwriter',
                                            BUFFER_MAX_SIZE=10485760,
-                                           #BUFFER_MAX_SIZE=2147483648,  
                                            write_csv=True)
         defwtrcfg = defaultwriter.to_msg()
 
         msg = artemis_pb2.JobConfig()
-
-        # Support old format, evolve schema
-        if hasattr(msg, 'config_id'):
-            print('add config id')
-            msg.config_id = str(uuid.uuid4())
         msg.input.generator.config.CopyFrom(msggen)
         msg.menu.CopyFrom(msgmenu)
         parser = msg.parser.csvparser
@@ -131,8 +136,8 @@ class ArtemisTestCase(unittest.TestCase):
         parquetwriter.suffix = '.parquet'
 
         sampler = msg.sampler
-        sampler.ndatums = 0
-        sampler.nchunks = 0
+        sampler.ndatums = 1
+        sampler.nchunks = 10
 
         msg.max_malloc_size_bytes = 2147483648
         
@@ -156,11 +161,9 @@ class ArtemisTestCase(unittest.TestCase):
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       loglevel='INFO',
-                      jobname='test')
+                      path='/tmp')
         bow.control()
-        print(os.path.abspath(os.path.dirname(sys.argv[0])))
 
 
 if __name__ == '__main__':
     unittest.main()
-    
