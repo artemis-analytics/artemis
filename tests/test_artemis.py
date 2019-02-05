@@ -123,13 +123,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.delimiter = '\r\n'
         parser.skip_header = True
 
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
-
         sampler = msg.sampler
         sampler.ndatums = 0
         sampler.nchunks = 0

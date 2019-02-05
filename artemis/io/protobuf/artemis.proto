@@ -91,29 +91,6 @@ message Parser {
     CsvParser csvparser = 1;
 }
 
-message BufferWriter {
-    string suffix = 1;    
-}
-
-message FileWriter {
-    string suffix = 1;
-}
-
-message ParquetWriter {
-    string suffix = 1;
-}
-
-message CsvWriter {
-    string suffix = 1;
-}
-
-message Writer {
-    BufferWriter buffer = 1;
-    FileWriter osfilewriter = 2;
-    ParquetWriter parquetwriter = 3;
-    CsvWriter csvwriter = 4;
-}
-
 message Sampler {
     int32 ndatums = 1;
     int32 nchunks = 2;
@@ -123,7 +100,6 @@ message JobConfig {
     Input input = 1;
     Menu menu = 2;
     Parser parser = 3; 
-    repeated Writer writers = 4;
     uint64 max_malloc_size_bytes = 5;
     Sampler sampler = 6;
     repeated Tool tools = 7;

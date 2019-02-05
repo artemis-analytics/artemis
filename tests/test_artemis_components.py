@@ -107,13 +107,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.delimiter = '\r\n'
         parser.skip_header = True
 
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
-
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -154,13 +147,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.delimiter = '\r\n'
         parser.skip_header = True
 
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
-
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -199,13 +185,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.block_size = 2**16
         parser.delimiter = '\r\n'
         parser.skip_header = True
-
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
 
         try:
             with open(self.prtcfg, "wb") as f:
@@ -247,13 +226,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.delimiter = '\r\n'
         parser.skip_header = True
 
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
-
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -293,13 +265,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.block_size = 2**16
         parser.delimiter = '\r\n'
         parser.skip_header = True
-
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
 
         try:
             with open(self.prtcfg, "wb") as f:
@@ -341,13 +306,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.block_size = 2**16
         parser.delimiter = '\r\n'
         parser.skip_header = True
-
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
 
         try:
             with open(self.prtcfg, "wb") as f:
@@ -411,13 +369,6 @@ class ArtemisTestCase(unittest.TestCase):
         parser.block_size = 2**16
         parser.delimiter = '\r\n'
         parser.skip_header = True
-
-        writer = msg.writers.add()
-        csvwriter = writer.csvwriter
-        csvwriter.suffix = '.txt'
-        writer = msg.writers.add()
-        parquetwriter = writer.parquetwriter
-        parquetwriter.suffix = '.parquet'
 
         try:
             with open(self.prtcfg, "wb") as f:
