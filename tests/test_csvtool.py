@@ -15,7 +15,7 @@ from google.protobuf import text_format
 from artemis.tools.csvtool import CsvTool
 from artemis.core.tool import ToolBase
 
-from artemis.generators.generators import GenCsvLikeArrow
+from artemis.generators.csvgen import GenCsvLikeArrow
 logging.getLogger().setLevel(logging.INFO)
 class CsvToolTestCase(unittest.TestCase):
 

@@ -18,19 +18,60 @@ class MfTool(ToolBase):
     '''
     The class that deals with mainframe files.
     '''
-    def __init__(self, ds_schema):
+
+    def __init__(self, name, **kwargs):
         '''
-        Initiate a reader with parameters. The reader can be reused.
+        Generator parameters. Configured once per instantiation.
         '''
-        self.ds_schema = ds_schema
-        self.nrecords = len(ds_schema)
-        self.pos_char = {'{': '0', 'a': '1', 'b': '2', 'c': '3', 'd': '4',
-                         'e': '5', 'f': '6', 'g': '7', 'h': '8', 'i': '9'}
-        self.neg_char = {'j': '0', 'k': '1', 'l': '2', 'm': '3', 'n': '4',
-                         'o': '5', 'p': '6', 'q': '7', 'r': '8', 's': '9'}
+        self._defaults = self._set_defaults()
+        # Override the defaults from the kwargs
+        for key in kwargs:
+            self._defaults[key] = kwargs[key]
+
+        # Set the properties with the full configuration
+        super().__init__(name, **self._defaults)
+        self.ds_schema = []
+        self.col_names = []
+        if 'ds_schema' in self._defaults.keys():
+            self.ds_schema = self._defaults['ds_schema']
+            for i, column in enumerate(self.ds_schema):
+                self.col_names.append('column_' + str(i))
+
+        else:
+            for key in self._defaults:
+                if 'column' in key:
+                    self.ds_schema.append(self._defaults[key])
+                    name = key.split('_')[-1]
+                    self.col_names.append(name)
+
+        self.nrecords = len(self.ds_schema)
         self.rsize = 0
         for ds in self.ds_schema:
             self.rsize = self.rsize + ds['length']
+
+        # Specific characters used for encoding signed integers.
+        # Need to swap key,value from generator dict
+        self.pos_char = dict((v, k)
+                             for k, v in self.properties.pos_char.items())
+        self.neg_char = dict((v, k)
+                             for k, v in self.properties.neg_char.items())
+
+    def _set_defaults(self):
+        #  pos_char, neg_char
+        #  Specific characters used for encoding signed integers.
+        defaults = {'seed': 42,
+                    'nbatches': 1,
+                    'num_rows': 10,
+                    'pos_char': {'0': '{', '1': 'a',
+                                 '2': 'b', '3': 'c', '4': 'd',
+                                 '5': 'e', '6': 'f', '7': 'g',
+                                 '8': 'h', '9': 'i'},
+                    'neg_char': {'0': 'j', '1': 'k', '2': 'l',
+                                 '3': 'm', '4': 'n',
+                                 '5': 'o', '6': 'p', '7': 'q',
+                                 '8': 'r', '9': 's'}
+                    }
+        return defaults
 
     def execute(self, block):
         '''
@@ -41,7 +82,7 @@ class MfTool(ToolBase):
         block = block.decode('cp500')
 
         isize = len(block)
-        print(isize)
+        self.__logger.debug("Block size to process %i", isize)
         odata = []
         arrowodata = []
         nrecords = len(self.ds_schema)
@@ -89,10 +130,15 @@ class MfTool(ToolBase):
         for my_list in odata:
             arrowodata.append(pa.array(my_list))
 
-        print('Output data lists.')
-        print(odata)
+        self.__logger.info('Output data lists.')
+        self.__logger.info(odata)
 
-        print('Output data arrow arrays.')
-        print(arrowodata)
+        self.__logger.info('Output data arrow arrays.')
+        self.__logger.info(arrowodata)
 
-        return arrowodata
+        try:
+            rbatch = pa.RecordBatch.from_arrays(arrowodata, self.col_names)
+        except Exception:
+            self.__logger.error("Cannot convert arrays to batch")
+            raise
+        return rbatch

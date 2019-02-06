@@ -21,7 +21,7 @@ from artemis.algorithms.profileralgo import ProfilerAlgo
 from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
-from artemis.generators.generators import GenCsvLikeArrow
+from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.io.filehandler import FileHandlerTool
 from artemis.io.writer import BufferOutputWriter
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2

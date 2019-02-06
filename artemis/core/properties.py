@@ -51,10 +51,14 @@ class Properties():
         _supported = {'str': str,
                       'float': float,
                       'int': int,
-                      'bool': bool}
+                      'bool': bool,
+                      'dict': dict}
         properties = {}
         for p in msg.property:
-            properties[p.name] = _supported[p.type](p.value)
+            if p.type == 'dict':
+                properties[p.name] = eval(p.value)
+            else:
+                properties[p.name] = _supported[p.type](p.value)
         return properties
 
     def to_dict(self):
