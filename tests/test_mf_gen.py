@@ -7,8 +7,12 @@
 # Distributed under terms of the  license.
 
 import unittest
+import logging
 
-from artemis.generators.generators import GenMF
+from artemis.generators.legacygen import GenMF
+from artemis.core.algo import AlgoBase
+
+logging.getLogger().setLevel(logging.INFO)
 
 class Test_MF_Gen(unittest.TestCase):
 
@@ -53,10 +57,40 @@ class Test_MF_Gen(unittest.TestCase):
         # Number of records.
         size = 10
         # Create GenMF object, properly configured.
-        test_gen = GenMF(test_ds, size)
+        test_gen = GenMF('test', ds_schema=test_ds, num_rows=size)
         # Test for data column generation with different types.
-        GenMF.gen_column('test', intconf0, size)
-        GenMF.gen_column('test', strconf0, size)
-        GenMF.gen_column('test', intconf9, size)
+        test_gen.gen_column(intconf0, size)
+        test_gen.gen_column(strconf0, size)
+        test_gen.gen_column(intconf9, size)
         # Test for entire chunk.
         test_gen.gen_chunk()
+    
+    def test_msg(self):
+        intconf0 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10, }
+        
+        test_gen = GenMF('test', column=intconf0, num_rows=10)
+        msg = test_gen.to_msg()
+        #test_gen.gen_chunk()
+        
+        logger = logging.getLogger()
+        test_gen2 = AlgoBase.from_msg(logger,msg)
+
+        print(test_gen2.properties.column)
+        test_gen2.gen_chunk()
+
+    def test_generate_chunks(self):
+        intconf0 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10, }
+        
+        test_gen = GenMF('test', column=intconf0, num_rows=10, nbatches=10)
+
+        iter_ = test_gen.generate()
+        #print(next(iter_))
+        for i,chunk in enumerate(iter_):
+            print('Batch', i)
+            print(chunk)
+
+
+
+
+if __name__ == "__main__":
+    unittest.main()

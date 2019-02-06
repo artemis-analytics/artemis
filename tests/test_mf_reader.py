@@ -8,6 +8,7 @@
 
 
 import unittest
+import logging
 from collections import OrderedDict, namedtuple
 
 import pyarrow as pa
@@ -15,7 +16,9 @@ import pyarrow as pa
 from artemis.tools.mftool import MfTool
 from artemis.core.tool import ToolBase
 
-from artemis.generators.generators import GenMF
+from artemis.generators.legacygen import GenMF
+
+logging.getLogger().setLevel(logging.INFO)
 
 class Test_MF_Reader(unittest.TestCase):
 
@@ -37,9 +40,9 @@ class Test_MF_Reader(unittest.TestCase):
         intconf1 = {'utype':'uint', 'length':6}
         strconf0 = {'utype':'str', 'length':4}
         # Schema definition for all fields.
-        self.schema = [intconf0, strconf0, intconf1]
+        schema = [intconf0, strconf0, intconf1]
         # Test data block.
-        self.block = "012345678aabcd012345012345678babcd012345"\
+        block = "012345678aabcd012345012345678babcd012345"\
                  + "012345678cabc 012345012345678dabcd012345"\
                  + "012345678eabcd012345012345678fabcd012345"\
                  + "012345678aabc 012345012345678babcd012345"\
@@ -49,16 +52,16 @@ class Test_MF_Reader(unittest.TestCase):
                  + "012345678cabc 012345"
         # Show block in unencoded format.
         print('Block: ')
-        print(self.block)
+        print(block)
         # Encode in EBCDIC format.
-        self.block = self.block.encode(encoding='cp500')
+        block = block.encode(encoding='cp500')
         # Show block in encoded format.
         print('Encoded block: ')
-        print(self.block)
+        print(block)
         # Create MfTool object. It is configured.
-        mfreader = MfTool(self.schema)
+        mfreader = MfTool('reader',ds_schema=schema)
         # Run the reader on the data block.
-        mfreader.execute(self.block)
+        mfreader.execute(block)
 
     def test_mf_gen_read(self):
         '''
@@ -74,10 +77,16 @@ class Test_MF_Reader(unittest.TestCase):
         # Size of chunk to create.
         size = 10
         # Create a generator objected, properly configured.
-        my_gen = GenMF(schema, size)
+        my_gen = GenMF('test', ds_schema=schema, num_rows=size)
         # Create a data chunk.
         chunk = my_gen.gen_chunk()
         # Create MfTool object, properly configured.
-        my_read = MfTool(schema)
+        my_read = MfTool('reader', ds_schema=schema)
         # Read generated data chunk.
-        my_read.execute(chunk)
+        batch = my_read.execute(chunk)
+        print("Batch columns %i, rows %i" % (batch.num_columns, batch.num_rows))
+        print(batch.schema)
+
+
+if __name__ == "__main__":
+    unittest.main()

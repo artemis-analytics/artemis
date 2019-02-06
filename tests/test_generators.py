@@ -13,12 +13,13 @@ import unittest
 import logging
 import csv
 import io
-import tempfile
 from ast import literal_eval
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
 
-from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow, FileGenerator
+from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow 
+from artemis.generators.filegen import FileGenerator
+from artemis.generators.common import BuiltinsGenerator
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -310,6 +311,16 @@ class GeneratorTestCase(unittest.TestCase):
 
         iter_ = generator.generate()
         print(next(iter_))
+
+    def test_multiple(self):
+        print("Testing multiple generators with same seed")
+        gen1 = BuiltinsGenerator(42)
+        gen2 = BuiltinsGenerator(42)
+
+        print(gen1.generate_int_list(10, 0.1))
+        print(gen2.generate_int_list(10, 0.1))
+
+
 
 
 

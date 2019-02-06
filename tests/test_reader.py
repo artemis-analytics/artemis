@@ -17,7 +17,7 @@ from ast import literal_eval
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
 
-from artemis.generators.generators import GenCsvLike, GenCsvLikeArrow
+from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow
 from artemis.io.filehandler import FileHandlerTool
 logging.getLogger().setLevel(logging.INFO)
 
