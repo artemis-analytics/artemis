@@ -28,7 +28,7 @@ class ReaderTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        self._handler = FileHandlerTool('tool')
+        self._handler = FileHandlerTool('tool', delimiter='\r\n')
         self._handler.initialize()
 
     def tearDown(self):

@@ -110,6 +110,7 @@ class ArtemisTestCase(unittest.TestCase):
         filetool = FileHandlerTool('filehandler',
                                    blocksize=2**16,
                                    skip_header=True,
+                                   delimiter='\r\n',
                                    loglevel='INFO')
         filetoolcfg = filetool.to_msg()
         

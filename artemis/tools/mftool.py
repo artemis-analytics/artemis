@@ -72,6 +72,14 @@ class MfTool(ToolBase):
                                  '8': 'r', '9': 's'}
                     }
         return defaults
+    
+    @property
+    def record_size(self):
+        return self.rsize
+
+    @property
+    def columns(self):
+        return self.col_names
 
     def execute(self, block):
         '''
@@ -130,11 +138,11 @@ class MfTool(ToolBase):
         for my_list in odata:
             arrowodata.append(pa.array(my_list))
 
-        self.__logger.info('Output data lists.')
-        self.__logger.info(odata)
+        self.__logger.debug('Output data lists.')
+        self.__logger.debug(odata)
 
-        self.__logger.info('Output data arrow arrays.')
-        self.__logger.info(arrowodata)
+        self.__logger.debug('Output data arrow arrays.')
+        self.__logger.debug(arrowodata)
 
         try:
             rbatch = pa.RecordBatch.from_arrays(arrowodata, self.col_names)

@@ -55,7 +55,7 @@ class Properties():
                       'dict': dict}
         properties = {}
         for p in msg.property:
-            if p.type == 'dict':
+            if p.type == 'dict' or p.type == 'bool':
                 properties[p.name] = eval(p.value)
             else:
                 properties[p.name] = _supported[p.type](p.value)
