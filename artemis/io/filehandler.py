@@ -26,18 +26,22 @@ class FileHandlerTool(ToolBase):
     def __init__(self, name, **kwargs):
         defaults = self._set_defaults()
         # Override the defaults from the kwargs
+        self._delimiter = None
+        self._offset_header = None
         for key in kwargs:
             defaults[key] = kwargs[key]
         super().__init__(name, **defaults)
-        self._delimiter = None
-        self._offset_header = None
+        #  Default delimiter value is None
+        #  Force set of delimiter in configuration options
+        #  If not set, no finding end of line with delimiter search
+        self._legacy_data = self.properties.legacy_data
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
 
     def _set_defaults(self):
         defaults = {'blocksize': 2**27,
                     'separator': ',',
-                    'delimiter': '\r\n',
                     'skip_header': False,
+                    'legacy_data': False,
                     'offset_header': 0}
 
         return defaults
@@ -49,7 +53,8 @@ class FileHandlerTool(ToolBase):
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
-        self.encode_delimiter()
+        if hasattr(self.properties, 'delimiter'): 
+            self.encode_delimiter()
         self._offset_header = self.properties.offset_header
 
     def prepare(self, file_):
@@ -57,13 +62,27 @@ class FileHandlerTool(ToolBase):
         try to read the first line of file
         filehandle, f, is pa.PythonFile
         '''
+
+        #  TODO
+        #  Implement proper way to handle legacy fixed-width no header data
+        #
         if file_.tell() != 0:
             file_.seek(0)
 
         header = file_.readline()
         offset = file_.tell()  # Do we start of offset, or offset + byte
-        meta = header.decode().rstrip(self.properties.delimiter).\
-            split(self.properties.separator)
+        try:
+            meta = header.decode().rstrip(self.properties.delimiter).\
+                split(self.properties.separator)
+        except UnicodeDecodeError:
+            self.__logger.warning("File not UTF8 encoded assume legacy data")
+            meta = None
+            file_.seek(0)
+            self._offset_header = file_.tell() 
+            raise
+        except Exception:
+            self.__logger.error("Unknown error occurred at file preparation")
+            raise
 
         file_.seek(0)
         self._offset_header = offset
@@ -142,6 +161,23 @@ class FileHandlerTool(ToolBase):
 
             offset = start
             length = end - start
+        else:
+            self.__logger.debug("Seek to block offset %i length %i size %i", 
+                                offset, length, size)
+
+            start = file_.tell()
+            length -= start - offset
+            if (start+length) > size:
+                length = size - start
+            # BUG - No Exception thrown on seek past last byte in object
+            try:
+                file_.seek(start + length)
+            except (OSError, ValueError):
+                file_.seek(0, 2)
+            end = file_.tell()
+
+            offset = start
+            length = end - start
 
         return offset, length
 
@@ -184,9 +220,19 @@ class FileHandlerTool(ToolBase):
         # Requires inserting header into each block
         '''
         if schema is None:
+            block_ = bytearray()
             if offset != file_.tell():
                 file_.seek(offset)
-            return file_.readinto(bobj)
+            file_.readinto(bobj)
+            block_.extend(bobj)
+            return block_
+        elif self._legacy_data is True:
+            block_ = bytearray()
+            if offset != file_.tell():
+                file_.seek(offset)
+            file_.readinto(bobj)
+            block_.extend(bobj)
+            return block_
         else:
             block_ = self._create_header(schema)
 
@@ -206,13 +252,17 @@ class FileHandlerTool(ToolBase):
 
         '''
         # Seek to end (0 bytes relative to the end)
+        self.__logger.debug("FileHandler execute")
         file_.seek(0, 2)
         fsize = file_.tell()
+        self.__logger.debug("File size %i", fsize)
+        self.__logger.debug("Offset header size %i", self._offset_header)
         if self.properties.skip_header:
             file_.seek(self._offset_header)
         else:
             file_.seek(0)
         pos = file_.tell()
+        self.__logger.debug("Start position %i", pos)
         blocks = []  # tuples of length two (offset, length)
         while file_.tell() < fsize:
             if pos == 0 and self._offset_header is not None:
@@ -220,6 +270,8 @@ class FileHandlerTool(ToolBase):
                     self._offset_header
             else:
                 size = self.properties.blocksize
+            self.__logger.debug("Current position %i size %i filesize %i", 
+                                pos, size, fsize)
             blocks.append(self._get_block(file_,
                                           pos,
                                           size,

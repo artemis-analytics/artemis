@@ -10,7 +10,7 @@
 Classes for generating legacy (mainframe) like data
 """
 import string
-
+import tempfile
 from artemis.generators.common import GeneratorBase
 
 
@@ -141,11 +141,11 @@ class GenMF(GeneratorBase):
                 chunk = chunk + column[i]
             i = i + 1
 
-        self.__logger.info('Chunk: %s', chunk)
+        self.__logger.debug('Chunk: %s', chunk)
         # Encode data chunk in cp500.
         # Might want to make this configurable.
         chunk = chunk.encode(encoding='cp500')
-        self.__logger.info('Chunk ebcdic: %s', chunk)
+        self.__logger.debug('Chunk ebcdic: %s', chunk)
 
         return chunk
 
@@ -159,3 +159,23 @@ class GenMF(GeneratorBase):
             yield data
             self._nbatches -= 1
             self.__logger.debug("Batch %i", self._nbatches)
+    
+    def write(self):
+        self.__logger.info("Batch %i", self._nbatches)
+        iter_ = self.generate()
+        while True:
+            try:
+                raw = next(iter_)
+            except StopIteration:
+                self.__logger.info("Request data: iterator complete")
+                break
+            except Exception:
+                self.__logger.info("Iterator empty")
+                raise
+
+            filename = tempfile.mktemp(suffix=self.properties.suffix,
+                                       prefix=self.properties.prefix,
+                                       dir=self.properties.path)
+            self.__logger.info("Write file %s", filename)
+            with open(filename, 'wb') as f:
+                f.write(raw)

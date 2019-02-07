@@ -562,7 +562,12 @@ class Artemis():
                 self.__logger.info("Leave node %s", leaf)
                 node = _tree.get_node_by_key(leaf)
                 key = node.key
-                _last = node.payload[-1].get_data()
+                try:
+                    _last = node.payload[-1].get_data()
+                except IndexError:
+                    self.__logger.error("Cannot retrieve payload! %s", key)
+                    raise
+
                 if isinstance(_last, pa.lib.RecordBatch):
                     _wrtcfg.name = "writer_" + key
                     self.__logger.info("Add Tool %s", _wrtcfg.name)
@@ -656,7 +661,15 @@ class Artemis():
         except StopIteration:
             self.__logger.info("Request data: iterator complete")
             raise
+        except ValueError:
+            #  Occurs when receiving a 1tuple from generator
+            try:
+                raw = next(self.data_handler)
+            except StopIteration:
+                self.__logger.info("Request data: iterator complete")
+                raise
         except TypeError:
+            #  Occurs when receiving a file path
             try:
                 raw = next(self.data_handler)
             except StopIteration:
@@ -706,14 +719,30 @@ class Artemis():
 
         Returns a python list for reading back chunk
         '''
+        #  TODO
+        #  Improve file preparation for different input types
         _finfo = self._jp.meta.data[-1]
-        header, meta, off_head = \
-            self.__tools.get("filehandler").prepare(file_)
-        _finfo.schema.size_bytes = off_head
-        _finfo.schema.header = header
-        for col in meta:
-            a_col = _finfo.schema.columns.add()
-            a_col.name = col
+        try:
+            header, meta, off_head = \
+                self.__tools.get("filehandler").prepare(file_)
+            _finfo.schema.size_bytes = off_head
+            _finfo.schema.header = header
+            for col in meta:
+                a_col = _finfo.schema.columns.add()
+                a_col.name = col
+        except UnicodeDecodeError:
+            self.__logger.warning("Input data type is not utf8")
+            # Assume for now no header in file
+            _finfo.schema.size_bytes = 0
+            _finfo.schema.header = b''
+            meta = self.__tools.get("legacytool").columns
+            for col in meta:
+                a_col = _finfo.schema.columns.add()
+                a_col.name = col
+        except Exception:
+            self.__logger.error("Unknown error at file preparation")
+            raise
+        
         return meta  # should be removed and accessed through metastore
 
     @timethis
@@ -737,6 +766,7 @@ class Artemis():
             msg = _finfo.blocks.add()
             msg.range.offset_bytes = block[0]
             msg.range.size_bytes = block[1]
+            self.__logger.debug(msg)
         return True
 
     def _prepare_datum(self):
