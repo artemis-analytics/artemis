@@ -72,7 +72,7 @@ class MfTool(ToolBase):
                                  '8': 'r', '9': 's'}
                     }
         return defaults
-    
+
     @property
     def record_size(self):
         return self.rsize

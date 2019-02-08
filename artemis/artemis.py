@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2018 Ryan Mackenzie White <ryan.white4@canada.ca>
+# Copyright © Her Majesty the Queen in Right of Canada, as represented
+# by the Minister of Statistics Canada, 2019.
 #
 # Distributed under terms of the  license.
 
@@ -742,7 +743,7 @@ class Artemis():
         except Exception:
             self.__logger.error("Unknown error at file preparation")
             raise
-        
+
         return meta  # should be removed and accessed through metastore
 
     @timethis

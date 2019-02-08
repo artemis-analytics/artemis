@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2019 Ryan Mackenzie White <ryan.white4@canada.ca>
+# Copyright © Her Majesty the Queen in Right of Canada, as represented
+# by the Minister of Statistics Canada, 2019.
 #
 # Distributed under terms of the  license.
 
@@ -159,7 +160,7 @@ class GenMF(GeneratorBase):
             yield data
             self._nbatches -= 1
             self.__logger.debug("Batch %i", self._nbatches)
-    
+
     def write(self):
         self.__logger.info("Batch %i", self._nbatches)
         iter_ = self.generate()
