@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2019 Ryan Mackenzie White <ryan.white4@canada.ca>
+# Copyright © Her Majesty the Queen in Right of Canada, as represented
+# by the Minister of Statistics Canada, 2019.
 #
 # Distributed under terms of the  license.
 
@@ -53,7 +54,7 @@ class FileHandlerTool(ToolBase):
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
-        if hasattr(self.properties, 'delimiter'): 
+        if hasattr(self.properties, 'delimiter'):
             self.encode_delimiter()
         self._offset_header = self.properties.offset_header
 
@@ -78,7 +79,7 @@ class FileHandlerTool(ToolBase):
             self.__logger.warning("File not UTF8 encoded assume legacy data")
             meta = None
             file_.seek(0)
-            self._offset_header = file_.tell() 
+            self._offset_header = file_.tell()
             raise
         except Exception:
             self.__logger.error("Unknown error occurred at file preparation")
@@ -162,7 +163,7 @@ class FileHandlerTool(ToolBase):
             offset = start
             length = end - start
         else:
-            self.__logger.debug("Seek to block offset %i length %i size %i", 
+            self.__logger.debug("Seek to block offset %i length %i size %i",
                                 offset, length, size)
 
             start = file_.tell()
@@ -270,7 +271,7 @@ class FileHandlerTool(ToolBase):
                     self._offset_header
             else:
                 size = self.properties.blocksize
-            self.__logger.debug("Current position %i size %i filesize %i", 
+            self.__logger.debug("Current position %i size %i filesize %i",
                                 pos, size, fsize)
             blocks.append(self._get_block(file_,
                                           pos,
