@@ -35,7 +35,6 @@ from artemis.io.writer import BufferOutputWriter
 from artemis.tools.csvtool import CsvTool
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
-
 logging.getLogger().setLevel(logging.INFO)
 
 
@@ -94,7 +93,7 @@ class ArtemisTestCase(unittest.TestCase):
             msgmenu = self.testmenu.to_msg()
         except Exception:
             raise
-
+        
         generator = GenCsvLikeArrow('generator',
                                     nbatches=10,
                                     num_cols=20,
@@ -145,7 +144,6 @@ class ArtemisTestCase(unittest.TestCase):
         csvtoolmsg = msg.tools.add()
         csvtoolmsg.CopyFrom(csvtoolcfg)
         print(text_format.MessageToString(csvtoolmsg))
-
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())

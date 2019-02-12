@@ -58,7 +58,7 @@ class Test_MF_Gen(unittest.TestCase):
         # Number of records.
         size = 10
         # Create GenMF object, properly configured.
-        test_gen = GenMF('test', ds_schema=test_ds, num_rows=size)
+        test_gen = GenMF('test', ds_schema=test_ds, num_rows=size, loglevel='INFO')
         # Test for data column generation with different types.
         test_gen.gen_column(intconf0, size)
         test_gen.gen_column(strconf0, size)
@@ -69,7 +69,7 @@ class Test_MF_Gen(unittest.TestCase):
     def test_msg(self):
         intconf0 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10, }
         
-        test_gen = GenMF('test', column=intconf0, num_rows=10)
+        test_gen = GenMF('test', column=intconf0, num_rows=10, loglevel='INFO')
         msg = test_gen.to_msg()
         #test_gen.gen_chunk()
         
@@ -82,7 +82,7 @@ class Test_MF_Gen(unittest.TestCase):
     def test_generate_chunks(self):
         intconf0 = {'utype':'int', 'length':10, 'min_val':0, 'max_val':10, }
         
-        test_gen = GenMF('test', column=intconf0, num_rows=10, nbatches=10)
+        test_gen = GenMF('test', column=intconf0, num_rows=10, nbatches=10, loglevel='INFO')
 
         iter_ = test_gen.generate()
         #print(next(iter_))
