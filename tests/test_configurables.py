@@ -2,46 +2,50 @@
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © Her Majesty the Queen in Right of Canada, as represented 
-# by the Minister of Statistics Canada, 2019.
+# Copyright © 2019 Ryan Mackenzie White <ryan.white4@canada.ca>
 #
 # Distributed under terms of the  license.
 
 """
-
+Testing the configurable classes
 """
-import coverage
 import unittest
 import logging
 
 from artemis.artemis import Artemis
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
-from artemis.core.singleton import Singleton
+from artemis.configurables.configs.csvgenconfig import CsvGenConfig
+
 from artemis.core.tree import Tree
+from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
 from artemis.core.properties import JobProperties
 
 logging.getLogger().setLevel(logging.INFO)
-
-
-class ArtemisTestCase(unittest.TestCase):
+class ConfigurableTestCase(unittest.TestCase):
         
     def setUp(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+    def test_config(self):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
 
-    def tearDown(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
-        Singleton.reset(ArrowSets)
+        config = CsvGenConfig()
+        config.configure()
 
-    def test_proto(self):
-        cov = coverage.Coverage()
-        cov.start()
+    def test_config_artemis(self):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
+        
         mb = MenuFactory('csvgen')
         
         self.prtcfg = 'test_configurable.dat'
@@ -65,10 +69,7 @@ class ArtemisTestCase(unittest.TestCase):
                       loglevel='INFO',
                       jobname='test')
         bow.control()
-        
-        cov.stop()
-        cov.save()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

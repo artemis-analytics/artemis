@@ -48,8 +48,6 @@ class Sequence():
         # Single item tuple must include trailing ,
         self._algos = algos  # of type tuple
         self._element = element  # expect string
-        self.__logger.info('%s: parent type %s' %
-                           (self.__class__.__name__, type(parents)))
         self.__logger.debug('%s: parent type %s' %
                             (self.__class__.__name__, type(parents)))
         if not isinstance(parents, list):

@@ -10,23 +10,18 @@
 
 import unittest
 import logging
-import uuid
-from google.protobuf import text_format
 
-from artemis.core.tree import Tree, Node, Element
+from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
-from artemis.core.dag import Sequence, Chain, Menu
-from artemis.algorithms.legacyalgo import LegacyDataAlgo
 from artemis.artemis import Artemis
 from artemis.core.properties import JobProperties
 from artemis.tools.mftool import MfTool
 from artemis.generators.legacygen import GenMF
-from artemis.io.filehandler import FileHandlerTool
-from artemis.io.writer import BufferOutputWriter
-from artemis.generators.filegen import FileGenerator
-import artemis.io.protobuf.artemis_pb2 as artemis_pb2
+
+from artemis.configurables.factories import MenuFactory, JobConfigFactory
 logging.getLogger().setLevel(logging.INFO)
+
 
 class Test_MF_Reader(unittest.TestCase):
 
@@ -90,7 +85,7 @@ class Test_MF_Reader(unittest.TestCase):
         # Size of chunk to create.
         size = 10
         # Create a generator objected, properly configured.
-        my_gen = GenMF('test', ds_schema=schema, num_rows=size)
+        my_gen = GenMF('test', ds_schema=schema, num_rows=size, loglevel='INFO')
         # Create a data chunk.
         chunk = my_gen.gen_chunk()
         # Create MfTool object, properly configured.
@@ -105,81 +100,30 @@ class Test_MF_Reader(unittest.TestCase):
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
         prtcfg = ''
-        legacyalgo = LegacyDataAlgo('legacyparser', loglevel='INFO')
-
-        legacyChain = Chain("legacychain")
-        seqX = Sequence(["initial"], (legacyalgo,), "seqX")
-        legacyChain.add(seqX)
         
-        testmenu = Menu("test")
-        testmenu.add(legacyChain)
-        testmenu.generate()
-        
+        mb = MenuFactory('legacygen')
         prtcfg = 'arrowmf_proto.dat'
         try:
-            msgmenu = testmenu.to_msg()
+            msgmenu = mb.build()
         except Exception:
             raise
-        
         intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
         intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
         strconf0 = {'utype': 'str', 'length': 4}
         # Schema definition.
         # Size of chunk to create.
         # Create a generator objected, properly configured.
-        generator = GenMF('generator',
-                          column_a=intconf0,
-                          column_b=intuconf0,
-                          column_c=strconf0,
-                          num_rows=10000, nbatches=10)
-
-        msggen = generator.to_msg()
         
-        mftool = MfTool('legacytool',
-                        column_a=intconf0,
-                        column_b=intuconf0,
-                        column_c=strconf0)
+        config = JobConfigFactory('legacygen', msgmenu)
+        config.configure(ctype='legacy',
+                         nbatches=10,
+                         num_rows=10000,
+                         delimiter='\r\n',
+                         column_a=intconf0,
+                         column_b=intuconf0,
+                         column_c=strconf0)
 
-        mftoolcfg = mftool.to_msg()
-        blocksize = mftool.record_size * 100
-        filetool = FileHandlerTool('filehandler',
-                                   blocksize=blocksize,
-                                   skip_header=False,
-                                   legacy_data=True,
-                                   loglevel='INFO')
-        filetoolcfg = filetool.to_msg()
-
-        defaultwriter = BufferOutputWriter('bufferwriter',
-                                           BUFFER_MAX_SIZE=10485760,
-                                           #BUFFER_MAX_SIZE=2147483648,  
-                                           write_csv=True)
-        defwtrcfg = defaultwriter.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-
-        # Support old format, evolve schema
-        if hasattr(msg, 'config_id'):
-            print('add config id')
-            msg.config_id = str(uuid.uuid4())
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-
-        sampler = msg.sampler
-        sampler.ndatums = 0
-        sampler.nchunks = 0
-
-        msg.max_malloc_size_bytes = 2147483648
-        
-        filetoolmsg = msg.tools.add()
-        filetoolmsg.CopyFrom(filetoolcfg)
-        
-        defwrtmsg = msg.tools.add()
-        defwrtmsg.CopyFrom(defwtrcfg)
-
-        mftoolmsg = msg.tools.add()
-        mftoolmsg.CopyFrom(mftoolcfg)
-        print(text_format.MessageToString(mftoolmsg))
-
+        msg = config.job_config
         try:
             with open(prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -192,25 +136,17 @@ class Test_MF_Reader(unittest.TestCase):
                       loglevel='INFO',
                       jobname='mftest')
         bow.control()
-
+    
+    
     def test_mfartemisio(self):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
         prtcfg = ''
-        legacyalgo = LegacyDataAlgo('legacyparser', loglevel='INFO')
-
-        legacyChain = Chain("legacychain")
-        seqX = Sequence(["initial"], (legacyalgo,), "seqX")
-        legacyChain.add(seqX)
-        
-        testmenu = Menu("test")
-        testmenu.add(legacyChain)
-        testmenu.generate()
-        
+        mb = MenuFactory('legacygen')
         prtcfg = 'arrowmf_proto.dat'
         try:
-            msgmenu = testmenu.to_msg()
+            msgmenu = mb.build()
         except Exception:
             raise
         
@@ -228,60 +164,21 @@ class Test_MF_Reader(unittest.TestCase):
                           nbatches=10,
                           suffix='.txt',
                           prefix='testio',
-                          path='/tmp')
+                          path='/tmp',
+                          loglevel='INFO')
 
         generator.write()
-        
-        
-        filegen = FileGenerator('generator',
-                                path='/tmp',
-                                glob='testio*.txt',
-                                nbatches=0)
-        msggen = filegen.to_msg()
-        mftool = MfTool('legacytool',
-                        column_a=intconf0,
-                        column_b=intuconf0,
-                        column_c=strconf0)
+        config = JobConfigFactory('legacyio', msgmenu)
+        config.configure(ctype='legacy',
+                         nbatches=10,
+                         delimiter='\r\n',
+                         path='/tmp',
+                         glob='testio*.txt',
+                         column_a=intconf0,
+                         column_b=intuconf0,
+                         column_c=strconf0)
 
-        mftoolcfg = mftool.to_msg()
-        blocksize = mftool.record_size * 100
-        filetool = FileHandlerTool('filehandler',
-                                   blocksize=blocksize,
-                                   skip_header=False,
-                                   legacy_data=True,
-                                   loglevel='INFO')
-        filetoolcfg = filetool.to_msg()
-
-        defaultwriter = BufferOutputWriter('bufferwriter',
-                                           BUFFER_MAX_SIZE=10485760,
-                                           #BUFFER_MAX_SIZE=2147483648,  
-                                           write_csv=True)
-        defwtrcfg = defaultwriter.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-
-        # Support old format, evolve schema
-        if hasattr(msg, 'config_id'):
-            print('add config id')
-            msg.config_id = str(uuid.uuid4())
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-
-        sampler = msg.sampler
-        sampler.ndatums = 0
-        sampler.nchunks = 0
-
-        msg.max_malloc_size_bytes = 2147483648
-        
-        filetoolmsg = msg.tools.add()
-        filetoolmsg.CopyFrom(filetoolcfg)
-        
-        defwrtmsg = msg.tools.add()
-        defwrtmsg.CopyFrom(defwtrcfg)
-
-        mftoolmsg = msg.tools.add()
-        mftoolmsg.CopyFrom(mftoolcfg)
-        print(text_format.MessageToString(mftoolmsg))
+        msg = config.job_config
 
         try:
             with open(prtcfg, "wb") as f:
@@ -295,6 +192,6 @@ class Test_MF_Reader(unittest.TestCase):
                       loglevel='INFO',
                       jobname='mftest')
         bow.control()
-
+    
 if __name__ == "__main__":
     unittest.main()

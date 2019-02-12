@@ -12,21 +12,17 @@
 """
 import unittest
 import logging
-from google.protobuf import text_format
 
-from artemis.core.dag import Sequence, Chain, Menu
 from artemis.core.steering import Steering
-from artemis.algorithms.dummyalgo import DummyAlgo1
-from artemis.algorithms.csvparseralgo import CsvParserAlgo
-from artemis.algorithms.profileralgo import ProfilerAlgo
 from artemis.artemis import Artemis
-from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
-from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.logger import Logger
 from artemis.core.physt_wrapper import Physt_Wrapper
-from artemis.core.datastore import ArrowSets
+from artemis.configurables.factories import MenuFactory, JobConfigFactory
+
 from artemis.core.tree import Tree
+from artemis.core.singleton import Singleton
+from artemis.core.datastore import ArrowSets
 
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
@@ -35,79 +31,30 @@ logging.getLogger().setLevel(logging.INFO)
 
 
 class ArtemisTestCase(unittest.TestCase):
-        
-    def setUp(self):
-        print("================================================")
-        print("Beginning new TestCase %s" % self._testMethodName)
-        print("================================================")
+     
+    def reset(self):
         Singleton.reset(JobProperties)
         Singleton.reset(ArrowSets)
         Singleton.reset(Tree)
         Singleton.reset(Physt_Wrapper)
-        self.menucfg = ''
-        self.gencfg = ''
-        self.prtcfg = ''
-        testalgo = DummyAlgo1('dummy', myproperty='ptest', loglevel='INFO')
-        csvalgo = CsvParserAlgo('csvparser', loglevel='INFO')
-        profileralgo = ProfilerAlgo('profiler', loglevel='INFO')
 
-        seq1 = Sequence(["initial"], (testalgo, testalgo), "seq1")
-        seq2 = Sequence(["initial"], (testalgo, testalgo), "seq2")
-        seq3 = Sequence(["seq1", "seq2"], (testalgo,), "seq3")
-        seq4 = Sequence(["seq3"], (testalgo,), "seq4")
-
-        dummyChain1 = Chain("dummy1")
-        dummyChain1.add(seq1)
-        dummyChain1.add(seq4)
-        dummyChain1.add(seq3)
-        dummyChain1.add(seq2)
-
-        seq5 = Sequence(["initial"], (testalgo, testalgo), "seq5")
-        seq6 = Sequence(["seq5"], (testalgo, testalgo), "seq6")
-        seq7 = Sequence(["seq6"], (testalgo,), "seq7")
-
-        dummyChain2 = Chain("dummy2")
-        dummyChain2.add(seq5)
-        dummyChain2.add(seq6)
-        dummyChain2.add(seq7)
-
-        csvChain = Chain("csvchain")
-        seqX = Sequence(["initial"], (csvalgo,), "seqX")
-        seqY = Sequence(["seqX"], (profileralgo,), "seqY")
-        csvChain.add(seqX)
-        csvChain.add(seqY)
+    def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
+        self.reset()
         
-        self.testmenu = Menu("test")
-        self.testmenu.add(dummyChain1)
-        self.testmenu.add(dummyChain2)
-        self.testmenu.add(csvChain)
-        self.testmenu.generate()
-
-    def tearDown(self):
-        Singleton.reset(JobProperties)
-    
-    def test_launch(self):
-        Singleton.reset(JobProperties)
+        mb = MenuFactory('csvgen')
+        
         self.prtcfg = 'arrowproto_proto.dat'
         try:
-            msgmenu = self.testmenu.to_msg()
+            msgmenu = mb.build()
         except Exception:
             raise
         
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
+        config = JobConfigFactory('csvgen', msgmenu)
+        config.configure()
+        msg = config.job_config
         try:
             with open(self.prtcfg, "wb") as f:
                 f.write(msg.SerializeToString())
@@ -115,6 +62,12 @@ class ArtemisTestCase(unittest.TestCase):
             self.__logger.error("Cannot write message")
         except Exception:
             raise
+
+    def tearDown(self):
+        self.reset()
+    
+    def test_launch(self):
+        self.reset()
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
@@ -128,33 +81,10 @@ class ArtemisTestCase(unittest.TestCase):
 
     def test_configure(self):
         Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
+        Singleton.reset(ArrowSets)
+        Singleton.reset(Tree)
+        Singleton.reset(Physt_Wrapper)
         
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
@@ -166,34 +96,7 @@ class ArtemisTestCase(unittest.TestCase):
         bow._configure()
 
     def test_lock(self):
-        Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
+        self.reset()
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
@@ -206,34 +109,7 @@ class ArtemisTestCase(unittest.TestCase):
         bow._lock()
 
     def test_initialize(self):
-        Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
+        self.reset()
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
@@ -246,34 +122,8 @@ class ArtemisTestCase(unittest.TestCase):
         bow._initialize()
 
     def test_book(self):
-        Singleton.reset(JobProperties)
+        self.reset() 
         self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
@@ -287,34 +137,7 @@ class ArtemisTestCase(unittest.TestCase):
         bow._book()
 
     def test_run(self):
-        Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
+        self.reset() 
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
@@ -350,34 +173,7 @@ class ArtemisTestCase(unittest.TestCase):
             raise
 
     def test_finalize(self):
-        Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=1,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
-
-        msg = artemis_pb2.JobConfig()
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
-
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
+        self.reset() 
         bow = Artemis("arrowproto", 
                       protomsg=self.prtcfg,
                       blocksize=2**16,
