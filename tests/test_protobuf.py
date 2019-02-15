@@ -12,6 +12,7 @@
 """
 import unittest
 import logging
+import pyarrow as pa
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
@@ -88,6 +89,23 @@ class ArtemisTestCase(unittest.TestCase):
                 msg.ParseFromString(f.read())
         except Exception:
             raise
+
+    def test_schema(self):
+        fields = [('foo', pa.int32()),
+                  ('bar', pa.float32())]
+        schema = pa.schema(fields)
+
+        serialized_schema = schema.serialize().to_pybytes()
+
+        msg = artemis_pb2.SchemaInfo()
+        msg.arrow_schema = serialized_schema
+        
+        newschema = pa.ipc.read_schema(pa.py_buffer(msg.arrow_schema))
+
+        assert schema == newschema
+
+
+
 
 
 

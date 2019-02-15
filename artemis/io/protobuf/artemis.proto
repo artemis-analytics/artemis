@@ -134,6 +134,7 @@ message SchemaInfo {
     repeated Schema columns = 1;  
     uint64 size_bytes = 2;
     bytes header = 3;
+    bytes arrow_schema = 4;
 }
 
 message FileInfo {
