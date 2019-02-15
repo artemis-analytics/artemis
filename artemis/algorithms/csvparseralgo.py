@@ -109,6 +109,11 @@ class CsvParserAlgo(AlgoBase):
 
         self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
         self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
+        
+        # Create the arrow schema
+        # This should go into the job properties wrapper 
+
+        _finfo.schema.arrow_schema = rbatch.schema.serialize().to_pybytes()
 
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
