@@ -192,6 +192,144 @@ class Test_MF_Reader(unittest.TestCase):
                       loglevel='INFO',
                       jobname='mftest')
         bow.control()
-    
+
+    def test_legacyds(self):
+        
+        Singleton.reset(JobProperties)
+        Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
+        prtcfg = ''
+        mb = MenuFactory('legacygen')
+        prtcfg = 'legacymf_proto.dat'
+        try:
+            msgmenu = mb.build()
+        except Exception:
+            raise
+
+        fields = {'column_a': {'utype': 'str', 'length': 1},
+                  'column_b': {'utype': 'uint', 'length': 9, 'min_val': 0, 'max_val': 10},
+                  'column_c': {'utype': 'str', 'length': 2},
+                  'column_d': {'utype': 'uint', 'length': 4, 'min_val': 0, 'max_val': 10},
+                  'column_e': {'utype': 'uint', 'length': 9, 'min_val': 0, 'max_val': 10},
+                  'column_f': {'utype': 'str', 'length': 2},
+                  'column_g': {'utype': 'uint', 'length': 4, 'min_val': 0, 'max_val': 10},
+                  'column_h': {'utype': 'uint', 'length': 3, 'min_val': 0, 'max_val': 10},
+                  'column_i': {'utype': 'str', 'length': 10},  # date
+                  'column_j': {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10},
+                  'column_k': {'utype': 'int', 'length': 8, 'min_val': 0, 'max_val': 10},
+                  'column_l': {'utype': 'int', 'length': 13, 'min_val': 0, 'max_val': 10},
+                  'column_m': {'utype': 'int', 'length': 13, 'min_val': 0, 'max_val': 10},
+                  'column_n': {'utype': 'int', 'length': 8, 'min_val': 0, 'max_val': 10},
+                  'column_o': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_p': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_q': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_r': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_s': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_t': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_u': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_v': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_x': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_y': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_z': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_aa': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ab': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ac': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ad': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ae': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_af': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ag': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ah': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ai': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_aj': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ak': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_al': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_am': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_an': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ao': {'utype': 'str', 'length': 10},  # date
+                  'column_ap': {'utype': 'str', 'length': 2},  # unknown
+                  'column_aq': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_au': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_av': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ax': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ay': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_az': {'utype': 'str', 'length': 10},  # date
+                  'column_ba': {'utype': 'str', 'length': 30}, 
+                  'column_bb': {'utype': 'str', 'length': 30}, 
+                  'column_bc': {'utype': 'str', 'length': 30}, 
+                  'column_bd': {'utype': 'str', 'length': 30}, 
+                  'column_be': {'utype': 'str', 'length': 30},
+                  'column_bf': {'utype': 'str', 'length': 27}, 
+                  'column_bg': {'utype': 'str', 'length': 2},  
+                  'column_bh': {'utype': 'str', 'length': 2},  
+                  'column_bi': {'utype': 'str', 'length': 9},  
+                  'column_bj': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bk': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bl': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bm': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bn': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bo': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bp': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bq': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_br': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bs': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bt': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bu': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bv': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bx': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_by': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_bz': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_ca': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_cb': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_cc': {'utype': 'uint', 'length': 4, 'min_val': 0, 'max_val': 1},
+                  'column_cd': {'utype': 'uint', 'length': 2, 'min_val': 0, 'max_val': 1},
+                  'column_ce': {'utype': 'int', 'length': 13, 'min_val': 0, 'max_val': 10},
+                  'column_cf': {'utype': 'int', 'length': 13, 'min_val': 0, 'max_val': 10},
+                  'column_cg': {'utype': 'int', 'length': 13, 'min_val': 0, 'max_val': 10},
+                  'column_ch': {'utype': 'int', 'length': 13, 'min_val': 0, 'max_val': 10},
+                  'column_ci': {'utype': 'int', 'length': 14, 'min_val': 0, 'max_val': 10},
+                  'column_cj': {'utype': 'int', 'length': 14, 'min_val': 0, 'max_val': 10},
+                  'column_ck': {'utype': 'int', 'length': 9, 'min_val': 0, 'max_val': 10},
+                  'column_cl': {'utype': 'int', 'length': 9, 'min_val': 0, 'max_val': 10},
+                  'column_cm': {'utype': 'int', 'length': 8, 'min_val': 0, 'max_val': 10},
+                  'column_cn': {'utype': 'uint', 'length': 2, 'min_val': 0, 'max_val': 10},
+                  'column_co': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
+                  'column_cp': {'utype': 'str', 'length': 8}} # Empty column padding 8 bytes
+
+        generator = GenMF('generator',
+                          num_rows=10000, 
+                          nbatches=10,
+                          suffix='.txt',
+                          prefix='legacyaio',
+                          path='/tmp',
+                          loglevel='INFO',
+                          **fields)
+
+        generator.write()
+        config = JobConfigFactory('legacyio', msgmenu)
+        config.configure(ctype='legacy',
+                         nbatches=10,
+                         delimiter='\r\n',
+                         path='/tmp',
+                         glob='legacyaio*.txt',
+                         **fields)
+
+        msg = config.job_config
+
+        try:
+            with open(prtcfg, "wb") as f:
+                f.write(msg.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write message")
+        except Exception:
+            raise
+        bow = Artemis("mftest", 
+                      protomsg=prtcfg,
+                      loglevel='INFO',
+                      jobname='mftest')
+        bow.control()
+
+
+
+
 if __name__ == "__main__":
     unittest.main()
