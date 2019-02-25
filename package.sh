@@ -26,9 +26,15 @@ then
 fi
 
 # Actual work done.
+which pip3
+pip3 --version
 python setup.py sdist bdist_wheel
-pip freeze > ./dist/requirements.txt # Extract python packages from local environment.
-pip download -d ./dist/ -r ./dist/requirements.txt
+which pip3
+pip3 --version
+pip3 freeze > ./dist/requirements.txt # Extract python packages from local environment.
+sed -i '/artemis/d' ./dist/requirements.txt  # remove artemis package from first line
+cat ./dist/requirements.txt
+pip3 download -vvv -d ./dist/ -r ./dist/requirements.txt
 tar -cvf artemis.tar ./dist/ setup.sh
 mkdir -p $DIR
 gzip -c artemis.tar > "$DIR"/artemis.tar.gz
