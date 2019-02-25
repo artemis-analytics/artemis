@@ -113,19 +113,16 @@ document:
 package:
   stage: package
   image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:latest
-  dependencies:
-      - prepare
   variables:
     DOCKER_DRIVER: overlay2
   script:
-    - pip install wheel
     - python setup.py install
     - bash package.sh -d artemis_build
   artifacts:
       paths:
           - artemis_build/artemis.tar.gz
   only:
-      - tags
+    - tags
 
 build:
     stage: build

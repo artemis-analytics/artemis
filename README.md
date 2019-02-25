@@ -152,4 +152,9 @@ to
 import physt.io.protobuf.histogram_pb2 as histogram_pb2
 ```
 
+# Known Problems
+Offline use of Artemis requires downloading all dependencies.
+Release tags run the packaging stage, which fails due to listing artemis tag
+as a depenency in the requirements.txt file. Adding a hook to check if artemis
+is included in the requirements file, if so, remove.
 
