@@ -49,6 +49,11 @@ from artemis.utils.utils import bytes_to_mb, range_positive
 from google.protobuf import text_format
 from artemis.decorators import timethis
 
+# Generators
+from artemis.generators.filegen import FileGenerator
+from artemis.generators.csvgen import GenCsvLikeArrow
+from artemis.generators.legacygen import GenMF
+
 
 @Logger.logged
 class Artemis():
@@ -657,25 +662,27 @@ class Artemis():
             self.datum = None
 
     def _request_data(self):
-        try:
-            raw, batch = next(self.data_handler)
-        except StopIteration:
-            self.__logger.info("Request data: iterator complete")
-            raise
-        except ValueError:
+        self.__logger.debug("Generator type %s", type(self.generator))
+        if isinstance(self.generator, GenCsvLikeArrow):
+            self.__logger.debug("Receiving bytes and batch")
+            try:
+                raw, batch = next(self.data_handler)
+            except StopIteration:
+                self.__logger.info("Request data: iterator complete")
+                raise
+        elif isinstance(self.generator, GenMF) or \
+                isinstance(self.generator, FileGenerator):
             #  Occurs when receiving a 1tuple from generator
+            self.__logger.debug("receiving bytes or path")
             try:
                 raw = next(self.data_handler)
             except StopIteration:
                 self.__logger.info("Request data: iterator complete")
                 raise
-        except TypeError:
-            #  Occurs when receiving a file path
-            try:
-                raw = next(self.data_handler)
-            except StopIteration:
-                self.__logger.info("Request data: iterator complete")
-                raise
+        else:
+            self.__logger.error("Unknown data handler type %s",
+                                type(self.generator))
+            raise TypeError
 
         # Add fileinfo to message
         # TODO
