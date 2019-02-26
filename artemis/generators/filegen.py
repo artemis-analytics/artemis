@@ -40,4 +40,8 @@ class FileGenerator(GeneratorBase):
         return defaults
 
     def generate(self):
+        self.__logger.debug("Generating the file paths")
+        _files = pathlib.Path(self._path).glob(self._glob)
+        for f in _files:
+            self.__logger.debug(f)
         return pathlib.Path(self._path).glob(self._glob)

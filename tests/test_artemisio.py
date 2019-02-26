@@ -12,6 +12,8 @@
 """
 import unittest
 import logging
+import tempfile
+
 from artemis.artemis import Artemis
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
@@ -22,7 +24,8 @@ from artemis.configurables.factories import MenuFactory, JobConfigFactory
 
 logging.getLogger().setLevel(logging.INFO)
 
-
+# Improve temporary outputs and context handling
+# stackoverflow 3223604
 class ArtemisTestCase(unittest.TestCase):
         
     def setUp(self):
@@ -41,38 +44,40 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        self.prtcfg = 'arrowproto_proto.dat'
+        with tempfile.TemporaryDirectory() as dirpath:
+            print(dirpath)
+            self.prtcfg = dirpath + 'arrowproto_proto.dat'
 
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=10,
-                                    num_cols=20,
-                                    num_rows=10000,
-                                    suffix='.csv',
-                                    prefix='testio',
-                                    path='/tmp')
-        generator.write()
-        mb = MenuFactory('csvgen')
-        self.prtcfg = 'test_configurable.dat'
-        try:
-            msgmenu = mb.build()
-        except Exception:
-            raise
-        
-        config = JobConfigFactory('csvio', msgmenu)
-        config.configure()
-        msg = config.job_config
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("arrowproto",
-                      protomsg=self.prtcfg,
-                      loglevel='INFO',
-                      jobname='test')
-        bow.control()
+            generator = GenCsvLikeArrow('generator',
+                                        nbatches=1,
+                                        num_cols=20,
+                                        num_rows=10000,
+                                        suffix='.csv',
+                                        prefix='testio',
+                                        path=dirpath)
+            generator.write()
+            mb = MenuFactory('csvgen')
+            self.prtcfg = 'test_configurable.dat'
+            try:
+                msgmenu = mb.build()
+            except Exception:
+                raise
+            
+            config = JobConfigFactory('csvio', msgmenu)
+            config.configure(path=dirpath)
+            msg = config.job_config
+            try:
+                with open(self.prtcfg, "wb") as f:
+                    f.write(msg.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            bow = Artemis("arrowproto",
+                          protomsg=self.prtcfg,
+                          loglevel='INFO',
+                          jobname='test')
+            bow.control()
 
 
 if __name__ == '__main__':

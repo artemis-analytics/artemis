@@ -83,16 +83,16 @@ class CsvParserAlgo(AlgoBase):
         _finfo = self._jp.meta.data[-1]
         schema = [x.name for x in _finfo.schema.columns]
         self.__logger.debug('Expected header %s' % schema)
-        columns = [[] for _ in range(len(schema))]
-        length = 0
+        # columns = [[] for _ in range(len(schema))]
+        # length = 0
 
-        try:
-            rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
-        except Exception:
-            self.__logger.error("Python parsing fails")
-            raise
-        self.__timers.fill(self.name, 'pyparse', time_)
-        self.hbook.fill(self.name, 'time.pyparse', time_)
+        # try:
+        #     rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
+        # except Exception:
+        #     self.__logger.error("Python parsing fails")
+        #     raise
+        # self.__timers.fill(self.name, 'pyparse', time_)
+        # self.hbook.fill(self.name, 'time.pyparse', time_)
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)
@@ -102,18 +102,18 @@ class CsvParserAlgo(AlgoBase):
         self.__timers.fill(self.name, 'pyarrowparse', time_)
         self.hbook.fill(self.name, 'time.pyarrowparse', time_)
 
-        if rbatch.equals(tbatch) is False:
-            self.__logger.error("Batches not validated")
-        else:
-            self.__logger.debug("Batches equal %s", rbatch.equals(tbatch))
+        # if rbatch.equals(tbatch) is False:
+        #     self.__logger.error("Batches not validated")
+        # else:
+        #     self.__logger.debug("Batches equal %s", rbatch.equals(tbatch))
 
-        self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
-        self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
-        
+        # self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
+        self.__logger.debug("Arrow schema: %s: ", tbatch.schema)
+
         # Create the arrow schema
-        # This should go into the job properties wrapper 
+        # This should go into the job properties wrapper
 
-        _finfo.schema.arrow_schema = rbatch.schema.serialize().to_pybytes()
+        _finfo.schema.arrow_schema = tbatch.schema.serialize().to_pybytes()
 
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
