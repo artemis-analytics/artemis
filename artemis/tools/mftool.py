@@ -44,7 +44,7 @@ class MfTool(ToolBase):
                     name = key.split('_')[-1]
                     self.col_names.append(name)
 
-        self.nrecords = len(self.ds_schema)
+        self.nfields = len(self.ds_schema)
         self.rsize = 0
         for ds in self.ds_schema:
             self.rsize = self.rsize + ds['length']
@@ -62,14 +62,14 @@ class MfTool(ToolBase):
         defaults = {'seed': 42,
                     'nbatches': 1,
                     'num_rows': 10,
-                    'pos_char': {'0': '{', '1': 'a',
-                                 '2': 'b', '3': 'c', '4': 'd',
-                                 '5': 'e', '6': 'f', '7': 'g',
-                                 '8': 'h', '9': 'i'},
-                    'neg_char': {'0': 'j', '1': 'k', '2': 'l',
-                                 '3': 'm', '4': 'n',
-                                 '5': 'o', '6': 'p', '7': 'q',
-                                 '8': 'r', '9': 's'}
+                    'pos_char': {'0': '{', '1': 'A',
+                                 '2': 'B', '3': 'C', '4': 'D',
+                                 '5': 'E', '6': 'F', '7': 'G',
+                                 '8': 'H', '9': 'I'},
+                    'neg_char': {'0': '}', '1': 'J', '2': 'K',
+                                 '3': 'L', '4': 'M',
+                                 '5': 'N', '6': 'O', '7': 'P',
+                                 '8': 'Q', '9': 'R'}
                     }
         return defaults
 
@@ -93,7 +93,6 @@ class MfTool(ToolBase):
         self.__logger.debug("Block size to process %i", isize)
         odata = []
         arrowodata = []
-        nrecords = len(self.ds_schema)
 
         # Create a list of empty lists for the number of columns.
         for field in self.ds_schema:
@@ -106,7 +105,7 @@ class MfTool(ToolBase):
         while ccounter < isize:
             # Extract record.
             rdata = block[ccounter: (ccounter + self.rsize)]
-            while ncounter < nrecords:
+            while ncounter < self.nfields:
                 # Extract field.
                 field = rdata[fcounter:
                               (fcounter + self.ds_schema[ncounter]['length'])]
@@ -116,25 +115,82 @@ class MfTool(ToolBase):
                     # differentiating between negative and positive numbers.
                     if field[-1:] in self.pos_char:
                         # Padding zeroes are taken removed by type conversion.
-                        field = int(field.replace(field[-1:],
-                                                  self.pos_char[field[-1:]]))
+                        try:
+                            cnvfield = int(field.replace(field[-1:],
+                                           self.pos_char[field[-1:]]))
+                        except Exception:
+                            self.__logger.error("Cannot parse int field")
+                            self.__logger.error("Record %i Field %i Value %s ",
+                                                ccounter, ncounter, field)
+                            raise
                     else:
-                        field = field.replace(field[-1:],
-                                              self.neg_char[field[-1:]])
-                        field = int('-' + field)
-                    odata[ncounter].append(field)
+                        cnvfield = field.replace(field[-1:],
+                                                 self.neg_char[field[-1:]])
+                        try:
+                            cnvfield = int('-' + field)
+                        except Exception:
+                            self.__logger.error("Cannot parse int field")
+                            self.__logger.error("Record %i Field %i Value %s ",
+                                                ccounter, ncounter, field)
+                            raise
+                    odata[ncounter].append(cnvfield)
                 elif self.ds_schema[ncounter]['utype'] == 'str':
                     # Removes padding spaces from the data.
-                    odata[ncounter].append(field.strip())
+                    try:
+                        cnvfield = field.strip()
+                    except Exception:
+                        self.__logger.error("Cannot parse str field")
+                        self.__logger.error("Record %i Field %i Value %s ",
+                                            ccounter, ncounter, field)
+                        raise
+
+                    odata[ncounter].append(cnvfield)
                 elif self.ds_schema[ncounter]['utype'] == 'uint':
-                    odata[ncounter].append(int(field))
+                    try:
+                        cnvfield = int(field)
+                    except ValueError:
+                        self.__logger.error("Cannot parse uint field")
+                        self.__logger.error("Record %i Field %i Value %s ",
+                                            ccounter, ncounter, field)
+                        try:
+                            cnvfield = str(field)
+                        except Exception:
+                            self.__logger.error("Cannot parse uint as str")
+                            self.__logger.eror("Record %i Field %i Value %s ",
+                                               ccounter, ncounter, field)
+                            raise
+                        if cnvfield.isspace():
+                            self.__logger.debug("null, convert to zero")
+                            #  TODO determine correct value for empty fields???
+                            cnvfield = 0  
+                    except Exception:
+                        self.__logger.error("Cannot parse uint field")
+                        self.__logger.error("Record %i Field %i Value %s ",
+                                            ccounter, ncounter, field)
+                        raise
+                    odata[ncounter].append(cnvfield)
                 fcounter = fcounter + self.ds_schema[ncounter]['length']
                 ncounter = ncounter + 1
             ncounter = 0
             fcounter = 0
             ccounter = ccounter + self.rsize
 
+        # Validate lists
+        if len(odata) != self.nfields:
+            self.__logger.error("Number of parsed fields not equal schema")
+            raise ValueError
+
+        #  TODO
+        #  Pass the number of records per block to parse
+        #  How to handle last block?
+        #  Or validate equal arrays before passing to arrow?
+        # for i, my_list in enumerate(odata):
+        #     if len(my_list) != block_size:
+        #         self.__logger.error("Field column has
+        #  incorrect number of records Field %i length %i", i, len(my_list))
+
         # Creates apache arrow dataset.
+
         for my_list in odata:
             arrowodata.append(pa.array(my_list))
 

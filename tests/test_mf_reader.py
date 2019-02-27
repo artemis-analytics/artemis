@@ -50,14 +50,14 @@ class Test_MF_Reader(unittest.TestCase):
         # Schema definition for all fields.
         schema = [intconf0, strconf0, intconf1]
         # Test data block.
-        block = "012345678aabcd012345012345678babcd012345"\
-                 + "012345678cabc 012345012345678dabcd012345"\
-                 + "012345678eabcd012345012345678fabcd012345"\
-                 + "012345678aabc 012345012345678babcd012345"\
-                 + "012345678cabcd012345012345678dabcd012345"\
-                 + "012345678eabc 012345012345678fabcd012345"\
-                 + "012345678aabcd012345012345678babcd012345"\
-                 + "012345678cabc 012345"
+        block = "012345678AABCD012345012345678BABCD012345"\
+                 + "012345678CABC 012345012345678DABCD012345"\
+                 + "012345678EABCD012345012345678FABCD012345"\
+                 + "012345678AABC 012345012345678BABCD012345"\
+                 + "012345678CABCD012345012345678DABCD012345"\
+                 + "012345678EABC 012345012345678FABCD012345"\
+                 + "012345678AABCD012345012345678BABCD012345"\
+                 + "012345678CABC 012345"
         # Show block in unencoded format.
         print('Block: ')
         print(block)
@@ -67,7 +67,7 @@ class Test_MF_Reader(unittest.TestCase):
         print('Encoded block: ')
         print(block)
         # Create MfTool object. It is configured.
-        mfreader = MfTool('reader',ds_schema=schema)
+        mfreader = MfTool('reader', ds_schema=schema)
         # Run the reader on the data block.
         mfreader.execute(block)
 
@@ -116,7 +116,7 @@ class Test_MF_Reader(unittest.TestCase):
         
         config = JobConfigFactory('legacygen', msgmenu)
         config.configure(ctype='legacy',
-                         nbatches=10,
+                         nbatches=1,
                          num_rows=10000,
                          delimiter='\r\n',
                          column_a=intconf0,
@@ -161,7 +161,7 @@ class Test_MF_Reader(unittest.TestCase):
                           column_b=intuconf0,
                           column_c=strconf0,
                           num_rows=10000, 
-                          nbatches=10,
+                          nbatches=1,
                           suffix='.txt',
                           prefix='testio',
                           path='/tmp',
@@ -170,7 +170,7 @@ class Test_MF_Reader(unittest.TestCase):
         generator.write()
         config = JobConfigFactory('legacyio', msgmenu)
         config.configure(ctype='legacy',
-                         nbatches=10,
+                         nbatches=1,
                          delimiter='\r\n',
                          path='/tmp',
                          glob='testio*.txt',
@@ -297,7 +297,7 @@ class Test_MF_Reader(unittest.TestCase):
 
         generator = GenMF('generator',
                           num_rows=10000, 
-                          nbatches=10,
+                          nbatches=1,
                           suffix='.txt',
                           prefix='legacyaio',
                           path='/tmp',
@@ -307,7 +307,7 @@ class Test_MF_Reader(unittest.TestCase):
         generator.write()
         config = JobConfigFactory('legacyio', msgmenu)
         config.configure(ctype='legacy',
-                         nbatches=10,
+                         nbatches=1,
                          delimiter='\r\n',
                          path='/tmp',
                          glob='legacyaio*.txt',
