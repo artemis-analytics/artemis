@@ -122,16 +122,25 @@ class MfTool(ToolBase):
                             self.__logger.error("Cannot parse int field")
                             self.__logger.error("Record %i Field %i Value %s ",
                                                 ccounter, ncounter, field)
+                            self.__logger.error("Record %i: %s", ccounter, rdata)
                             raise
                     else:
-                        cnvfield = field.replace(field[-1:],
-                                                 self.neg_char[field[-1:]])
                         try:
-                            cnvfield = int('-' + field)
+                            cnvfield = field.replace(field[-1:],
+                                                 self.neg_char[field[-1:]])
                         except Exception:
                             self.__logger.error("Cannot parse int field")
                             self.__logger.error("Record %i Field %i Value %s ",
                                                 ccounter, ncounter, field)
+                            self.__logger.error("Record %i: %s", ccounter, rdata)
+                            raise
+                        try:
+                            cnvfield = int('-' + cnvfield)
+                        except Exception:
+                            self.__logger.error("Cannot parse int field")
+                            self.__logger.error("Record %i Field %i Value %s ",
+                                                ccounter, ncounter, field)
+                            self.__logger.error("Record %i: %s", ccounter, rdata)
                             raise
                     odata[ncounter].append(cnvfield)
                 elif self.ds_schema[ncounter]['utype'] == 'str':
@@ -142,6 +151,7 @@ class MfTool(ToolBase):
                         self.__logger.error("Cannot parse str field")
                         self.__logger.error("Record %i Field %i Value %s ",
                                             ccounter, ncounter, field)
+                        self.__logger.error("Record %i: %s", ccounter, rdata)
                         raise
 
                     odata[ncounter].append(cnvfield)
@@ -158,6 +168,7 @@ class MfTool(ToolBase):
                             self.__logger.error("Cannot parse uint as str")
                             self.__logger.eror("Record %i Field %i Value %s ",
                                                ccounter, ncounter, field)
+                            self.__logger.error("Record %i: %s", ccounter, rdata)
                             raise
                         if cnvfield.isspace():
                             self.__logger.debug("null, convert to zero")
@@ -167,6 +178,7 @@ class MfTool(ToolBase):
                         self.__logger.error("Cannot parse uint field")
                         self.__logger.error("Record %i Field %i Value %s ",
                                             ccounter, ncounter, field)
+                        self.__logger.error("Record %i: %s", ccounter, rdata)
                         raise
                     odata[ncounter].append(cnvfield)
                 fcounter = fcounter + self.ds_schema[ncounter]['length']
