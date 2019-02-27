@@ -740,9 +740,11 @@ class Artemis():
                 a_col.name = col
         except UnicodeDecodeError:
             self.__logger.warning("Input data type is not utf8")
-            # Assume for now no header in file
-            _finfo.schema.size_bytes = 0
-            _finfo.schema.header = b''
+            header, meta, off_head = \
+                self.__tools.get("filehandler").prepare_unicode(file_)
+            _finfo.schema.size_bytes = off_head
+            _finfo.schema.header = header
+            self.__logger.info("Header size %i", _finfo.schema.size_bytes)
             meta = self.__tools.get("legacytool").columns
             for col in meta:
                 a_col = _finfo.schema.columns.add()
@@ -808,7 +810,7 @@ class Artemis():
 
         # seek past header
         file_.seek(_finfo.schema.size_bytes)
-
+        self.__logger.info("Seek past header position: %i", file_.tell())
         # Obtain the block information for the file
         try:
             results_, time_ = self._prepare_blocks(file_,

@@ -159,8 +159,8 @@ class MfTool(ToolBase):
                     try:
                         cnvfield = int(field)
                     except ValueError:
-                        self.__logger.error("Cannot parse uint field")
-                        self.__logger.error("Record %i Field %i Value %s ",
+                        self.__logger.debug("Cannot parse uint field")
+                        self.__logger.debug("Record %i Field %i Value %s ",
                                             ccounter, ncounter, field)
                         try:
                             cnvfield = str(field)
@@ -168,12 +168,13 @@ class MfTool(ToolBase):
                             self.__logger.error("Cannot parse uint as str")
                             self.__logger.eror("Record %i Field %i Value %s ",
                                                ccounter, ncounter, field)
-                            self.__logger.error("Record %i: %s", ccounter, rdata)
+                            self.__logger.error("Record %i: %s",
+                                                ccounter, rdata)
                             raise
                         if cnvfield.isspace():
                             self.__logger.debug("null, convert to zero")
                             #  TODO determine correct value for empty fields???
-                            cnvfield = 0  
+                            cnvfield = 0 
                     except Exception:
                         self.__logger.error("Cannot parse uint field")
                         self.__logger.error("Record %i Field %i Value %s ",
