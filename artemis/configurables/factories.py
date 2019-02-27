@@ -44,7 +44,7 @@ class GeneratorFactory():
 
 class FileHandlerFactory():
 
-    def __new__(cls, ctype, blocksize=2**16, delimiter='\r\n'):
+    def __new__(cls, ctype, blocksize=2**16, delimiter='\r\n', offset_header=None):
 
         if ctype == 'csv':
             return FileHandlerTool('filehandler',
@@ -54,8 +54,10 @@ class FileHandlerFactory():
         elif ctype == 'legacy':
             return FileHandlerTool('filehandler',
                                    blocksize=blocksize,
-                                   skip_header=False,
-                                   legacy_data=True)
+                                   skip_header=True,
+                                   legacy_data=True,
+                                   offset_header=offset_header)
+                                   
         else:
             print('Unknown type')
 

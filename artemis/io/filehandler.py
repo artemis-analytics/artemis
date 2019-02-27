@@ -77,9 +77,6 @@ class FileHandlerTool(ToolBase):
                 split(self.properties.separator)
         except UnicodeDecodeError:
             self.__logger.warning("File not UTF8 encoded assume legacy data")
-            meta = None
-            file_.seek(0)
-            self._offset_header = file_.tell()
             raise
         except Exception:
             self.__logger.error("Unknown error occurred at file preparation")
@@ -87,6 +84,17 @@ class FileHandlerTool(ToolBase):
 
         file_.seek(0)
         self._offset_header = offset
+        return header, meta, offset
+    
+    def prepare_unicode(self, file_):
+        self.__logger.info("Prepare unicode file")
+        self.__logger.info("Offset %i", self._offset_header)
+        if file_.tell() != 0:
+            file_.seek(0)
+        
+        meta = []
+        header = file_.read(self._offset_header)
+        offset = self._offset_header  # Do we start of offset, or offset + byte
         return header, meta, offset
 
     def _create_header(self, schema):
