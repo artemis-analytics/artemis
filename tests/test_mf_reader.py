@@ -174,6 +174,9 @@ class Test_MF_Reader(unittest.TestCase):
                          delimiter='\r\n',
                          path='/tmp',
                          glob='testio*.txt',
+                         nrecords_per_block=4095,
+                         max_file_size=1073741824,
+                         write_csv=True,
                          column_a=intconf0,
                          column_b=intuconf0,
                          column_c=strconf0)
@@ -311,6 +314,9 @@ class Test_MF_Reader(unittest.TestCase):
                          delimiter='\r\n',
                          path='/tmp',
                          glob='legacyaio*.txt',
+                         nrecords_per_block=4095,
+                         max_file_size=1073741824,
+                         write_csv=True,
                          **fields)
 
         msg = config.job_config

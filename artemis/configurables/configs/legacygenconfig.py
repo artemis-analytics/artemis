@@ -69,6 +69,9 @@ class LegacyIOConfig(Configurable):
                   delimiter='\r\n',
                   path='/tmp',
                   glob='*.txt',
+                  nrecords_per_block=4095,
+                  max_file_size=1073741824,
+                  write_csv=True,
                   **columns):
 
         self._config_generator('file',
@@ -77,7 +80,7 @@ class LegacyIOConfig(Configurable):
                                nbatches=nbatches)
 
         mftool = MfTool('legacytool', **columns)
-        blocksize = mftool.record_size * 100
+        blocksize = mftool.record_size * nrecords_per_block
         rsize = 0
         for key in columns:
             rsize = rsize + columns[key]['length']
@@ -90,6 +93,6 @@ class LegacyIOConfig(Configurable):
         # file chunk size
         self._tools.append(mftool.to_msg())
         self._config_sampler()
-        self._config_writer()
+        self._config_writer(max_file_size, write_csv)
         self._add_tools()
         self.__logger.info(self._msg)
