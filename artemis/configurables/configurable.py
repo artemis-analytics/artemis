@@ -50,11 +50,11 @@ class Configurable():
         tool = FileHandlerFactory(ctype, **kwargs)
         self._tools.append(tool.to_msg())
 
-    def _config_writer(self):
+    def _config_writer(self, max_size=10485760, write_csv=True):
 
         tool = BufferOutputWriter('bufferwriter',
-                                  BUFFER_MAX_SIZE=10485760,
-                                  write_csv=True)
+                                  BUFFER_MAX_SIZE=max_size,
+                                  write_csv=write_csv)
         self._tools.append(tool.to_msg())
 
     def _config_sampler(self):
