@@ -972,8 +972,10 @@ class Artemis():
                            self._jp.meta.summary.processed_bytes)
 
         if _finfo.processed.size_bytes != _finfo.raw.size_bytes:
-            self.__logger.error("Processing payload not complete")
-            raise IOError
+            if _finfo.processed.size_bytes != \
+                    (_finfo.raw.size_bytes - _finfo.schema.size_bytes):
+                self.__logger.error("Processing payload not complete")
+                raise IOError
 
         try:
             file_.close()

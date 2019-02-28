@@ -106,6 +106,18 @@ class FileHandlerTool(ToolBase):
         # bytes object with unicode encoding
         csv = csv.getvalue().encode()
         return bytearray(csv)
+    
+    def _create_unicode_header_footer(self):
+        if file_.tell() != 0:
+            file_.seek(0)
+
+        header = file_.read(self._offset_header)
+
+        file_.seek(0, 2)
+        footer_offset = file_.tell() - self._offset_header
+        file_.seek(footer_offset)
+        footer = file_.read(self._offset_header)
+        file_seek(0)
 
     def _seek_delimiter(self, file_, delimiter, blocksize):
         '''
@@ -290,6 +302,13 @@ class FileHandlerTool(ToolBase):
 
         # Seek back to start
         file_.seek(0)
+        
+        # Removes the footer from last block
+        self.__logger.info("Final block %s", blocks[-1])
+        if self._legacy_data is True:
+            blocks[-1] = (blocks[-1][0], blocks[-1][1] - self._offset_header)
+            self.__logger.info("Final block without footer %s", blocks[-1])
+
         return blocks
 
 
