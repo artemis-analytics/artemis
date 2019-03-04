@@ -12,6 +12,8 @@
 """
 import unittest
 import logging
+import tempfile
+
 from artemis.io.writer import BufferOutputWriter 
 from artemis.core.tree import Element
 import pandas as pd
@@ -49,19 +51,20 @@ class WritterTestCase(unittest.TestCase):
             el = Element(str(i))
             el.add_data(batch)
             elements.append(el)
+    
+        with tempfile.TemporaryDirectory() as dirpath:
+            writer = BufferOutputWriter('test')
+            writer.BUFFER_MAX_SIZE = 1024
+            writer._fbasename = 'test'
+            writer._path = dirpath
+            writer._schema = batch.schema
+            writer.initialize()
 
-        writer = BufferOutputWriter('test')
-        writer.BUFFER_MAX_SIZE = 1024
-        writer._fbasename = 'test'
-        writer._path = '/tmp'
-        writer._schema = batch.schema
-        writer.initialize()
-
-        try:
-            writer.write(elements)
-            writer._finalize()
-        except Exception:
-            raise IOError
+            try:
+                writer.write(elements)
+                writer._finalize()
+            except Exception:
+                raise IOError
         
 
 if __name__ == "__main__":

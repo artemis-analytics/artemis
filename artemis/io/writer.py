@@ -30,14 +30,15 @@ class BufferOutputWriter(ToolBase):
 
         self.BUFFER_MAX_SIZE = self.properties.BUFFER_MAX_SIZE
         self._write_csv = self.properties.write_csv
-
+        self._path = self.properties.path  # absolute path for output
+        self.__logger.info("Writer path %s", self._path)
         self._cache = None  # cache for a pa.RecordBatch
         self._buffer = None  # in-memory buffer
         self._sink = None  # pa.BufferOutputStream
         self._writer = None  # pa.RecordBatchFileWriter
         self._schema = None  # pa.schema
         self._fbasename = None  # file basename for dataset
-        self._path = ''  # absolute path for output
+        
         self._sizeof_batches = 0
         self._nbatches = 0  # batches per file
         self._nrecords = 0  # records per file
@@ -46,10 +47,11 @@ class BufferOutputWriter(ToolBase):
         self._filecounter = 0  # total files
         self._fname = ''
         self._finfo = []  # Store list of metadata info objects
-
+        self.__logger.info("Writer path %s", self._path)
     def _set_defaults(self):
         defaults = {'BUFFER_MAX_SIZE': 2147483648,  # 2 GB
-                    'write_csv': True}
+                    'write_csv': True,
+                    'path': ''}
 
         return defaults
 
@@ -66,6 +68,9 @@ class BufferOutputWriter(ToolBase):
         return self._filecounter
 
     def initialize(self):
+        self.__logger.info("Initialize writer")
+        self.__logger.info(self.properties)
+        self.__logger.info(self._path)
         self._buffer = None
         self._sink = pa.BufferOutputStream()
         self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
@@ -191,6 +196,7 @@ class BufferOutputWriter(ToolBase):
         self._sink = pa.BufferOutputStream()
 
     def _new_filename(self):
+        self.__logger.info("Output path %s", self._path)
         _fname = self._fbasename + \
                       '_' + self.name + \
                       '_' + str(self._filecounter) + '.arrow'
@@ -198,7 +204,9 @@ class BufferOutputWriter(ToolBase):
             self._fname = _fname
         else:
             path = os.path.abspath(self._path)
+            self.__logger.info("Absolute path %s", path)
             self._fname = os.path.join(path, _fname)
+        self.__logger.info("Ouput file %s", self._fname)
 
     def _write_buffer(self):
         try:

@@ -573,7 +573,10 @@ class Artemis():
                 except IndexError:
                     self.__logger.error("Cannot retrieve payload! %s", key)
                     raise
-
+                
+                # TODO
+                # Properly configure the properties in the job config
+                # This is a workaround which overwrites any set properties
                 if isinstance(_last, pa.lib.RecordBatch):
                     _wrtcfg.name = "writer_" + key
                     self.__logger.info("Add Tool %s", _wrtcfg.name)

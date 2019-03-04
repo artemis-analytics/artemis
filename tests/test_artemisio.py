@@ -57,7 +57,6 @@ class ArtemisTestCase(unittest.TestCase):
                                         path=dirpath)
             generator.write()
             mb = MenuFactory('csvgen')
-            self.prtcfg = 'test_configurable.dat'
             try:
                 msgmenu = mb.build()
             except Exception:
@@ -76,6 +75,7 @@ class ArtemisTestCase(unittest.TestCase):
             bow = Artemis("arrowproto",
                           protomsg=self.prtcfg,
                           loglevel='INFO',
+                          path=dirpath,
                           jobname='test')
             bow.control()
 
