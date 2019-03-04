@@ -10,6 +10,8 @@
 
 import unittest
 import logging
+import tempfile
+import os
 
 from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
@@ -102,40 +104,46 @@ class Test_MF_Reader(unittest.TestCase):
         prtcfg = ''
         
         mb = MenuFactory('legacygen')
-        prtcfg = 'arrowmf_proto.dat'
-        try:
-            msgmenu = mb.build()
-        except Exception:
-            raise
-        intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
-        intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
-        strconf0 = {'utype': 'str', 'length': 4}
-        # Schema definition.
-        # Size of chunk to create.
-        # Create a generator objected, properly configured.
-        
-        config = JobConfigFactory('legacygen', msgmenu)
-        config.configure(ctype='legacy',
-                         nbatches=1,
-                         num_rows=10000,
-                         delimiter='\r\n',
-                         column_a=intconf0,
-                         column_b=intuconf0,
-                         column_c=strconf0)
+        with tempfile.TemporaryDirectory() as dirpath:
+            prtcfg = os.path.join(dirpath, 'arrowmf_proto.dat')
+            try:
+                msgmenu = mb.build()
+            except Exception:
+                raise
+            intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
+            intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+            strconf0 = {'utype': 'str', 'length': 4}
+            # Schema definition.
+            # Size of chunk to create.
+            # Create a generator objected, properly configured.
+            
+            config = JobConfigFactory('legacygen', msgmenu)
+            config.configure(ctype='legacy',
+                             nbatches=1,
+                             num_rows=10000,
+                             delimiter='\r\n',
+                             nrecords_per_block=4095,
+                             max_file_size=1073741824,
+                             write_csv=True,
+                             outpath=dirpath,
+                             column_a=intconf0,
+                             column_b=intuconf0,
+                             column_c=strconf0)
 
-        msg = config.job_config
-        try:
-            with open(prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("mftest", 
-                      protomsg=prtcfg,
-                      loglevel='INFO',
-                      jobname='mftest')
-        bow.control()
+            msg = config.job_config
+            try:
+                with open(prtcfg, "wb") as f:
+                    f.write(msg.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            bow = Artemis("mftest", 
+                          protomsg=prtcfg,
+                          loglevel='INFO',
+                          path=dirpath,
+                          jobname='mftest')
+            bow.control()
     
     
     def test_mfartemisio(self):
@@ -144,66 +152,68 @@ class Test_MF_Reader(unittest.TestCase):
         Singleton.reset(ArrowSets)
         prtcfg = ''
         mb = MenuFactory('legacygen')
-        prtcfg = 'arrowmf_proto.dat'
-        try:
-            msgmenu = mb.build()
-        except Exception:
-            raise
-        
-        intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
-        intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
-        strconf0 = {'utype': 'str', 'length': 4}
-        # Schema definition.
-        # Size of chunk to create.
-        # Create a generator objected, properly configured.
-        generator = GenMF('generator',
-                          column_a=intconf0,
-                          column_b=intuconf0,
-                          column_c=strconf0,
-                          num_rows=10000, 
-                          nbatches=1,
-                          suffix='.txt',
-                          prefix='testio',
-                          path='/tmp',
-                          loglevel='INFO')
+        with tempfile.TemporaryDirectory() as dirpath:
+            prtcfg = os.path.join(dirpath,'arrowmf_proto.dat')
+            try:
+                msgmenu = mb.build()
+            except Exception:
+                raise
+            
+            intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
+            intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+            strconf0 = {'utype': 'str', 'length': 4}
+            # Schema definition.
+            # Size of chunk to create.
+            # Create a generator objected, properly configured.
+            generator = GenMF('generator',
+                              column_a=intconf0,
+                              column_b=intuconf0,
+                              column_c=strconf0,
+                              num_rows=10000, 
+                              nbatches=1,
+                              suffix='.txt',
+                              prefix='testio',
+                              path=dirpath,
+                              loglevel='INFO')
 
-        generator.write()
-        config = JobConfigFactory('legacyio', msgmenu)
-        config.configure(ctype='legacy',
-                         nbatches=1,
-                         delimiter='\r\n',
-                         path='/tmp',
-                         glob='testio*.txt',
-                         nrecords_per_block=4095,
-                         max_file_size=1073741824,
-                         write_csv=True,
-                         column_a=intconf0,
-                         column_b=intuconf0,
-                         column_c=strconf0)
+            generator.write()
+            config = JobConfigFactory('legacyio', msgmenu)
+            config.configure(ctype='legacy',
+                             nbatches=1,
+                             delimiter='\r\n',
+                             path=dirpath,
+                             glob='testio*.txt',
+                             nrecords_per_block=4095,
+                             max_file_size=1073741824,
+                             write_csv=True,
+                             outpath=dirpath,
+                             column_a=intconf0,
+                             column_b=intuconf0,
+                             column_c=strconf0)
 
-        msg = config.job_config
+            msg = config.job_config
 
-        try:
-            with open(prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("mftest", 
-                      protomsg=prtcfg,
-                      loglevel='INFO',
-                      jobname='mftest')
-        bow.control()
+            try:
+                with open(prtcfg, "wb") as f:
+                    f.write(msg.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            bow = Artemis("mftest", 
+                          protomsg=prtcfg,
+                          loglevel='INFO',
+                          path=dirpath,
+                          jobname='mftest')
+            bow.control()
 
     def test_legacyds(self):
         
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        prtcfg = ''
         mb = MenuFactory('legacygen')
-        prtcfg = 'legacymf_proto.dat'
+        
         try:
             msgmenu = mb.build()
         except Exception:
@@ -298,41 +308,45 @@ class Test_MF_Reader(unittest.TestCase):
                   'column_co': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
                   'column_cp': {'utype': 'str', 'length': 8}} # Empty column padding 8 bytes
 
-        generator = GenMF('generator',
-                          num_rows=10000, 
-                          nbatches=1,
-                          suffix='.txt',
-                          prefix='legacyaio',
-                          path='/tmp',
+        with tempfile.TemporaryDirectory() as dirpath:
+            prtcfg = os.path.join(dirpath, 'legacymf_proto.dat')
+            generator = GenMF('generator',
+                              num_rows=10000, 
+                              nbatches=1,
+                              suffix='.txt',
+                              prefix='legacyaio',
+                              path=dirpath,
+                              loglevel='INFO',
+                              **fields)
+
+            generator.write()
+            config = JobConfigFactory('legacyio', msgmenu)
+            config.configure(ctype='legacy',
+                             nbatches=1,
+                             delimiter='\r\n',
+                             path=dirpath,
+                             glob='legacyaio*.txt',
+                             nrecords_per_block=4095,
+                             max_file_size=1073741824,
+                             write_csv=True,
+                             outpath=dirpath,
+                             **fields)
+
+            msg = config.job_config
+
+            try:
+                with open(prtcfg, "wb") as f:
+                    f.write(msg.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            bow = Artemis("mftest", 
+                          protomsg=prtcfg,
                           loglevel='INFO',
-                          **fields)
-
-        generator.write()
-        config = JobConfigFactory('legacyio', msgmenu)
-        config.configure(ctype='legacy',
-                         nbatches=1,
-                         delimiter='\r\n',
-                         path='/tmp',
-                         glob='legacyaio*.txt',
-                         nrecords_per_block=4095,
-                         max_file_size=1073741824,
-                         write_csv=True,
-                         **fields)
-
-        msg = config.job_config
-
-        try:
-            with open(prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("mftest", 
-                      protomsg=prtcfg,
-                      loglevel='INFO',
-                      jobname='mftest')
-        bow.control()
+                          path=dirpath,
+                          jobname='mftest')
+            bow.control()
 
 
 

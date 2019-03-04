@@ -14,6 +14,9 @@ import unittest
 import logging
 import csv
 import io
+import tempfile
+import os
+
 from ast import literal_eval
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
@@ -160,57 +163,61 @@ class GeneratorTestCase(unittest.TestCase):
                                     num_rows=10000)
 
         data, col_names, batch = generator.make_mixed_random_csv()
-        _fname = 'test.dat'
-        with pa.OSFile(_fname, 'wb') as sink:
-            writer = pa.RecordBatchFileWriter(sink, batch.schema)
-            i = 0
-            for _ in range(10):
-                print("Generating batch ", i)
-                data, batch = next(generator.generate())
-                writer.write_batch(batch)
-                i += 1
-            writer.close()
+        with tempfile.TemporaryDirectory() as dirpath:
+            _fname = os.path.join(dirpath, 'test.dat')
+            with pa.OSFile(_fname, 'wb') as sink:
+                writer = pa.RecordBatchFileWriter(sink, batch.schema)
+                i = 0
+                for _ in range(10):
+                    print("Generating batch ", i)
+                    data, batch = next(generator.generate())
+                    writer.write_batch(batch)
+                    i += 1
+                writer.close()
    
     def test_continuous_write(self):
-        generator = GenCsvLikeArrow('test', 
-                                    nbatches=4, 
-                                    num_cols=100, 
-                                    num_rows=10000)
-
-        data, col_names, batch = generator.make_mixed_random_csv()
-        schema = batch.schema
-        sink = pa.BufferOutputStream()
-        writer = pa.RecordBatchFileWriter(sink, schema)
-        i = 0
-        ifile = 0
-        batch = None
-        print("Size allocated ", pa.total_allocated_bytes())
-        for data, batch in generator.generate(): 
-            print("Generating batch ", i)
-            print("Size allocated ", pa.total_allocated_bytes())
-            if pa.total_allocated_bytes() < int(20000000):
-                print("Writing to buffer ", batch.num_rows)
-                writer.write_batch(batch)
-            else:
-                print("Flush to disk ", pa.total_allocated_bytes())
-                _fname = 'test_'+str(ifile)+'.dat'
-                buf = sink.getvalue()
-                with pa.OSFile(_fname, 'wb') as f:
-                    try:
-                        f.write(buf)
-                    except Exception:
-                        print("Bad idea")
-                print("Size allocated ", pa.total_allocated_bytes())
-                ifile += 1
-                # Batch still needs to be written
-                sink = pa.BufferOutputStream()
-                writer = pa.RecordBatchFileWriter(sink, schema)
-                writer.write_batch(batch)
-            i += 1
         
-        batch = None
+        with tempfile.TemporaryDirectory() as dirpath:
+            generator = GenCsvLikeArrow('test', 
+                                        nbatches=4, 
+                                        num_cols=100, 
+                                        num_rows=10000)
 
-        print("Size allocated ", pa.total_allocated_bytes())
+            data, col_names, batch = generator.make_mixed_random_csv()
+            schema = batch.schema
+            sink = pa.BufferOutputStream()
+            writer = pa.RecordBatchFileWriter(sink, schema)
+            i = 0
+            ifile = 0
+            batch = None
+            print("Size allocated ", pa.total_allocated_bytes())
+            for data, batch in generator.generate(): 
+                print("Generating batch ", i)
+                print("Size allocated ", pa.total_allocated_bytes())
+                if pa.total_allocated_bytes() < int(20000000):
+                    print("Writing to buffer ", batch.num_rows)
+                    writer.write_batch(batch)
+                else:
+                    print("Flush to disk ", pa.total_allocated_bytes())
+                    _fname = os.path.join(dirpath,'test_'+str(ifile)+'.dat')
+                    
+                    buf = sink.getvalue()
+                    with pa.OSFile(_fname, 'wb') as f:
+                        try:
+                            f.write(buf)
+                        except Exception:
+                            print("Bad idea")
+                    print("Size allocated ", pa.total_allocated_bytes())
+                    ifile += 1
+                    # Batch still needs to be written
+                    sink = pa.BufferOutputStream()
+                    writer = pa.RecordBatchFileWriter(sink, schema)
+                    writer.write_batch(batch)
+                i += 1
+            
+            batch = None
+
+            print("Size allocated ", pa.total_allocated_bytes())
 
     def test_write_buffer_csv(self):
 
@@ -252,20 +259,20 @@ class GeneratorTestCase(unittest.TestCase):
         buf = sink.getvalue() 
         print("Size in buffer ", buf.size)
         print("Size allocated ", pa.total_allocated_bytes())
-        
 
         reader = pa.RecordBatchFileReader(pa.BufferReader(buf))
         print(reader.num_record_batches)
+        with tempfile.TemporaryDirectory() as dirpath:
+            _fname = os.path.join(dirpath, 'test.dat')
+            with pa.OSFile(_fname, 'wb') as f:
+                try:
+                    f.write(buf)
+                except Exception:
+                    print("Bad idea")
         
-        with pa.OSFile('test.dat', 'wb') as f:
-            try:
-                f.write(buf)
-            except Exception:
-                print("Bad idea")
-        
-        file_obj = pa.OSFile('test.dat')
-        reader = pa.open_file(file_obj)
-        print(reader.num_record_batches)
+            file_obj = pa.OSFile(_fname)
+            reader = pa.open_file(file_obj)
+            print(reader.num_record_batches)
      
     def test_pyarrow_read_mixed_csv(self):
         generator = GenCsvLikeArrow('test')
@@ -300,18 +307,29 @@ class GeneratorTestCase(unittest.TestCase):
         return table
     
     def test_writecsv(self):
-        generator = GenCsvLikeArrow('test', nbatches=3, suffix='.csv', prefix='test', path='/tmp')
-        generator.write()
+        with tempfile.TemporaryDirectory() as dirpath:
+
+            generator = GenCsvLikeArrow('test', 
+                    nbatches=3, 
+                    suffix='.csv', 
+                    prefix='test', 
+                    path=dirpath)
+            generator.write()
 
     def test_filegenerator(self):
-        generator = GenCsvLikeArrow('test', nbatches=3, suffix='.csv', prefix='test', path='/tmp')
-        generator.write()
-        generator = FileGenerator('test', path='/tmp', glob='*.csv')
-        for item in generator.generate():
-            print(item)
+        with tempfile.TemporaryDirectory() as dirpath:
+            generator = GenCsvLikeArrow('test', 
+                    nbatches=3, 
+                    suffix='.csv', 
+                    prefix='test', 
+                    path=dirpath)
+            generator.write()
+            generator = FileGenerator('test', path=dirpath, glob='*.csv')
+            for item in generator.generate():
+                print(item)
 
-        iter_ = generator.generate()
-        print(next(iter_))
+            iter_ = generator.generate()
+            print(next(iter_))
 
     def test_multiple(self):
         print("Testing multiple generators with same seed")

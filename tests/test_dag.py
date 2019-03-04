@@ -12,6 +12,8 @@
 """
 import unittest
 import logging
+import tempfile
+import os
 
 from toposort import toposort, toposort_flatten
 
@@ -110,10 +112,12 @@ class DagTestCase(unittest.TestCase):
         testmenu.add(dummyChain2)
         testmenu.add(dummyChainX)
         testmenu.generate()
-        testmenu.to_json('testmenu.json')
+        with tempfile.TemporaryDirectory() as dirpath:
+            fname = os.path.join(dirpath, 'testmenu.json')
+            testmenu.to_json(fname)
 
-        msg = testmenu.to_msg()
-        print(text_format.MessageToString(msg))        
+            msg = testmenu.to_msg()
+            print(text_format.MessageToString(msg))        
 
 
 

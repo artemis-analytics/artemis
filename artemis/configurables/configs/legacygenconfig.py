@@ -26,11 +26,15 @@ class LegacyGenConfig(Configurable):
                   nbatches=10,
                   num_rows=10000,
                   delimiter='\r\n',
+                  nrecords_per_block=4095,
+                  max_file_size=1073741824,
+                  write_csv=True,
+                  outpath='',
                   **columns):
 
         self.__logger.info(columns)
         mftool = MfTool('legacytool', **columns)
-        blocksize = mftool.record_size * 100
+        blocksize = mftool.record_size * nrecords_per_block
         rsize = 0
         for key in columns:
             rsize = rsize + columns[key]['length']
@@ -52,7 +56,7 @@ class LegacyGenConfig(Configurable):
 
         self._tools.append(mftoolmsg)
         self._config_sampler()
-        self._config_writer()
+        self._config_writer(max_file_size, write_csv, outpath)
         self._add_tools()
         self.__logger.info(self._msg)
 
@@ -72,6 +76,7 @@ class LegacyIOConfig(Configurable):
                   nrecords_per_block=4095,
                   max_file_size=1073741824,
                   write_csv=True,
+                  outpath='',
                   **columns):
 
         self._config_generator('file',
@@ -93,6 +98,6 @@ class LegacyIOConfig(Configurable):
         # file chunk size
         self._tools.append(mftool.to_msg())
         self._config_sampler()
-        self._config_writer(max_file_size, write_csv)
+        self._config_writer(max_file_size, write_csv, outpath)
         self._add_tools()
         self.__logger.info(self._msg)

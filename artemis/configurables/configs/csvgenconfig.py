@@ -27,7 +27,10 @@ class CsvGenConfig(Configurable):
                   num_cols=20,
                   num_rows=10000,
                   blocksize=2**16,
-                  delimiter='\r\n'):
+                  delimiter='\r\n',
+                  max_file_size=1073741824,
+                  write_csv=True,
+                  outpath=''):
 
         self._config_generator(ctype,
                                nbatches=nbatches,
@@ -43,7 +46,7 @@ class CsvGenConfig(Configurable):
         csvtool = CsvTool('csvtool', block_size=2**24)
         self._tools.append(csvtool.to_msg())
         self._config_sampler()
-        self._config_writer()
+        self._config_writer(max_file_size, write_csv, outpath)
         self._add_tools()
         self.__logger.info(self._msg)
 
@@ -62,7 +65,10 @@ class CsvIOConfig(Configurable):
                   blocksize=2**16,
                   delimiter='\r\n',
                   path='/tmp',
-                  glob='*.csv'):
+                  glob='*.csv',
+                  max_file_size=1073741824,
+                  write_csv=True,
+                  outpath=''):
 
         self._config_generator('file',
                                path=path,
@@ -78,6 +84,6 @@ class CsvIOConfig(Configurable):
         csvtool = CsvTool('csvtool', block_size=2**24)
         self._tools.append(csvtool.to_msg())
         self._config_sampler()
-        self._config_writer()
+        self._config_writer(max_file_size, write_csv, outpath)
         self._add_tools()
         self.__logger.info(self._msg)

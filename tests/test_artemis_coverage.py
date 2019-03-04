@@ -13,6 +13,7 @@
 import coverage
 import unittest
 import logging
+import tempfile
 
 from artemis.artemis import Artemis
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
@@ -43,31 +44,32 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
         mb = MenuFactory('csvgen')
-        
-        self.prtcfg = 'test_configurable.dat'
-        try:
-            msgmenu = mb.build()
-        except Exception:
-            raise
-        
-        config = JobConfigFactory('csvgen', msgmenu)
-        config.configure()
-        msg = config.job_config
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("arrowproto", 
-                      protomsg=self.prtcfg,
-                      loglevel='INFO',
-                      jobname='test')
-        bow.control()
-        
-        cov.stop()
-        cov.save()
+        with tempfile.TemporaryDirectory() as dirpath:
+            self.prtcfg = dirpath + 'test_configurable.dat'
+            try:
+                msgmenu = mb.build()
+            except Exception:
+                raise
+            
+            config = JobConfigFactory('csvgen', msgmenu)
+            config.configure()
+            msg = config.job_config
+            try:
+                with open(self.prtcfg, "wb") as f:
+                    f.write(msg.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            bow = Artemis("arrowproto", 
+                          protomsg=self.prtcfg,
+                          loglevel='INFO',
+                          jobname='test',
+                          path=dirpath)
+            bow.control()
+            
+            cov.stop()
+            cov.save()
 
 
 if __name__ == '__main__':

@@ -12,6 +12,9 @@
 """
 import unittest
 import logging
+import tempfile
+import os
+
 import pyarrow as pa
 
 from artemis.core.dag import Sequence, Chain, Menu
@@ -75,20 +78,22 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(JobProperties)
    
     def test_menu(self):
-        msgmenu = self.testmenu.to_msg()
-        try:
-            with open('testmenu.dat', "wb") as f:
-                f.write(msgmenu.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        try:
-            with open('testmenu.dat', 'rb') as f:
-                msg = artemis_pb2.Menu()
-                msg.ParseFromString(f.read())
-        except Exception:
-            raise
+        with tempfile.TemporaryDirectory() as dirpath:
+            fname = os.path.join(dirpath,'testmenu.dat')
+            msgmenu = self.testmenu.to_msg()
+            try:
+                with open(fname, "wb") as f:
+                    f.write(msgmenu.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            try:
+                with open(fname, 'rb') as f:
+                    msg = artemis_pb2.Menu()
+                    msg.ParseFromString(f.read())
+            except Exception:
+                raise
 
     def test_schema(self):
         fields = [('foo', pa.int32()),
