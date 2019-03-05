@@ -80,17 +80,6 @@ message Input {
     AtomInput atom = 2;
 }
 
-message CsvParser {
-    uint64 block_size = 1;
-    string delimiter = 2;  // Can be bytes
-    bool skip_header = 3;
-    uint64 header_size = 4;
-}
-
-message Parser {
-    CsvParser csvparser = 1;
-}
-
 message Sampler {
     int32 ndatums = 1;
     int32 nchunks = 2;
@@ -99,11 +88,10 @@ message Sampler {
 message JobConfig {
     Input input = 1;
     Menu menu = 2;
-    Parser parser = 3; 
-    uint64 max_malloc_size_bytes = 5;
-    Sampler sampler = 6;
-    repeated Tool tools = 7;
-    string config_id = 8;
+    uint64 max_malloc_size_bytes = 3;
+    Sampler sampler = 4;
+    repeated Tool tools = 5;
+    string config_id = 6;
 }
 
 message RawInfo {
