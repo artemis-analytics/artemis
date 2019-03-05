@@ -12,8 +12,28 @@ Classes for generating legacy (mainframe) like data
 """
 import string
 import tempfile
+
+from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
 
+
+@iterable
+class GenMFOptions:
+    '''
+    Class to hold dictionary of required options
+    '''
+    seed = 42
+    nbatches = 1
+    num_rows = 10
+    pos_char = {'0': '{', '1': 'A',
+                '2': 'B', '3': 'C', '4': 'D',
+                '5': 'E', '6': 'F', '7': 'G',
+                '8': 'H', '9': 'I'}
+    neg_char = {'0': '}', '1': 'J', '2': 'K',
+                '3': 'L', '4': 'M',
+                '5': 'N', '6': 'O', '7': 'P',
+                '8': 'Q', '9': 'R'}
+     
 
 class GenMF(GeneratorBase):
     '''
@@ -26,21 +46,19 @@ class GenMF(GeneratorBase):
         '''
         Generator parameters. Configured once per instantiation.
         '''
-        self._defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        for key in kwargs:
-            self._defaults[key] = kwargs[key]
 
-        # Set the properties with the full configuration
-        super().__init__(name, **self._defaults)
-        self.ds_schema = None
-        if 'ds_schema' in self._defaults.keys():
-            self.ds_schema = self._defaults['ds_schema']
+        options = dict(GenMFOptions())
+        options.update(kwargs)
+
+        super().__init__(name, **options)
+        
+        if hasattr(self.properties, 'ds_schema'):
+            self.ds_schema = self.properties.ds_schema
         else:
             self.ds_schema = []
-            for key in self._defaults:
+            for key in options:
                 if 'column' in key:
-                    self.ds_schema.append(self._defaults[key])
+                    self.ds_schema.append(options[key])
 
         self._nbatches = self.properties.nbatches
         self.num_rows = self.properties.num_rows
@@ -48,23 +66,6 @@ class GenMF(GeneratorBase):
         # Specific characters used for encoding signed integers.
         self.pos_char = self.properties.pos_char
         self.neg_char = self.properties.neg_char
-
-    def _set_defaults(self):
-        #  pos_char, neg_char
-        #  Specific characters used for encoding signed integers.
-        defaults = {'seed': 42,
-                    'nbatches': 1,
-                    'num_rows': 10,
-                    'pos_char': {'0': '{', '1': 'A',
-                                 '2': 'B', '3': 'C', '4': 'D',
-                                 '5': 'E', '6': 'F', '7': 'G',
-                                 '8': 'H', '9': 'I'},
-                    'neg_char': {'0': '}', '1': 'J', '2': 'K',
-                                 '3': 'L', '4': 'M',
-                                 '5': 'N', '6': 'O', '7': 'P',
-                                 '8': 'Q', '9': 'R'}
-                    }
-        return defaults
 
     def gen_column(self, dataset, size):
         '''

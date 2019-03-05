@@ -17,59 +17,45 @@ import csv
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions, ParseOptions
 
+from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
+
+
+@iterable
+class CsvToolOptions:
+
+    # Add user-defined options for Artemis.CsvTool
+    dummy = 'brain'
+    pass
 
 
 class CsvTool(ToolBase):
 
     def __init__(self, name, **kwargs):
-        defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        for key in kwargs:
-            defaults[key] = kwargs[key]
-        super().__init__(name, **defaults)
-        self.__logger.info(defaults)
-        _ropts = self._update_opts(ReadOptions, **defaults)
-        _popts = self._update_opts(ParseOptions, **defaults)
-        self.__logger.info("Configured ReadOptions: ")
-        self.__logger.info(_ropts)
-        self.__logger.info("Configured ParseOptions ")
-        self.__logger.info(_popts)
-        self._readopts = ReadOptions(**_ropts)
-        self._parseopts = ParseOptions(**_popts)
+
+        # Retrieves the default options from arrow
+        # Updates with any user-defined options
+        # Create a final dictionary to store all properties
+        ropts = self._get_opts(ReadOptions(), **kwargs)
+        popts = self._get_opts(ParseOptions(), **kwargs)
+        options = {**ropts, **popts, **dict(CsvToolOptions())}
+        options.update(kwargs)
+
+        super().__init__(name, **options)
+        self.__logger.info(options)
+        self._readopts = ReadOptions(**ropts)
+        self._parseopts = ParseOptions(**popts)
         self._convertopts = None  # Coming in 0.12
-        self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
-
-    def _update_opts(self, cls, **kwargs):
-        _updates = self._get_opts(cls())
-        # Drop escape char from defaults
-        if 'escape_char' in _updates.keys():
-            del _updates['escape_char']
-        for key in _updates:
-            _updates[key] = kwargs[key]
-        return _updates
-
-    def _get_opts(self, opts):
-        defaults = {}
-        for attr in dir(opts):
-            if attr.startswith("__"):
-                continue
-            defaults[attr] = getattr(opts, attr)
-        return defaults
-
-    def _set_defaults(self):
-        ropts = self._get_opts(ReadOptions())  # Retrieve defaults from pyarrow
-        popts = self._get_opts(ParseOptions())
-        self.__logger.info("Default Read options")
-        self.__logger.info(ropts)
-        self.__logger.info("Default Parse options")
-        self.__logger.info(popts)
-        # Remove escape_char option, required to be None (False)
-        del popts['escape_char']
-
-        defaults = {**ropts, **popts}
-
-        return defaults
+        self.__logger.info('%s: __init__ CsvTool' % self.name)
+    
+    def _get_opts(self, cls, **kwargs):
+        options = {}
+        for attr in dir(cls):
+            if attr[:2] != '__' and attr != "escape_char":
+                options[attr] = getattr(cls, attr)
+                if attr in kwargs:
+                    options[attr] = kwargs[attr]
+        return options
 
     def initialize(self):
         self.__logger.info("%s properties: %s",

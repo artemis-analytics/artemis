@@ -22,6 +22,7 @@ from array import array
 import pyarrow as pa
 
 from artemis.logger import Logger
+from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
 
 
@@ -133,7 +134,16 @@ class GenCsvLike:
                             (self.__class__.__name__, mysumsize/i))
 
 
-# @Logger.logged
+@iterable
+class GenCsvLikeArrowOptions:
+    nbatches = 1
+    num_cols = 2
+    num_rows = 10
+    linesep = u'\r\n'
+    seed = 42
+    header = True
+
+
 class GenCsvLikeArrow(GeneratorBase):
     '''
     Arrow-like generator
@@ -152,13 +162,11 @@ class GenCsvLikeArrow(GeneratorBase):
 
     def __init__(self, name, **kwargs):
 
-        self._defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        for key in kwargs:
-            self._defaults[key] = kwargs[key]
+        options = dict(GenCsvLikeArrowOptions())
+        options.update(kwargs)
 
-        # Set the properties with the full configuration
-        super().__init__(name, **self._defaults)
+        super().__init__(name, **options)
+        
         self._nbatches = self.properties.nbatches
         self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
@@ -188,15 +196,6 @@ class GenCsvLikeArrow(GeneratorBase):
     @num_batches.setter
     def num_batches(self, n):
         self._nbatches = n
-
-    def _set_defaults(self):
-        defaults = {'nbatches': 1,
-                    'num_cols': 2,
-                    'num_rows': 10,
-                    'linesep': u'\r\n',
-                    'seed': 42,
-                    'header': True}
-        return defaults
 
     def generate_col_names(self):
         letters = string.ascii_lowercase
