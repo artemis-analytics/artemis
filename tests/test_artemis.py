@@ -124,10 +124,6 @@ class ArtemisTestCase(unittest.TestCase):
             msg.config_id = str(uuid.uuid4())
         msg.input.generator.config.CopyFrom(msggen)
         msg.menu.CopyFrom(msgmenu)
-        parser = msg.parser.csvparser
-        parser.block_size = 2**16
-        parser.delimiter = '\r\n'
-        parser.skip_header = True
 
         sampler = msg.sampler
         sampler.ndatums = 0
