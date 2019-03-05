@@ -19,33 +19,32 @@ Extracting meta data from a header
 import io
 import pathlib
 
+from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
+
+
+@iterable
+class FileHandlerOptions:
+    blocksize = 2**27
+    separator = ','
+    skip_header = False
+    legacy_data = False
+    offset_header = 0
 
 
 class FileHandlerTool(ToolBase):
 
     def __init__(self, name, **kwargs):
-        defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        self._delimiter = None
-        self._offset_header = None
-        for key in kwargs:
-            defaults[key] = kwargs[key]
-        super().__init__(name, **defaults)
+        options = dict(FileHandlerOptions()) 
+        options.update(kwargs)
+        super().__init__(name, **options)
         #  Default delimiter value is None
         #  Force set of delimiter in configuration options
         #  If not set, no finding end of line with delimiter search
+        self._delimiter = None
+        self._offset_header = None
         self._legacy_data = self.properties.legacy_data
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
-
-    def _set_defaults(self):
-        defaults = {'blocksize': 2**27,
-                    'separator': ',',
-                    'skip_header': False,
-                    'legacy_data': False,
-                    'offset_header': 0}
-
-        return defaults
 
     def encode_delimiter(self):
         self._delimiter = bytes(self.properties.delimiter, 'utf8')

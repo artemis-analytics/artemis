@@ -7,9 +7,15 @@ import pyarrow as pa
 
 from artemis.core.tool import ToolBase
 from artemis.logger import Logger
-from artemis.decorators import timethis
+from artemis.decorators import timethis, iterable
 
 from artemis.io.protobuf.artemis_pb2 import RecordBatchFileInfo
+
+@iterable
+class BufferOutputOptions:
+    BUFFER_MAX_SIZE = 2147483648  # 2 GB
+    write_csv = True
+    path = ''
 
 
 @Logger.logged
@@ -22,11 +28,9 @@ class BufferOutputWriter(ToolBase):
     '''
 
     def __init__(self, name, **kwargs):
-        defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        for key in kwargs:
-            defaults[key] = kwargs[key]
-        super().__init__(name, **defaults)
+        options = dict(BufferOutputOptions())
+        options.update(kwargs)
+        super().__init__(name, **options)
 
         self.BUFFER_MAX_SIZE = self.properties.BUFFER_MAX_SIZE
         self._write_csv = self.properties.write_csv
@@ -48,12 +52,6 @@ class BufferOutputWriter(ToolBase):
         self._fname = ''
         self._finfo = []  # Store list of metadata info objects
         self.__logger.info("Writer path %s", self._path)
-    def _set_defaults(self):
-        defaults = {'BUFFER_MAX_SIZE': 2147483648,  # 2 GB
-                    'write_csv': True,
-                    'path': ''}
-
-        return defaults
 
     @property
     def total_records(self):

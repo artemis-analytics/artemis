@@ -23,3 +23,20 @@ def timethis(func):
         mytime = (end - start)/1e-3
         return r, mytime
     return wrapper
+
+
+def iterable(cls):
+    '''
+    Generate a dictionary from class properties
+    Used to encapulate default values for configurable class properties
+
+    Stack Overflow "proper way to use kwargs in python"
+    '''
+    def iterfn(self):
+        iters = dict((x, y) for x, y in cls.__dict__.items() if x[:2] != '__')
+        iters.update(self.__dict__)
+
+        for x, y in iters.items():
+            yield x, y
+    cls.__iter__ = iterfn
+    return cls

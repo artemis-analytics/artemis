@@ -11,7 +11,24 @@ Tool that reads mainframe files encoded in the EBCDIC format.
 """
 
 import pyarrow as pa
+from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
+
+
+@iterable
+class MfToolOptions:
+    '''
+    Class to hold dictionary of required options
+    '''
+    pos_char = {'0': '{', '1': 'A',
+                '2': 'B', '3': 'C', '4': 'D',
+                '5': 'E', '6': 'F', '7': 'G',
+                '8': 'H', '9': 'I'}
+    neg_char = {'0': '}', '1': 'J', '2': 'K',
+                '3': 'L', '4': 'M',
+                '5': 'N', '6': 'O', '7': 'P',
+                '8': 'Q', '9': 'R'}
+    codec = 'cp500'
 
 
 class MfTool(ToolBase):
@@ -23,24 +40,21 @@ class MfTool(ToolBase):
         '''
         Generator parameters. Configured once per instantiation.
         '''
-        self._defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        for key in kwargs:
-            self._defaults[key] = kwargs[key]
+        options = dict(MfToolOptions())
+        options.update(kwargs)
 
-        # Set the properties with the full configuration
-        super().__init__(name, **self._defaults)
-        self.ds_schema = []
+        super().__init__(name, **options)
+
         self.col_names = []
-        if 'ds_schema' in self._defaults.keys():
-            self.ds_schema = self._defaults['ds_schema']
+        if hasattr(self.properties, 'ds_schema'):
+            self.ds_schema = self.properties.ds_schema
             for i, column in enumerate(self.ds_schema):
                 self.col_names.append('column_' + str(i))
-
         else:
-            for key in self._defaults:
+            self.ds_schema = []
+            for key in options:
                 if 'column' in key:
-                    self.ds_schema.append(self._defaults[key])
+                    self.ds_schema.append(options[key])
                     name = key.split('_')[-1]
                     self.col_names.append(name)
 
@@ -56,22 +70,7 @@ class MfTool(ToolBase):
         self.neg_char = dict((v, k)
                              for k, v in self.properties.neg_char.items())
 
-    def _set_defaults(self):
-        #  pos_char, neg_char
-        #  Specific characters used for encoding signed integers.
-        defaults = {'seed': 42,
-                    'nbatches': 1,
-                    'num_rows': 10,
-                    'pos_char': {'0': '{', '1': 'A',
-                                 '2': 'B', '3': 'C', '4': 'D',
-                                 '5': 'E', '6': 'F', '7': 'G',
-                                 '8': 'H', '9': 'I'},
-                    'neg_char': {'0': '}', '1': 'J', '2': 'K',
-                                 '3': 'L', '4': 'M',
-                                 '5': 'N', '6': 'O', '7': 'P',
-                                 '8': 'Q', '9': 'R'}
-                    }
-        return defaults
+        self.codec = self.properties.codec
 
     @property
     def record_size(self):
@@ -87,7 +86,7 @@ class MfTool(ToolBase):
         '''
 
         # The block is decoded from the cp500 code page.
-        block = block.decode('cp500')
+        block = block.decode(self.codec)
 
         isize = len(block)
         self.__logger.debug("Block size to process %i", isize)
