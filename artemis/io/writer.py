@@ -11,6 +11,7 @@ from artemis.decorators import timethis, iterable
 
 from artemis.io.protobuf.artemis_pb2 import RecordBatchFileInfo
 
+
 @iterable
 class BufferOutputOptions:
     BUFFER_MAX_SIZE = 2147483648  # 2 GB
@@ -42,7 +43,7 @@ class BufferOutputWriter(ToolBase):
         self._writer = None  # pa.RecordBatchFileWriter
         self._schema = None  # pa.schema
         self._fbasename = None  # file basename for dataset
-        
+
         self._sizeof_batches = 0
         self._nbatches = 0  # batches per file
         self._nrecords = 0  # records per file
@@ -73,6 +74,14 @@ class BufferOutputWriter(ToolBase):
         self._sink = pa.BufferOutputStream()
         self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
         self._new_filename()
+
+    def flush(self):
+        '''If all else fails, clear everything
+        '''
+        self.__logger.error("Flushing buffer %s", self.name)
+        self._writer = None
+        self._sink = None
+        self._buffer = None
 
     def _validate_metainfo(self):
         '''
@@ -196,8 +205,8 @@ class BufferOutputWriter(ToolBase):
     def _new_filename(self):
         self.__logger.info("Output path %s", self._path)
         _fname = self._fbasename + \
-                      '_' + self.name + \
-                      '_' + str(self._filecounter) + '.arrow'
+            '_' + self.name + \
+            '_' + str(self._filecounter) + '.arrow'
         if self._path == '':
             self._fname = _fname
         else:

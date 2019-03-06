@@ -19,6 +19,7 @@ import sys
 import os
 import uuid
 import pathlib
+import traceback
 
 # Externals
 import pyarrow as pa
@@ -573,7 +574,7 @@ class Artemis():
                 except IndexError:
                     self.__logger.error("Cannot retrieve payload! %s", key)
                     raise
-                
+
                 # TODO
                 # Properly configure the properties in the job config
                 # This is a workaround which overwrites any set properties
@@ -1057,6 +1058,25 @@ class Artemis():
                                writer.total_batches,
                                writer.total_files)
 
+    def _flush_buffer(self):
+        _wnames = []
+        for leaf in Tree().leaves:
+            self.__logger.info("Leave node %s", leaf)
+            node = Tree().get_node_by_key(leaf)
+            key = node.key
+            _wnames.append("writer_" + node.key)
+
+        for key in _wnames:
+            try:
+                writer = self.__tools.get(key)
+            except KeyError:
+                continue
+            try:
+                writer.flush()
+            except Exception:
+                self.__logger.error("Flush buffer stream fails %s", key)
+                raise
+
     def _finalize(self):
         self.__logger.info("Finalizing Artemis job %s" %
                            self._jp.meta.name)
@@ -1127,12 +1147,25 @@ class Artemis():
         self._jp.meta.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")
         self.__logger.error("Reason %s" % args[0])
+        try:
+            self._finalize_buffer()
+        except Exception:
+            self.__logger.error("Cannot finalize buffer")
+            try:
+                self._flush_buffer()
+            except Exception as e:
+                error_message = traceback.format_exc()
+                self.__logger.error("Flush fails. Reason: %s", e)
+                self.__logger.error(error_message)
+
         self._jp.meta.finished.GetCurrentTime()
-        jobinfoname = self.jobname + '_meta.dat'
+        jobinfoname = self._job_id + '_meta.dat'
         try:
             with open(jobinfoname, "wb") as f:
                 f.write(self._jp.meta.SerializeToString())
         except IOError:
             self.__logger.error("Cannot write hbook")
-        except Exception:
-            raise
+        except Exception as e:
+            error_message = traceback.format_exc()
+            self.__logger.error("Meta data write fails. Reason: %s", e)
+            self.__logger.error(error_message)

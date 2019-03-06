@@ -10,10 +10,6 @@
 """
 
 """
-import io
-from ast import literal_eval
-import csv
-
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions, ParseOptions
 
@@ -47,7 +43,7 @@ class CsvTool(ToolBase):
         self._parseopts = ParseOptions(**popts)
         self._convertopts = None  # Coming in 0.12
         self.__logger.info('%s: __init__ CsvTool' % self.name)
-    
+
     def _get_opts(self, cls, **kwargs):
         options = {}
         for attr in dir(cls):

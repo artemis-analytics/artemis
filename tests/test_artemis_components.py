@@ -223,6 +223,29 @@ class ArtemisTestCase(unittest.TestCase):
             print('Finalizing')
             bow._finalize()
             print('Job finished')
+    
+    def test_abort(self):
+        self.reset()
+        with tempfile.TemporaryDirectory() as dirpath:
+            bow = Artemis("arrowproto", 
+                          protomsg=self.prtcfg,
+                          blocksize=2**16,
+                          skip_header=True,
+                          loglevel='INFO',
+                          path=dirpath)
+            print('State change -> RUNNING')
+            bow._jp.meta.state = artemis_pb2.JOB_RUNNING
+            _msgcfg = bow._jp.meta.config
+            with open(bow.properties.protomsg, 'rb') as f:
+                _msgcfg.ParseFromString(f.read())
+            bow._configure() 
+            bow._initialize()
+            bow._book()
+            bow._sample_chunks()
+            bow._init_buffers()
+            print('Finalizing')
+            bow.abort("abort")
+            print('Job finished')
 
 def suite():
     suite = unittest.TestSuite()

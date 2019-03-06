@@ -78,7 +78,7 @@ class CsvParserAlgo(AlgoBase):
         self.hbook.fill(self.name, 'time.pyarrowparse', time_)
 
         self.__logger.debug("Arrow schema: %s: ", tbatch.schema)
-       
+
         #  TODO
         #  Arrow schema validation per batch
 
