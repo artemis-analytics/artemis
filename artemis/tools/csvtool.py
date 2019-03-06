@@ -62,54 +62,6 @@ class CsvTool(ToolBase):
                            self.__class__.__name__,
                            self.properties)
 
-    def execute_pyparsing(self, schema, columns, length, block):
-        '''
-        Relies on python object inspection to determine type
-        Used as a comparison and validation tool for the pyarrow module
-        '''
-        try:
-            with io.TextIOWrapper(io.BytesIO(block)) as file_:
-                reader = csv.reader(file_)
-                try:
-                    next(reader)
-                except Exception:
-                    self.__logger.error("Cannot read inserted header")
-                    raise
-                try:
-                    for row in reader:
-                        # print(row)
-                        length += 1
-                        for i, item in enumerate(row):
-                            if item == 'nan':
-                                item = 'None'
-                            try:
-                                columns[i].append(literal_eval(item))
-                            except Exception:
-                                self.__logger.error("Line %i row %s" %
-                                                    (i, row))
-                                raise
-                except Exception:
-                    self.__logger.error('Error reading line %i' % length)
-                    raise
-        except IOError:
-            raise
-        except Exception:
-            raise
-
-        array = []
-        for column in columns:
-            try:
-                array.append(pa.array(column))
-            except Exception:
-                self.__logger.error("Cannot convert list to pyarrow arrow")
-                raise
-        try:
-            rbatch = pa.RecordBatch.from_arrays(array, schema)
-        except Exception:
-            self.__logger.error("Cannot convert arrays to batch")
-            raise
-        return rbatch
-
     def execute(self, block):
         '''
         Calls the read_csv module from pyarrow
