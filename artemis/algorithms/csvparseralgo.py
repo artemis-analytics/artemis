@@ -37,10 +37,8 @@ class CsvParserAlgo(AlgoBase):
         self.__logger.info("Book")
         self.hbook = Physt_Wrapper()
         self.__timers = TimerSvc()
-        self.__timers.book(self.name, 'pyparse')
         self.__timers.book(self.name, 'pyarrowparse')
         bins = [x for x in range_positive(0., 100., 2.)]
-        self.hbook.book(self.name, 'time.pyparse', bins, 'ms')
         self.hbook.book(self.name, 'time.pyarrowparse', bins, 'ms')
 
     def rebook(self):
@@ -57,19 +55,6 @@ class CsvParserAlgo(AlgoBase):
             self.hbook.rebook(self.name, 'time.'+name, bins, 'ms')
 
     @timethis
-    def py_parsing(self, schema, columns, length, block):
-        try:
-            batch = self.__tools.get("csvtool").\
-                    execute_pyparsing(schema,
-                                      columns,
-                                      length,
-                                      block)
-        except Exception:
-            self.__logger.error("Python parsing fails")
-            raise
-        return batch
-
-    @timethis
     def pyarrow_parsing(self, block):
         try:
             batch = self.__tools.get('csvtool').execute(block)
@@ -83,16 +68,6 @@ class CsvParserAlgo(AlgoBase):
         _finfo = self._jp.meta.data[-1]
         schema = [x.name for x in _finfo.schema.columns]
         self.__logger.debug('Expected header %s' % schema)
-        # columns = [[] for _ in range(len(schema))]
-        # length = 0
-
-        # try:
-        #     rbatch, time_ = self.py_parsing(schema, columns, length, raw_)
-        # except Exception:
-        #     self.__logger.error("Python parsing fails")
-        #     raise
-        # self.__timers.fill(self.name, 'pyparse', time_)
-        # self.hbook.fill(self.name, 'time.pyparse', time_)
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)
@@ -102,17 +77,12 @@ class CsvParserAlgo(AlgoBase):
         self.__timers.fill(self.name, 'pyarrowparse', time_)
         self.hbook.fill(self.name, 'time.pyarrowparse', time_)
 
-        # if rbatch.equals(tbatch) is False:
-        #     self.__logger.error("Batches not validated")
-        # else:
-        #     self.__logger.debug("Batches equal %s", rbatch.equals(tbatch))
-
-        # self.__logger.debug("Arrow schema: %s time: ", rbatch.schema)
         self.__logger.debug("Arrow schema: %s: ", tbatch.schema)
+       
+        #  TODO
+        #  Arrow schema validation per batch
 
-        # Create the arrow schema
-        # This should go into the job properties wrapper
-
+        #  If already stored, no need to update
         _finfo.schema.arrow_schema = tbatch.schema.serialize().to_pybytes()
 
         # Does this overwrite the existing data for this element?
