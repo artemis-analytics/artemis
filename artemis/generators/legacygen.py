@@ -33,7 +33,7 @@ class GenMFOptions:
                 '3': 'L', '4': 'M',
                 '5': 'N', '6': 'O', '7': 'P',
                 '8': 'Q', '9': 'R'}
-     
+
 
 class GenMF(GeneratorBase):
     '''
@@ -51,7 +51,7 @@ class GenMF(GeneratorBase):
         options.update(kwargs)
 
         super().__init__(name, **options)
-        
+
         if hasattr(self.properties, 'ds_schema'):
             self.ds_schema = self.properties.ds_schema
         else:

@@ -35,7 +35,7 @@ class FileHandlerOptions:
 class FileHandlerTool(ToolBase):
 
     def __init__(self, name, **kwargs):
-        options = dict(FileHandlerOptions()) 
+        options = dict(FileHandlerOptions())
         options.update(kwargs)
         super().__init__(name, **options)
         #  Default delimiter value is None
@@ -84,13 +84,13 @@ class FileHandlerTool(ToolBase):
         file_.seek(0)
         self._offset_header = offset
         return header, meta, offset
-    
+
     def prepare_unicode(self, file_):
         self.__logger.info("Prepare unicode file")
         self.__logger.info("Offset %i", self._offset_header)
         if file_.tell() != 0:
             file_.seek(0)
-        
+
         meta = []
         header = file_.read(self._offset_header)
         offset = self._offset_header  # Do we start of offset, or offset + byte
@@ -105,7 +105,10 @@ class FileHandlerTool(ToolBase):
         # bytes object with unicode encoding
         csv = csv.getvalue().encode()
         return bytearray(csv)
-    
+
+    #  TODO
+    #  Extract and store the unicode header and footer
+    '''
     def _create_unicode_header_footer(self):
         if file_.tell() != 0:
             file_.seek(0)
@@ -117,6 +120,7 @@ class FileHandlerTool(ToolBase):
         file_.seek(footer_offset)
         footer = file_.read(self._offset_header)
         file_seek(0)
+    '''
 
     def _seek_delimiter(self, file_, delimiter, blocksize):
         '''
@@ -301,7 +305,7 @@ class FileHandlerTool(ToolBase):
 
         # Seek back to start
         file_.seek(0)
-        
+
         # Removes the footer from last block
         self.__logger.info("Final block %s", blocks[-1])
         if self._legacy_data is True:

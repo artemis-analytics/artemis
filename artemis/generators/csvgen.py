@@ -166,7 +166,7 @@ class GenCsvLikeArrow(GeneratorBase):
         options.update(kwargs)
 
         super().__init__(name, **options)
-        
+
         self._nbatches = self.properties.nbatches
         self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
