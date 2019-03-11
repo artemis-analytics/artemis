@@ -15,12 +15,13 @@ import unittest
 import logging
 import tempfile
 
-from artemis.artemis import Artemis
+from artemis.artemis import Artemis, ArtemisFactory
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from artemis.core.properties import JobProperties
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -43,29 +44,22 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        mb = MenuFactory('csvgen')
         with tempfile.TemporaryDirectory() as dirpath:
-            self.prtcfg = dirpath + 'test_configurable.dat'
-            try:
-                msgmenu = mb.build()
-            except Exception:
-                raise
-            
-            config = JobConfigFactory('csvgen', msgmenu)
+            mb = MenuFactory('csvgen')
+            msgmenu = mb.build()
+            config = JobConfigFactory('csvgen',msgmenu,
+                                      jobname='arrowproto',
+                                      output_repo=dirpath)
             config.configure()
             msg = config.job_config
-            try:
-                with open(self.prtcfg, "wb") as f:
-                    f.write(msg.SerializeToString())
-            except IOError:
-                self.__logger.error("Cannot write message")
-            except Exception:
-                raise
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          loglevel='INFO',
-                          jobname='test',
-                          path=dirpath)
+            job = JobInfo_pb()
+            job.name = 'arrowproto'
+            job.job_id = 'example'
+            job.output.repo = dirpath
+            job.config.CopyFrom(msg)
+            #job.job_id = str(uuid.uuid4())
+            print(job)
+            bow = ArtemisFactory(job, 'INFO')
             bow.control()
             
             cov.stop()

@@ -39,7 +39,7 @@ class GeneratorFactory():
                                  glob=kwargs['glob'],
                                  nbatches=kwargs['nbatches'])
         else:
-            print("Unknown type")
+            raise ValueError 
 
 
 class FileHandlerFactory():
@@ -62,7 +62,7 @@ class FileHandlerFactory():
                                    legacy_data=True,
                                    offset_header=offset_header)
         else:
-            print('Unknown type')
+            raise ValueError
 
 
 class MenuFactory():
@@ -76,28 +76,26 @@ class MenuFactory():
             from artemis.configurables.menus.legacygenmenu import LegacyGenMenu
             return LegacyGenMenu(name)
         else:
-            print("Menu not found")
-            return None
+            raise ValueError 
 
 
 class JobConfigFactory():
 
-    def __new__(cls, config, menu=None):
+    def __new__(cls, config, menu=None, **kwargs):
 
         if config == 'csvgen':
             from artemis.configurables.configs.csvgenconfig import CsvGenConfig
-            return CsvGenConfig(menu)
+            return CsvGenConfig(menu, **kwargs)
         elif config == 'csvio':
             from artemis.configurables.configs.csvgenconfig import CsvIOConfig
-            return CsvIOConfig(menu)
+            return CsvIOConfig(menu, **kwargs)
         elif config == 'legacygen':
             from artemis.configurables.configs.legacygenconfig \
                 import LegacyGenConfig
-            return LegacyGenConfig(menu)
+            return LegacyGenConfig(menu, **kwargs)
         elif config == 'legacyio':
             from artemis.configurables.configs.legacygenconfig \
                 import LegacyIOConfig
-            return LegacyIOConfig(menu)
+            return LegacyIOConfig(menu, **kwargs)
         else:
-            print("Config not found")
-            return None
+            raise ValueError

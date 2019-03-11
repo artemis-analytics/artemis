@@ -14,14 +14,14 @@ import unittest
 import logging
 import tempfile
 
-from artemis.artemis import Artemis
+from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
-
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 logging.getLogger().setLevel(logging.INFO)
 
 # Improve temporary outputs and context handling
@@ -45,9 +45,8 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
         with tempfile.TemporaryDirectory() as dirpath:
-            print(dirpath)
-            self.prtcfg = dirpath + 'arrowproto_proto.dat'
-
+            mb = MenuFactory('csvgen')
+            msgmenu = mb.build()
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         num_cols=20,
@@ -56,29 +55,32 @@ class ArtemisTestCase(unittest.TestCase):
                                         prefix='testio',
                                         path=dirpath)
             generator.write()
-            mb = MenuFactory('csvgen')
-            try:
-                msgmenu = mb.build()
-            except Exception:
-                raise
             
-            config = JobConfigFactory('csvio', msgmenu)
-            config.configure(path=dirpath)
-            msg = config.job_config
-            try:
-                with open(self.prtcfg, "wb") as f:
-                    f.write(msg.SerializeToString())
-            except IOError:
-                self.__logger.error("Cannot write message")
-            except Exception:
-                raise
-            bow = Artemis("arrowproto",
-                          protomsg=self.prtcfg,
-                          loglevel='INFO',
-                          path=dirpath,
-                          jobname='test')
-            bow.control()
+            config = JobConfigFactory('csvio', msgmenu,
+                                      jobname='arrowproto',
+                                      generator_type='file',
+                                      filehandler_type='csv',
+                                      nbatches=1,
+                                      num_rows=10000,
+                                      delimiter='\r\n',
+                                      max_file_size=1073741824,
+                                      write_csv=True,
+                                      input_repo=dirpath,
+                                      input_glob='testio*.csv',
+                                      output_repo=dirpath
+                                      )
 
+            config.configure()
+            msg = config.job_config
+            job = JobInfo_pb()
+            job.name = 'arrowproto'
+            job.job_id = 'example'
+            job.output.repo = dirpath
+            job.config.CopyFrom(msg)
+            #job.job_id = str(uuid.uuid4())
+            print(job)
+            bow = ArtemisFactory(job, 'INFO')
+            bow.control()
 
 if __name__ == '__main__':
     unittest.main()

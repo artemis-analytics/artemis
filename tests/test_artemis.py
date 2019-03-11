@@ -15,16 +15,27 @@ import logging
 import os
 import sys
 import uuid
+from shutil import copyfile
 from google.protobuf import text_format
+
+use_factories_test = True
 
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.algorithms.csvparseralgo import CsvParserAlgo
 from artemis.algorithms.profileralgo import ProfilerAlgo
 from artemis.artemis import Artemis
+try:
+    from artemis.artemis import ArtemisFactory
+except:
+    use_factories_test = False
+    
+from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.core.singleton import Singleton
+from artemis.core.tree import Tree
+from artemis.core.datastore import ArrowSets
 from artemis.core.properties import JobProperties
-
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 try:
     from artemis.generators.csvgen import GenCsvLikeArrow
 except ModuleNotFoundError:
@@ -83,77 +94,117 @@ class ArtemisTestCase(unittest.TestCase):
         self.testmenu.add(csvChain)
         self.testmenu.generate()
 
+    
     def tearDown(self):
         Singleton.reset(JobProperties)
+        Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
+   
+    
+    def factory_example(self):
+        Singleton.reset(JobProperties)
+        Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
+        dirpath=''
+        mb = MenuFactory('csvgen')
+        msgmenu = mb.build()
+        config = JobConfigFactory('csvgen', msgmenu,
+                                  jobname='arrowproto',
+                                  generator_type='csv',
+                                  filehandler_type='csv',
+                                  nbatches=10,
+                                  num_cols=20,
+                                  num_rows=10000,
+                                  delimiter='\r\n',
+                                  max_buffer_size=10485760,
+                                  max_malloc=2147483648,
+                                  write_csv=True,
+                                  output_repo=dirpath
+                                  )
+        config.configure()
+        msg = config.job_config
+        job = JobInfo_pb()
+        job.name = 'arrowproto'
+        job.job_id = 'example'
+        job.output.repo = dirpath
+        job.config.CopyFrom(msg)
+        #job.job_id = str(uuid.uuid4())
+        print(job)
+        bow = ArtemisFactory(job, 'INFO')
+        bow.control()
+        copyfile('arrowproto-example.log', 'test.log')
     
     def test_proto(self):
-        Singleton.reset(JobProperties)
-        self.prtcfg = 'arrowproto_proto.dat'
-        try:
-            msgmenu = self.testmenu.to_msg()
-        except Exception:
-            raise
-        
-        generator = GenCsvLikeArrow('generator',
-                                    nbatches=10,
-                                    num_cols=20,
-                                    num_rows=10000)
-        msggen = generator.to_msg()
+        if use_factories_test is True:
+            self.factory_example()
+        else:
+            Singleton.reset(JobProperties)
+            self.prtcfg = 'arrowproto_proto.dat'
+            try:
+                msgmenu = self.testmenu.to_msg()
+            except Exception:
+                raise
+            
+            generator = GenCsvLikeArrow('generator',
+                                        nbatches=10,
+                                        num_cols=20,
+                                        num_rows=10000)
+            msggen = generator.to_msg()
 
-        filetool = FileHandlerTool('filehandler',
-                                   blocksize=2**16,
-                                   skip_header=True,
-                                   delimiter='\r\n',
-                                   loglevel='INFO')
-        filetoolcfg = filetool.to_msg()
-        
-        csvtool = CsvTool('csvtool', block_size=2**24)
-        csvtoolcfg = csvtool.to_msg()
+            filetool = FileHandlerTool('filehandler',
+                                       blocksize=2**16,
+                                       skip_header=True,
+                                       delimiter='\r\n',
+                                       loglevel='INFO')
+            filetoolcfg = filetool.to_msg()
+            
+            csvtool = CsvTool('csvtool', block_size=2**24)
+            csvtoolcfg = csvtool.to_msg()
 
-        defaultwriter = BufferOutputWriter('bufferwriter',
-                                           BUFFER_MAX_SIZE=10485760,
-                                           #BUFFER_MAX_SIZE=2147483648,  
-                                           write_csv=True)
-        defwtrcfg = defaultwriter.to_msg()
+            defaultwriter = BufferOutputWriter('bufferwriter',
+                                               BUFFER_MAX_SIZE=10485760,
+                                               #BUFFER_MAX_SIZE=2147483648,  
+                                               write_csv=True)
+            defwtrcfg = defaultwriter.to_msg()
 
-        msg = artemis_pb2.JobConfig()
+            msg = artemis_pb2.JobConfig()
 
-        # Support old format, evolve schema
-        if hasattr(msg, 'config_id'):
-            print('add config id')
-            msg.config_id = str(uuid.uuid4())
-        msg.input.generator.config.CopyFrom(msggen)
-        msg.menu.CopyFrom(msgmenu)
+            # Support old format, evolve schema
+            if hasattr(msg, 'config_id'):
+                print('add config id')
+                msg.config_id = str(uuid.uuid4())
+            msg.input.generator.config.CopyFrom(msggen)
+            msg.menu.CopyFrom(msgmenu)
 
-        sampler = msg.sampler
-        sampler.ndatums = 0
-        sampler.nchunks = 0
+            sampler = msg.sampler
+            sampler.ndatums = 0
+            sampler.nchunks = 0
 
-        msg.max_malloc_size_bytes = 2147483648
-        
-        filetoolmsg = msg.tools.add()
-        filetoolmsg.CopyFrom(filetoolcfg)
-        
-        defwrtmsg = msg.tools.add()
-        defwrtmsg.CopyFrom(defwtrcfg)
+            msg.max_malloc_size_bytes = 2147483648
+            
+            filetoolmsg = msg.tools.add()
+            filetoolmsg.CopyFrom(filetoolcfg)
+            
+            defwrtmsg = msg.tools.add()
+            defwrtmsg.CopyFrom(defwtrcfg)
 
-        csvtoolmsg = msg.tools.add()
-        csvtoolmsg.CopyFrom(csvtoolcfg)
-        print(text_format.MessageToString(csvtoolmsg))
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
-        bow = Artemis("arrowproto", 
-                      protomsg=self.prtcfg,
-                      loglevel='INFO',
-                      jobname='test')
-        bow.control()
-        print(os.path.abspath(os.path.dirname(sys.argv[0])))
-
+            csvtoolmsg = msg.tools.add()
+            csvtoolmsg.CopyFrom(csvtoolcfg)
+            print(text_format.MessageToString(csvtoolmsg))
+            try:
+                with open(self.prtcfg, "wb") as f:
+                    f.write(msg.SerializeToString())
+            except IOError:
+                self.__logger.error("Cannot write message")
+            except Exception:
+                raise
+            bow = Artemis("arrowproto", 
+                          protomsg=self.prtcfg,
+                          loglevel='INFO',
+                          jobname='test')
+            bow.control()
+            print(os.path.abspath(os.path.dirname(sys.argv[0])))
+    
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,7 +14,7 @@ import logging
 import tempfile
 import os
 
-from artemis.artemis import Artemis
+from artemis.artemis import Artemis, ArtemisFactory
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.configurables.configs.csvgenconfig import CsvGenConfig
 
@@ -22,7 +22,7 @@ from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
 from artemis.core.properties import JobProperties
-
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 logging.getLogger().setLevel(logging.INFO)
 class ConfigurableTestCase(unittest.TestCase):
         
@@ -36,8 +36,9 @@ class ConfigurableTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-
-        config = CsvGenConfig()
+        mb = MenuFactory('csvgen')
+        msgmenu = mb.build()
+        config = CsvGenConfig(msgmenu)
         config.configure()
 
     def test_config_artemis(self):
@@ -50,27 +51,30 @@ class ConfigurableTestCase(unittest.TestCase):
         
         mb = MenuFactory('csvgen')
         with tempfile.TemporaryDirectory() as dirpath:
-            self.prtcfg = os.path.join(dirpath, 'test_configurable.dat')
-            try:
-                msgmenu = mb.build()
-            except Exception:
-                raise
-            
-            config = JobConfigFactory('csvgen', msgmenu)
+            mb = MenuFactory('csvgen')
+            msgmenu = mb.build()
+            config = JobConfigFactory('csvgen', msgmenu,
+                                      jobname='arrowproto',
+                                      generator_type='csv',
+                                      filehandler_type='csv',
+                                      nbatches=10,
+                                      num_cols=20,
+                                      num_rows=10000,
+                                      delimiter='\r\n',
+                                      max_file_size=10485760,
+                                      write_csv=True,
+                                      output_repo=dirpath
+                                      )
             config.configure()
             msg = config.job_config
-            try:
-                with open(self.prtcfg, "wb") as f:
-                    f.write(msg.SerializeToString())
-            except IOError:
-                self.__logger.error("Cannot write message")
-            except Exception:
-                raise
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          loglevel='INFO',
-                          jobname='test',
-                          path=dirpath)
+            job = JobInfo_pb()
+            job.name = 'arrowproto'
+            job.job_id = 'example'
+            job.output.repo = dirpath
+            job.config.CopyFrom(msg)
+            #job.job_id = str(uuid.uuid4())
+            print(job)
+            bow = ArtemisFactory(job, 'INFO')
             bow.control()
 
 

@@ -80,6 +80,9 @@ message Input {
     AtomInput atom = 2;
 }
 
+message Output {
+    string repo = 1;
+}
 message Sampler {
     int32 ndatums = 1;
     int32 nchunks = 2;
@@ -174,4 +177,6 @@ message JobInfo {
     JobConfig config = 7;
     Properties properties = 8;
     string job_id = 9;
+    Input input = 10;
+    Output output = 11;
 }

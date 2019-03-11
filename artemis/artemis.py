@@ -56,23 +56,72 @@ from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.generators.legacygen import GenMF
 
 
+class ArtemisFactory:
+    '''
+    Factory class 
+    Update the configuration message from JobInfo message
+    Allows for configuration to be static or predefined
+    Reused for new datasets with different input and output data repos
+    
+    Requires updating 
+    bufferwriter tool with output repo path
+    file generator tool with input repo path
+    also replace a data generator with a file generator
+    '''
+    def __new__(cls, jobinfo, loglevel='INFO'):
+        dirpath = jobinfo.output.repo
+        
+        if jobinfo.HasField('input'):
+            if jobinfo.input.HasField('atom'):
+                inpath = jobinfo.input.atom.repo
+                glob = jobinfo.input.atom.glob
+                generator = jobinfo.config.input.generator
+                if generator.config.klass == 'FileGenerator':
+                    for p in generator.config.properties.property:
+                        if p.name == 'path':
+                            p.value = inpath
+                        if p.name == 'glob':
+                            p.value = glob
+        
+        for tool in jobinfo.config.tools:
+            if tool.name == 'bufferwriter':
+                for p in tool.properties.property:
+                    if p.name == 'path':
+                        p.value = dirpath
+            
+        return Artemis(jobinfo, loglevel=loglevel)
+
+
 @Logger.logged
 class Artemis():
 
-    def __init__(self, name, **kwargs):
-
-        #######################################################################
-        # Properties
+    def __init__(self, jobinfo, **kwargs):
         self.properties = Properties()
         self._jp = JobProperties()
-
-        # Set defaults if not configured
-        self._jp.meta.name = name
-        self._jp.meta.job_id = str(uuid.uuid4())
+        self._jp.meta.CopyFrom(jobinfo)
+        
+        # TODO
+        # Validate the metadata
+        #
+        self._job_id = self._jp.meta.name + '-' + self._jp.meta.job_id
+        
+        # Logging
+        Logger.configure(self, 
+                        jobname = self._job_id,
+                        path = self._jp.meta.output.repo,
+                        loglevel = kwargs['loglevel'])
+        #######################################################################
+        # Initialize summary info in meta data 
         self._jp.meta.started.GetCurrentTime()
         self._update_state(artemis_pb2.JOB_STARTING)
-        self._job_id = None
-        self._path = ''
+        self._jp.meta.summary.processed_bytes = 0
+        self._jp.meta.summary.processed_ndatums = 0
+       
+        # Define internal properties from job configuration
+        self._path = self._jp.meta.output.repo
+        self.MALLOC_MAX_SIZE = self._jp.meta.config.max_malloc_size_bytes
+        self._ndatum_samples = self._jp.meta.config.sampler.ndatums
+        self._nchunk_samples = self._jp.meta.config.sampler.nchunks
 
         # Define the internal objects for Artemis
         self.steer = None
@@ -81,31 +130,9 @@ class Artemis():
         self._raw = None
         self._schema = {}
 
-        # Define internal properties
-        self.MALLOC_MAX_SIZE = 0
-        self._ndatum_samples = 0
-        self._nchunk_samples = 0
-
         # List of timer histos for easy access
         self.__timers = TimerSvc()
         self.__tools = ToolStore()
-
-        # TODO
-        # Improve consistency of setting path, filesnames, etc...
-        self._set_job_id()
-
-        # Required for setting the log file
-        if 'jobname' not in kwargs.keys():
-            kwargs['jobname'] = self._job_id
-
-        for key in kwargs:
-            self.properties.add_property(key, kwargs[key])
-        #######################################################################
-        self._set_path()
-        #######################################################################
-        # Logging
-        Logger.configure(self, **kwargs)
-        #######################################################################
 
     @property
     def datum(self):
@@ -273,39 +300,6 @@ class Artemis():
     def _launch(self):
         self.logger.info('Artemis is ready')
 
-    def _set_defaults(self):
-        # Default values that are part of the metadata
-        # Values not set in metadata are updated here
-        # Hard-coding of default job parameters
-        #
-        # Summary information such as counters are initialized
-        # Summary information must be reset if rebook called
-        # Maximum memory allocation in Arrow to trigger flush
-        # Sampler settings
-
-        _summary = self._jp.meta.summary
-        _summary.processed_bytes = 0
-        _summary.processed_ndatums = 0
-
-        _msgcfg = self._jp.meta.config
-        if _msgcfg.max_malloc_size_bytes:
-            self.MALLOC_MAX_SIZE = _msgcfg.max_malloc_size_bytes
-        else:
-            self.__logger.info("Setting default memory allocation 2GB")
-            self.MALLOC_MAX_SIZE = 2147483648
-        if _msgcfg.HasField('sampler'):
-            if _msgcfg.sampler.ndatums:
-                self._ndatum_samples = _msgcfg.sampler.ndatums
-            else:
-                self._ndatum_samples = 1
-            if _msgcfg.sampler.nchunks:
-                self._nchunk_samples = _msgcfg.sampler.nchunks
-            else:
-                self._nchunk_samples = 10
-        else:
-            self._ndatum_samples = 1
-            self._nchunk_samples = 10
-
     def _configure(self):
         '''
         Configure global job dependencies
@@ -318,28 +312,9 @@ class Artemis():
                            self.properties)
         self.__logger.info("Job ID %s", self._job_id)
         self.__logger.info("Job path %s", self._path)
-        if hasattr(self.properties, 'protomsg'):
-            _msgcfg = self._jp.meta.config
-            try:
-                with open(self.properties.protomsg, 'rb') as f:
-                    _msgcfg.ParseFromString(f.read())
-            except IOError:
-                self.__logger.error("Cannot read collections")
-            except Exception:
-                self.__logger.error('Cannot parse msg')
-                raise
-        else:
+        if hasattr(self._jp.meta, 'config') is False:
             self.__logger.error("Configuration not provided")
             raise AttributeError
-        self.__logger.info(text_format.MessageToString(_msgcfg))
-
-        try:
-            self._set_defaults()
-        except ValueError:
-            self.__logger.info(text_format.MessageToString(_msgcfg))
-            raise
-        except Exception:
-            raise
 
         # Set up histogram store
         self.hbook = Physt_Wrapper()
@@ -357,7 +332,7 @@ class Artemis():
             raise
 
         # Add tools
-        for toolcfg in _msgcfg.tools:
+        for toolcfg in self._jp.meta.config.tools:
             self.__logger.info("Add Tool %s", toolcfg.name)
             self.__tools.add(self.__logger, toolcfg)
             if toolcfg.name == 'filehandler':
@@ -1106,8 +1081,7 @@ class Artemis():
 
         summary.collection.CopyFrom(self.hbook.to_message())
         jobinfoname = self._job_id + '_meta.dat'
-        if hasattr(self.properties, 'path'):
-            jobinfoname = os.path.join(self._path, jobinfoname)
+        jobinfoname = os.path.join(self._path, jobinfoname)
         self._finalize_jobstate(artemis_pb2.JOB_SUCCESS)
 
         try:

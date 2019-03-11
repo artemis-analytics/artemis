@@ -23,7 +23,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='artemis',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\rartemis.proto\x12\x07\x61rtemis\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x0fhistogram.proto\"5\n\x08Property\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"1\n\nProperties\x12#\n\x08property\x18\x01 \x03(\x0b\x32\x11.artemis.Property\"\\\n\x04Tool\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06module\x18\x02 \x01(\t\x12\r\n\x05klass\x18\x03 \x01(\t\x12\'\n\nproperties\x18\x04 \x01(\x0b\x32\x13.artemis.Properties\"\\\n\x04\x41lgo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06module\x18\x02 \x01(\t\x12\r\n\x05klass\x18\x03 \x01(\t\x12\'\n\nproperties\x18\x04 \x01(\x0b\x32\x13.artemis.Properties\"4\n\x04Node\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07parents\x18\x02 \x03(\t\x12\r\n\x05\x61lgos\x18\x03 \x03(\t\"$\n\x04Tree\x12\x1c\n\x05nodes\x18\x01 \x03(\x0b\x32\r.artemis.Node\"A\n\x04Menu\x12\x1b\n\x04tree\x18\x01 \x01(\x0b\x32\r.artemis.Tree\x12\x1c\n\x05\x61lgos\x18\x02 \x03(\x0b\x32\r.artemis.Algo\"/\n\x0eGeneratorInput\x12\x1d\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\r.artemis.Algo\"5\n\tAtomInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04repo\x18\x02 \x01(\t\x12\x0c\n\x04glob\x18\x03 \x01(\t\"U\n\x05Input\x12*\n\tgenerator\x18\x01 \x01(\x0b\x32\x17.artemis.GeneratorInput\x12 \n\x04\x61tom\x18\x02 \x01(\x0b\x32\x12.artemis.AtomInput\"+\n\x07Sampler\x12\x0f\n\x07ndatums\x18\x01 \x01(\x05\x12\x0f\n\x07nchunks\x18\x02 \x01(\x05\"\xba\x01\n\tJobConfig\x12\x1d\n\x05input\x18\x01 \x01(\x0b\x32\x0e.artemis.Input\x12\x1b\n\x04menu\x18\x02 \x01(\x0b\x32\r.artemis.Menu\x12\x1d\n\x15max_malloc_size_bytes\x18\x03 \x01(\x04\x12!\n\x07sampler\x18\x04 \x01(\x0b\x32\x10.artemis.Sampler\x12\x1c\n\x05tools\x18\x05 \x03(\x0b\x32\r.artemis.Tool\x12\x11\n\tconfig_id\x18\x06 \x01(\t\"\x1d\n\x07RawInfo\x12\x12\n\nsize_bytes\x18\x01 \x01(\x04\"5\n\tByteRange\x12\x14\n\x0coffset_bytes\x18\x01 \x01(\x04\x12\x12\n\nsize_bytes\x18\x02 \x01(\x04\".\n\tBlockInfo\x12!\n\x05range\x18\x01 \x01(\x0b\x32\x12.artemis.ByteRange\"*\n\x05\x42lock\x12!\n\x05\x62lock\x18\x01 \x01(\x0b\x32\x12.artemis.BlockInfo\"M\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08raw_type\x18\x02 \x01(\t\x12\x0f\n\x07py_type\x18\x03 \x01(\t\x12\x12\n\narrow_type\x18\x04 \x01(\t\"h\n\nSchemaInfo\x12 \n\x07\x63olumns\x18\x01 \x03(\x0b\x32\x0f.artemis.Schema\x12\x12\n\nsize_bytes\x18\x02 \x01(\x04\x12\x0e\n\x06header\x18\x03 \x01(\x0c\x12\x14\n\x0c\x61rrow_schema\x18\x04 \x01(\x0c\"\xa5\x01\n\x08\x46ileInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\x03raw\x18\x02 \x01(\x0b\x32\x10.artemis.RawInfo\x12\"\n\x06\x62locks\x18\x03 \x03(\x0b\x32\x12.artemis.BlockInfo\x12#\n\x06schema\x18\x04 \x01(\x0b\x32\x13.artemis.SchemaInfo\x12#\n\tprocessed\x18\x05 \x01(\x0b\x32\x10.artemis.RawInfo\"\x84\x01\n\x13RecordBatchFileInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0bnum_columns\x18\x02 \x01(\x05\x12\x10\n\x08num_rows\x18\x03 \x01(\x05\x12#\n\x06schema\x18\x04 \x01(\x0b\x32\x13.artemis.SchemaInfo\x12\x13\n\x0bnum_batches\x18\x05 \x01(\x05\"0\n\x05Timer\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04time\x18\x02 \x01(\x02\x12\x0b\n\x03std\x18\x03 \x01(\x02\"\xe8\x01\n\x07Summary\x12.\n\ncollection\x18\x01 \x01(\x0b\x32\x1a.physt.HistogramCollection\x12\x17\n\x0fprocessed_bytes\x18\x02 \x01(\x04\x12\x1e\n\x06timers\x18\x03 \x03(\x0b\x32\x0e.artemis.Timer\x12\x19\n\x11processed_ndatums\x18\x04 \x01(\x05\x12,\n\x06tables\x18\x05 \x03(\x0b\x32\x1c.artemis.RecordBatchFileInfo\x12+\n\x08job_time\x18\x06 \x01(\x0b\x32\x19.google.protobuf.Duration\"\xb5\x02\n\x07JobInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x07started\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12,\n\x08\x66inished\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x1f\n\x04\x64\x61ta\x18\x04 \x03(\x0b\x32\x11.artemis.FileInfo\x12!\n\x07summary\x18\x05 \x01(\x0b\x32\x10.artemis.Summary\x12 \n\x05state\x18\x06 \x01(\x0e\x32\x11.artemis.JobState\x12\"\n\x06\x63onfig\x18\x07 \x01(\x0b\x32\x12.artemis.JobConfig\x12\'\n\nproperties\x18\x08 \x01(\x0b\x32\x13.artemis.Properties\x12\x0e\n\x06job_id\x18\t \x01(\t*^\n\x08JobState\x12\x10\n\x0cJOB_STARTING\x10\x00\x12\x0f\n\x0bJOB_RUNNING\x10\x01\x12\x0f\n\x0bJOB_FAILURE\x10\x02\x12\x0f\n\x0bJOB_SUCCESS\x10\x03\x12\r\n\tJOB_ABORT\x10\x04\x62\x06proto3')
+  serialized_pb=_b('\n\rartemis.proto\x12\x07\x61rtemis\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x0fhistogram.proto\"5\n\x08Property\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"1\n\nProperties\x12#\n\x08property\x18\x01 \x03(\x0b\x32\x11.artemis.Property\"\\\n\x04Tool\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06module\x18\x02 \x01(\t\x12\r\n\x05klass\x18\x03 \x01(\t\x12\'\n\nproperties\x18\x04 \x01(\x0b\x32\x13.artemis.Properties\"\\\n\x04\x41lgo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06module\x18\x02 \x01(\t\x12\r\n\x05klass\x18\x03 \x01(\t\x12\'\n\nproperties\x18\x04 \x01(\x0b\x32\x13.artemis.Properties\"4\n\x04Node\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07parents\x18\x02 \x03(\t\x12\r\n\x05\x61lgos\x18\x03 \x03(\t\"$\n\x04Tree\x12\x1c\n\x05nodes\x18\x01 \x03(\x0b\x32\r.artemis.Node\"A\n\x04Menu\x12\x1b\n\x04tree\x18\x01 \x01(\x0b\x32\r.artemis.Tree\x12\x1c\n\x05\x61lgos\x18\x02 \x03(\x0b\x32\r.artemis.Algo\"/\n\x0eGeneratorInput\x12\x1d\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\r.artemis.Algo\"5\n\tAtomInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04repo\x18\x02 \x01(\t\x12\x0c\n\x04glob\x18\x03 \x01(\t\"U\n\x05Input\x12*\n\tgenerator\x18\x01 \x01(\x0b\x32\x17.artemis.GeneratorInput\x12 \n\x04\x61tom\x18\x02 \x01(\x0b\x32\x12.artemis.AtomInput\"\x16\n\x06Output\x12\x0c\n\x04repo\x18\x01 \x01(\t\"+\n\x07Sampler\x12\x0f\n\x07ndatums\x18\x01 \x01(\x05\x12\x0f\n\x07nchunks\x18\x02 \x01(\x05\"\xba\x01\n\tJobConfig\x12\x1d\n\x05input\x18\x01 \x01(\x0b\x32\x0e.artemis.Input\x12\x1b\n\x04menu\x18\x02 \x01(\x0b\x32\r.artemis.Menu\x12\x1d\n\x15max_malloc_size_bytes\x18\x03 \x01(\x04\x12!\n\x07sampler\x18\x04 \x01(\x0b\x32\x10.artemis.Sampler\x12\x1c\n\x05tools\x18\x05 \x03(\x0b\x32\r.artemis.Tool\x12\x11\n\tconfig_id\x18\x06 \x01(\t\"\x1d\n\x07RawInfo\x12\x12\n\nsize_bytes\x18\x01 \x01(\x04\"5\n\tByteRange\x12\x14\n\x0coffset_bytes\x18\x01 \x01(\x04\x12\x12\n\nsize_bytes\x18\x02 \x01(\x04\".\n\tBlockInfo\x12!\n\x05range\x18\x01 \x01(\x0b\x32\x12.artemis.ByteRange\"*\n\x05\x42lock\x12!\n\x05\x62lock\x18\x01 \x01(\x0b\x32\x12.artemis.BlockInfo\"M\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08raw_type\x18\x02 \x01(\t\x12\x0f\n\x07py_type\x18\x03 \x01(\t\x12\x12\n\narrow_type\x18\x04 \x01(\t\"h\n\nSchemaInfo\x12 \n\x07\x63olumns\x18\x01 \x03(\x0b\x32\x0f.artemis.Schema\x12\x12\n\nsize_bytes\x18\x02 \x01(\x04\x12\x0e\n\x06header\x18\x03 \x01(\x0c\x12\x14\n\x0c\x61rrow_schema\x18\x04 \x01(\x0c\"\xa5\x01\n\x08\x46ileInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\x03raw\x18\x02 \x01(\x0b\x32\x10.artemis.RawInfo\x12\"\n\x06\x62locks\x18\x03 \x03(\x0b\x32\x12.artemis.BlockInfo\x12#\n\x06schema\x18\x04 \x01(\x0b\x32\x13.artemis.SchemaInfo\x12#\n\tprocessed\x18\x05 \x01(\x0b\x32\x10.artemis.RawInfo\"\x84\x01\n\x13RecordBatchFileInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0bnum_columns\x18\x02 \x01(\x05\x12\x10\n\x08num_rows\x18\x03 \x01(\x05\x12#\n\x06schema\x18\x04 \x01(\x0b\x32\x13.artemis.SchemaInfo\x12\x13\n\x0bnum_batches\x18\x05 \x01(\x05\"0\n\x05Timer\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04time\x18\x02 \x01(\x02\x12\x0b\n\x03std\x18\x03 \x01(\x02\"\xe8\x01\n\x07Summary\x12.\n\ncollection\x18\x01 \x01(\x0b\x32\x1a.physt.HistogramCollection\x12\x17\n\x0fprocessed_bytes\x18\x02 \x01(\x04\x12\x1e\n\x06timers\x18\x03 \x03(\x0b\x32\x0e.artemis.Timer\x12\x19\n\x11processed_ndatums\x18\x04 \x01(\x05\x12,\n\x06tables\x18\x05 \x03(\x0b\x32\x1c.artemis.RecordBatchFileInfo\x12+\n\x08job_time\x18\x06 \x01(\x0b\x32\x19.google.protobuf.Duration\"\xf5\x02\n\x07JobInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x07started\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12,\n\x08\x66inished\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x1f\n\x04\x64\x61ta\x18\x04 \x03(\x0b\x32\x11.artemis.FileInfo\x12!\n\x07summary\x18\x05 \x01(\x0b\x32\x10.artemis.Summary\x12 \n\x05state\x18\x06 \x01(\x0e\x32\x11.artemis.JobState\x12\"\n\x06\x63onfig\x18\x07 \x01(\x0b\x32\x12.artemis.JobConfig\x12\'\n\nproperties\x18\x08 \x01(\x0b\x32\x13.artemis.Properties\x12\x0e\n\x06job_id\x18\t \x01(\t\x12\x1d\n\x05input\x18\n \x01(\x0b\x32\x0e.artemis.Input\x12\x1f\n\x06output\x18\x0b \x01(\x0b\x32\x0f.artemis.Output*^\n\x08JobState\x12\x10\n\x0cJOB_STARTING\x10\x00\x12\x0f\n\x0bJOB_RUNNING\x10\x01\x12\x0f\n\x0bJOB_FAILURE\x10\x02\x12\x0f\n\x0bJOB_SUCCESS\x10\x03\x12\r\n\tJOB_ABORT\x10\x04\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,google_dot_protobuf_dot_duration__pb2.DESCRIPTOR,histogram__pb2.DESCRIPTOR,])
 
@@ -56,8 +56,8 @@ _JOBSTATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2249,
-  serialized_end=2343,
+  serialized_start=2337,
+  serialized_end=2431,
 )
 _sym_db.RegisterEnumDescriptor(_JOBSTATE)
 
@@ -478,6 +478,37 @@ _INPUT = _descriptor.Descriptor(
 )
 
 
+_OUTPUT = _descriptor.Descriptor(
+  name='Output',
+  full_name='artemis.Output',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='repo', full_name='artemis.Output.repo', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=752,
+  serialized_end=774,
+)
+
+
 _SAMPLER = _descriptor.Descriptor(
   name='Sampler',
   full_name='artemis.Sampler',
@@ -511,8 +542,8 @@ _SAMPLER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=752,
-  serialized_end=795,
+  serialized_start=776,
+  serialized_end=819,
 )
 
 
@@ -577,8 +608,8 @@ _JOBCONFIG = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=798,
-  serialized_end=984,
+  serialized_start=822,
+  serialized_end=1008,
 )
 
 
@@ -608,8 +639,8 @@ _RAWINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=986,
-  serialized_end=1015,
+  serialized_start=1010,
+  serialized_end=1039,
 )
 
 
@@ -646,8 +677,8 @@ _BYTERANGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1017,
-  serialized_end=1070,
+  serialized_start=1041,
+  serialized_end=1094,
 )
 
 
@@ -677,8 +708,8 @@ _BLOCKINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1072,
-  serialized_end=1118,
+  serialized_start=1096,
+  serialized_end=1142,
 )
 
 
@@ -708,8 +739,8 @@ _BLOCK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1120,
-  serialized_end=1162,
+  serialized_start=1144,
+  serialized_end=1186,
 )
 
 
@@ -760,8 +791,8 @@ _SCHEMA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1164,
-  serialized_end=1241,
+  serialized_start=1188,
+  serialized_end=1265,
 )
 
 
@@ -812,8 +843,8 @@ _SCHEMAINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1243,
-  serialized_end=1347,
+  serialized_start=1267,
+  serialized_end=1371,
 )
 
 
@@ -871,8 +902,8 @@ _FILEINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1350,
-  serialized_end=1515,
+  serialized_start=1374,
+  serialized_end=1539,
 )
 
 
@@ -930,8 +961,8 @@ _RECORDBATCHFILEINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1518,
-  serialized_end=1650,
+  serialized_start=1542,
+  serialized_end=1674,
 )
 
 
@@ -975,8 +1006,8 @@ _TIMER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1652,
-  serialized_end=1700,
+  serialized_start=1676,
+  serialized_end=1724,
 )
 
 
@@ -1041,8 +1072,8 @@ _SUMMARY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1703,
-  serialized_end=1935,
+  serialized_start=1727,
+  serialized_end=1959,
 )
 
 
@@ -1116,6 +1147,20 @@ _JOBINFO = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='input', full_name='artemis.JobInfo.input', index=9,
+      number=10, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='output', full_name='artemis.JobInfo.output', index=10,
+      number=11, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -1128,8 +1173,8 @@ _JOBINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1938,
-  serialized_end=2247,
+  serialized_start=1962,
+  serialized_end=2335,
 )
 
 _PROPERTIES.fields_by_name['property'].message_type = _PROPERTY
@@ -1164,6 +1209,8 @@ _JOBINFO.fields_by_name['summary'].message_type = _SUMMARY
 _JOBINFO.fields_by_name['state'].enum_type = _JOBSTATE
 _JOBINFO.fields_by_name['config'].message_type = _JOBCONFIG
 _JOBINFO.fields_by_name['properties'].message_type = _PROPERTIES
+_JOBINFO.fields_by_name['input'].message_type = _INPUT
+_JOBINFO.fields_by_name['output'].message_type = _OUTPUT
 DESCRIPTOR.message_types_by_name['Property'] = _PROPERTY
 DESCRIPTOR.message_types_by_name['Properties'] = _PROPERTIES
 DESCRIPTOR.message_types_by_name['Tool'] = _TOOL
@@ -1174,6 +1221,7 @@ DESCRIPTOR.message_types_by_name['Menu'] = _MENU
 DESCRIPTOR.message_types_by_name['GeneratorInput'] = _GENERATORINPUT
 DESCRIPTOR.message_types_by_name['AtomInput'] = _ATOMINPUT
 DESCRIPTOR.message_types_by_name['Input'] = _INPUT
+DESCRIPTOR.message_types_by_name['Output'] = _OUTPUT
 DESCRIPTOR.message_types_by_name['Sampler'] = _SAMPLER
 DESCRIPTOR.message_types_by_name['JobConfig'] = _JOBCONFIG
 DESCRIPTOR.message_types_by_name['RawInfo'] = _RAWINFO
@@ -1259,6 +1307,13 @@ Input = _reflection.GeneratedProtocolMessageType('Input', (_message.Message,), d
   # @@protoc_insertion_point(class_scope:artemis.Input)
   ))
 _sym_db.RegisterMessage(Input)
+
+Output = _reflection.GeneratedProtocolMessageType('Output', (_message.Message,), dict(
+  DESCRIPTOR = _OUTPUT,
+  __module__ = 'artemis_pb2'
+  # @@protoc_insertion_point(class_scope:artemis.Output)
+  ))
+_sym_db.RegisterMessage(Output)
 
 Sampler = _reflection.GeneratedProtocolMessageType('Sampler', (_message.Message,), dict(
   DESCRIPTOR = _SAMPLER,
