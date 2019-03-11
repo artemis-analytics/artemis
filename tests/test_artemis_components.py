@@ -17,7 +17,7 @@ import os
 import shutil
 
 from artemis.core.steering import Steering
-from artemis.artemis import Artemis
+from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.properties import JobProperties
 from artemis.logger import Logger
 from artemis.core.physt_wrapper import Physt_Wrapper
@@ -28,7 +28,7 @@ from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
 
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
-
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 logging.getLogger().setLevel(logging.INFO)
 
@@ -48,41 +48,29 @@ class ArtemisTestCase(unittest.TestCase):
         self.reset()
         
         mb = MenuFactory('csvgen')
-        
-        self.tmppath = tempfile.mkdtemp() 
-        self.prtcfg = os.path.join(self.tmppath,'arrowproto_proto.dat')
-        try:
-            msgmenu = mb.build()
-        except Exception:
-            raise
-        
-        config = JobConfigFactory('csvgen', msgmenu)
+        msgmenu = mb.build()
+        config = JobConfigFactory('csvgen',msgmenu,
+                                  jobname='arrowproto',
+                                  output_repo='')
         config.configure()
         msg = config.job_config
-        try:
-            with open(self.prtcfg, "wb") as f:
-                f.write(msg.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write message")
-        except Exception:
-            raise
+       
+        self.job = JobInfo_pb()
+        self.job.name = 'arrowproto'
+        self.job.job_id = 'example'
+        self.job.output.repo = ''
+        self.job.config.CopyFrom(msg)
 
     def tearDown(self):
         self.reset()
         # Should be able to call self.tmppath.cleanup()
         # But above, cannot join str and TemporaryDirectory types
-        if os.path.exists(self.tmppath):
-            shutil.rmtree(self.tmppath)
     
     def test_launch(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Launching')
@@ -95,12 +83,8 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(Tree)
         Singleton.reset(Physt_Wrapper)
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Configuring')
@@ -109,12 +93,8 @@ class ArtemisTestCase(unittest.TestCase):
     def test_lock(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Locking')
@@ -124,12 +104,8 @@ class ArtemisTestCase(unittest.TestCase):
     def test_initialize(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
@@ -140,12 +116,8 @@ class ArtemisTestCase(unittest.TestCase):
         self.reset() 
         self.prtcfg = 'arrowproto_proto.dat'
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
@@ -156,17 +128,10 @@ class ArtemisTestCase(unittest.TestCase):
     def test_run(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
-            _msgcfg = bow._jp.meta.config
-            with open(bow.properties.protomsg, 'rb') as f:
-                _msgcfg.ParseFromString(f.read())
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
             bow.steer._hbook = Physt_Wrapper()
             bow.steer._hbook.book('steer.time', 'dummy', range(10))
@@ -194,17 +159,10 @@ class ArtemisTestCase(unittest.TestCase):
     def test_finalize(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
-            _msgcfg = bow._jp.meta.config
-            with open(bow.properties.protomsg, 'rb') as f:
-                _msgcfg.ParseFromString(f.read())
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
             bow.steer._hbook = Physt_Wrapper()
             bow.steer._hbook.book('steer.time', 'dummy', range(10))
@@ -227,17 +185,10 @@ class ArtemisTestCase(unittest.TestCase):
     def test_abort(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
-            bow = Artemis("arrowproto", 
-                          protomsg=self.prtcfg,
-                          blocksize=2**16,
-                          skip_header=True,
-                          loglevel='INFO',
-                          path=dirpath)
+            self.job.output.repo = dirpath
+            bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
-            _msgcfg = bow._jp.meta.config
-            with open(bow.properties.protomsg, 'rb') as f:
-                _msgcfg.ParseFromString(f.read())
             bow._configure() 
             bow._initialize()
             bow._book()

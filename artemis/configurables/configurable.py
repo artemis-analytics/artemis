@@ -12,6 +12,8 @@ Base class for creating a job configuration
 import uuid
 
 from artemis.logger import Logger
+from artemis.decorators import iterable
+
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 from artemis.io.writer import BufferOutputWriter
@@ -20,12 +22,58 @@ from artemis.configurables.factories import FileHandlerFactory
 from artemis.core.dag import Menu
 
 
+@iterable
+class GlobalConfigOptions:
+    '''
+    Options required to specify a dataset job
+    Each instance of Artemis must be configured with these options
+
+    Options set to None should be specified as default options
+    in inherited configurations
+    or must be set by the user
+    '''
+    # Required 
+    jobname = None  # Common to all jobs using the same menu and configuration
+    output_repo = None  # Absolute path to write output meta data, tables and logs
+    dbkey = None  # Unique key to store/retrieve the configuration from the DB
+    
+    # Optional is using filegenerator
+    input_repo = None  # Absolute path to dataset
+    input_glob = None
+
+    # Defaults
+    max_malloc = 2147483648  # Maximum memory allowed in Arrow memory pool per subjob
+    max_buffer_size = 2147483648  # Maximum size of serialize arrow data in a given output buffer 
+    write_csv = True  # Output csv files
+    sample_ndatums = 1  # Preprocess job to sample files from dataset
+    sample_nchunks = 10  # Preprocess job to sample chunks from a file
+    loglevel = 'INFO'
+    # Set by the config classes
+    generator_type = None
+    filehandler_type = None
+    
+
+
 @Logger.logged
 class Configurable():
 
-    def __init__(self, menu=None, max_malloc=2147483648, loglevel='INFO'):
-        self._msg = artemis_pb2.JobConfig()
-        self._msg.max_malloc_size_bytes = max_malloc
+    def __init__(self, menu, **options):
+        '''
+        Menu required as input
+        '''
+        if menu is None:
+            raise ValueError
+
+        # add attribute from options
+        for name, value in options.items():
+            setattr(self, name, value) 
+        
+        if self.dbkey:
+            self._msg = self.retrieve_from_db()
+        else:
+            self._msg = artemis_pb2.JobConfig()
+        
+        self._msg.max_malloc_size_bytes = self.max_malloc
         self._tools = []
 
         if hasattr(self._msg, 'config_id'):
@@ -38,33 +86,57 @@ class Configurable():
     @property
     def job_config(self):
         return self._msg
+    
+    def retrieve_from_db(self):
+        '''
+        Create DB connection 
+        Not required to run full configuration
+        completes the job configuration process
+        '''
+        pass
 
     def configure(self):
         pass
 
-    def _config_generator(self, ctype, **kwargs):
-        generator = GeneratorFactory(ctype, **kwargs)
+    def _config_generator(self, **kwargs):
+        '''
+        ctype = configuration class to generate
+            csv -- generate csv-like data
+            legacy -- generator legacy cp500 data
+            file -- generator of files
+
+        kwargs specified in inherited job configurables
+        '''
+        generator = GeneratorFactory(self.generator_type, **kwargs)
         self._msg.input.generator.config.CopyFrom(generator.to_msg())
 
-    def _config_filehandler(self, ctype, **kwargs):
-        tool = FileHandlerFactory(ctype, **kwargs)
+    def _config_filehandler(self, **kwargs):
+        '''
+        ctype = configuration class to generator
+            accepted class types:
+            csv -- reads csv data
+            legacy -- reads legacy cp500 data
+
+        kwargs specified in inherited job configurables
+        '''
+        tool = FileHandlerFactory(self.filehandler_type, **kwargs)
         self._tools.append(tool.to_msg())
 
-    def _config_writer(self, max_size=10485760, write_csv=True, path=''):
+    def _config_writer(self):
         self.__logger.info("Configure writer")
-        self.__logger.info("Max file size %i", max_size)
-        self.__logger.info("Write csv %s", write_csv)
-        self.__logger.info("Absolute output path %s", path)
+        self.__logger.info("Max file size %i", self.max_buffer_size)
+        self.__logger.info("Write csv %s", self.write_csv)
+        self.__logger.info("Absolute output path %s", self.output_repo)
         tool = BufferOutputWriter('bufferwriter',
-                                  BUFFER_MAX_SIZE=max_size,
-                                  write_csv=write_csv,
-                                  path=path)
+                                  BUFFER_MAX_SIZE=self.max_buffer_size,
+                                  write_csv=self.write_csv,
+                                  path=self.output_repo)
         self._tools.append(tool.to_msg())
 
     def _config_sampler(self):
         sampler = self._msg.sampler
-        sampler.ndatums = 0
-        sampler.nchunks = 0
+        sampler.ndatums = self.sample_ndatums
+        sampler.nchunks = self.sample_nchunks
 
     def _add_tools(self):
         for tool in self._tools:
@@ -74,6 +146,12 @@ class Configurable():
 
 @Logger.logged
 class MenuBuilder():
+    '''
+    Standard method to build menus
+    Menus can be stored in a DB
+    So, should be retrieved via a key and converted to
+    the protobuf
+    '''
 
     def __init__(self, name='test'):
         self._name = name
