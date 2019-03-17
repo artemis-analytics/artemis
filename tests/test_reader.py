@@ -35,18 +35,6 @@ class ReaderTestCase(unittest.TestCase):
 
     def tearDown(self):
         pass
-    
-    def test_header(self):
-        generator = GenCsvLikeArrow('test')
-        data, names, batch = generator.make_random_csv()
-        
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-
-        header, meta, offset = self._handler.prepare(file_)
-
-        assert meta == names
      
     def test_read_block(self):
         delimiter = b'\n'
@@ -102,10 +90,11 @@ class ReaderTestCase(unittest.TestCase):
         length = len(data)
         
         # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
+        #buf = io.BytesIO(data)
+        buf = pa.py_buffer(data)
+        #file_ = pa.PythonFile(buf, mode='r')
         
-        header, meta, off_head = self._handler.prepare(file_)
+        self._handler.prepare(buf)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
@@ -114,7 +103,7 @@ class ReaderTestCase(unittest.TestCase):
         
         blocksum = 0
 
-        blocks = self._handler.execute(file_) 
+        blocks = self._handler.blocks
         for blk in blocks:
             blocksum += blk[1]
         try:
@@ -125,6 +114,7 @@ class ReaderTestCase(unittest.TestCase):
         # print(offsets)
         # print(lengths)
     
+    '''
     def test_readinto(self):
         generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
@@ -132,20 +122,21 @@ class ReaderTestCase(unittest.TestCase):
         length = len(data)
         
         # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-        
-        header, meta, off_head = self._handler.prepare(file_)
+        #buf = io.BytesIO(data)
+        #file_ = pa.PythonFile(buf, mode='r')
+        buf = pa.py_buffer(data)
+        self._handler.prepare(buf)
         
         print("Generated buffer is %s bytes" % length)
+        print("Arrow buffer is %s bytes" % buf.size)
         # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
+        #buf = io.BytesIO(data)
+        #file_ = pa.PythonFile(buf, mode='r')
 
-        blocks = self._handler.execute(file_)
+        blocks = self._handler.blocks
         chunks = [bytearray(block[1]) for block in blocks]
         for i, block in enumerate(blocks):
-            self._handler.readinto_block(file_, chunks[i], block[0])
+            self._handler.readinto_block(buf, chunks[i], block[0])
             print(chunks[i].decode())
         print(blocks) 
         #print(offsets)
@@ -161,10 +152,11 @@ class ReaderTestCase(unittest.TestCase):
         length = len(data)
         print("Generated large file %i" % length)
         # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-        
-        header, meta, off_head = self._handler.prepare(file_)
+        #buf = io.BytesIO(data)
+        #file_ = pa.PythonFile(buf, mode='r')
+        buf = pa.py_buffer(data)
+
+        self._handler.prepare(buf)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
@@ -172,7 +164,7 @@ class ReaderTestCase(unittest.TestCase):
         file_ = pa.PythonFile(buf, mode='r')
 
         # offsets, lengths = self._handler.get_blocks(file_, 6, b'\r\n', off_head)
-        blocks = self._handler.execute(file_) 
+        blocks = self._handler.blocks
         chunks = [bytearray(block[1]) for block in blocks]
         for i, block in enumerate(blocks):
             self._handler.readinto_block(file_, chunks[i], block[0])
@@ -198,7 +190,7 @@ class ReaderTestCase(unittest.TestCase):
         print('Completed reading large chunks')
         #print(offsets)
         #print(lengths)
-    
+    '''
     def test_prepare_csv(self):
         generator = GenCsvLikeArrow('test',
                                     nbatches=1, 
@@ -251,9 +243,5 @@ class ReaderTestCase(unittest.TestCase):
             print(batch.to_pybytes())
 
 if __name__ == '__main__':
-    case = ReaderTestCase()
-    case.setUp()
-    case.test_prepare_csv() 
-    case.test_prepare_legacy()
-    #unittest.main()
+    unittest.main()
 

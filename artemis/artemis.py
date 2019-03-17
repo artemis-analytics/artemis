@@ -676,22 +676,6 @@ class Artemis():
                                 type(self.generator))
             raise TypeError
 
-        # Add fileinfo to message
-        # TODO
-        # Create file UUID, check UUID when creating block info???
-        _finfo = self._jp.meta.data.add()
-        _finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
-
-        # Update the raw metadata
-        _rinfo = _finfo.raw
-        try:
-            _rinfo.size_bytes = self._get_raw_size(raw)
-        except TypeError:
-            self.__logger.warning("Cannot determine type from raw datum")
-            _rinfo.size_bytes = 0
-        self.__logger.info("Payload size %i", _rinfo.size_bytes)
-        # Update datum input count
-        self._jp.meta.summary.processed_ndatums += 1
 
         # Return the raw bytes
         return raw
@@ -717,7 +701,22 @@ class Artemis():
             self.__logger.error("Failed to prepare file")
             raise
         
-        _finfo = self._jp.meta.data[-1]
+        # Add fileinfo to message
+        # TODO
+        # Create file UUID, check UUID when creating block info???
+        _finfo = self._jp.meta.data.add()
+        _finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
+
+        # Update the raw metadata
+        _rinfo = _finfo.raw
+        try:
+            _rinfo.size_bytes = self._get_raw_size(self.datum)
+        except TypeError:
+            self.__logger.warning("Cannot determine type from raw datum")
+            _rinfo.size_bytes = 0
+        self.__logger.info("Payload size %i", _rinfo.size_bytes)
+        # Update datum input count
+        self._jp.meta.summary.processed_ndatums += 1
            
         _finfo.schema.size_bytes = handler.header_offset
         _finfo.schema.header = handler.header

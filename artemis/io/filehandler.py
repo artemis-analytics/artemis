@@ -138,6 +138,7 @@ class FileHandlerTool(ToolBase):
             pos = stream.tell()
        
         stream.close()
+        self.__logger.info("Create Reader n samples %i", self.nsamples)
         return CsvReader(filepath_or_buffer, 
                       header, 
                       header_offset, 
@@ -203,45 +204,6 @@ class FileHandlerTool(ToolBase):
             return self.prepare_legacy(filepath_or_buffer)
         else:
             return self.prepare_csv(filepath_or_buffer)
-        
-        '''
-        try to read the first line of file
-        filehandle, f, is pa.PythonFile
-        
-
-        #  TODO
-        #  Implement proper way to handle legacy fixed-width no header data
-        #
-        if file_.tell() != 0:
-            file_.seek(0)
-
-        header = file_.readline()
-        offset = file_.tell()  # Do we start of offset, or offset + byte
-        try:
-            meta = header.decode().rstrip(self.properties.delimiter).\
-                split(self.properties.separator)
-        except UnicodeDecodeError:
-            self.__logger.warning("File not UTF8 encoded assume legacy data")
-            raise
-        except Exception:
-            self.__logger.error("Unknown error occurred at file preparation")
-            raise
-
-        file_.seek(0)
-        self._offset_header = offset
-        return header, meta, offset
-        '''
-
-    def prepare_unicode(self, file_):
-        self.__logger.info("Prepare unicode file")
-        self.__logger.info("Offset %i", self._offset_header)
-        if file_.tell() != 0:
-            file_.seek(0)
-
-        meta = []
-        header = file_.read(self._offset_header)
-        offset = self._offset_header  # Do we start of offset, or offset + byte
-        return header, meta, offset
 
     def _create_header(self, schema):
         linesep = self.properties.delimiter
@@ -253,22 +215,6 @@ class FileHandlerTool(ToolBase):
         csv = csv.getvalue().encode()
         return bytearray(csv)
 
-    #  TODO
-    #  Extract and store the unicode header and footer
-    '''
-    def _create_unicode_header_footer(self):
-        if file_.tell() != 0:
-            file_.seek(0)
-
-        header = file_.read(self._offset_header)
-
-        file_.seek(0, 2)
-        footer_offset = file_.tell() - self._offset_header
-        file_.seek(footer_offset)
-        footer = file_.read(self._offset_header)
-        file_seek(0)
-    '''
-   
     def readline(self, stream, size=-1):
         '''
         Using pyarrow input_stream
@@ -405,15 +351,16 @@ class FileHandlerTool(ToolBase):
 
             file_.seek(offset)
         return file_.read(length)
-
+  
+    '''
     def readinto_block(self, file_, bobj, offset, schema=None):
-        '''
+   
         Dask-like block read of data in bytes
         Assumes length of block fixed and preallocated bytearray provided
         Assumes the blocksize and line delimiter already handled
 
         # Requires inserting header into each block
-        '''
+     
         if schema is None:
             block_ = bytearray()
             if offset != file_.tell():
@@ -436,7 +383,7 @@ class FileHandlerTool(ToolBase):
             file_.readinto(bobj)
             block_.extend(bobj)
             return block_
-
+    '''
     def execute(self, file_):
         '''
         Creates a generator to return blocks of data from IO bytestream

@@ -12,6 +12,7 @@
 """
 import unittest
 import logging
+import pyarrow as pa
 from google.protobuf import text_format
 from artemis.tools.csvtool import CsvTool
 from artemis.core.tool import ToolBase
@@ -41,8 +42,8 @@ class CsvToolTestCase(unittest.TestCase):
         data, names, batch = generator.make_random_csv()
         
         length = len(data)
-        
-        tbatch = tool.execute(data)
+        buf = pa.py_buffer(data) 
+        tbatch = tool.execute(buf)
         print(batch.schema, batch.num_rows, batch.num_columns)
         print(tbatch.schema, tbatch.num_rows, tbatch.num_columns)
         print(tbatch.to_pydict())
