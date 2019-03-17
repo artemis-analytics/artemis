@@ -127,6 +127,7 @@ class Artemis():
         self.steer = None
         self.generator = None
         self.data_handler = None
+        self.reader = None
         self._raw = None
         self._schema = {}
 
@@ -210,6 +211,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
+        
 
         try:
             self._rebook()
@@ -218,7 +220,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-
+        
         try:
             self._init_buffers()
         except Exception as e:
@@ -226,7 +228,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-
+        
         # Clear all memory and raw data
         try:
             Tree().flush()
@@ -236,7 +238,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-
+        
         self.__logger.info("artemis: sampleing complete malloc %i",
                            pa.total_allocated_bytes())
         try:
@@ -246,7 +248,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-
+        
         try:
             self._finalize()
         except Exception as e:
@@ -292,6 +294,8 @@ class Artemis():
         '''
         if isinstance(raw, bytes):
             return len(raw)
+        if isinstance(raw, pa.lib.Buffer):
+            return raw.size
         elif isinstance(raw, pathlib.PosixPath):
             return os.path.getsize(raw)
         else:
@@ -643,21 +647,31 @@ class Artemis():
     def _request_data(self):
         self.__logger.debug("Generator type %s", type(self.generator))
         if isinstance(self.generator, GenCsvLikeArrow):
-            self.__logger.debug("Receiving bytes and batch")
+            self.__logger.debug("Expect bytes from GenCsvLikeArrow")
             try:
-                raw, batch = next(self.data_handler)
+                data, batch = next(self.data_handler)
+                raw = pa.py_buffer(data)
             except StopIteration:
                 self.__logger.info("Request data: iterator complete")
                 raise
         elif isinstance(self.generator, GenMF) or \
                 isinstance(self.generator, FileGenerator):
             #  Occurs when receiving a 1tuple from generator
-            self.__logger.debug("receiving bytes or path")
+            self.__logger.debug("expect bytes from GenMF")
+            try:
+                data = next(self.data_handler)
+                raw = pa.py_buffer(data)
+            except StopIteration:
+                self.__logger.info("Request data: iterator complete")
+                raise
+        elif isinstance(self.generator, FileGenerator):
+            self.__logger.debug("Expect filepath")
             try:
                 raw = next(self.data_handler)
             except StopIteration:
                 self.__logger.info("Request data: iterator complete")
                 raise
+
         else:
             self.__logger.error("Unknown data handler type %s",
                                 type(self.generator))
@@ -676,7 +690,7 @@ class Artemis():
         except TypeError:
             self.__logger.warning("Cannot determine type from raw datum")
             _rinfo.size_bytes = 0
-
+        self.__logger.info("Payload size %i", _rinfo.size_bytes)
         # Update datum input count
         self._jp.meta.summary.processed_ndatums += 1
 
@@ -839,17 +853,29 @@ class Artemis():
         except Exception:
             raise
 
-        try:
-            self._prepare_datum()
-        except Exception:
-            self.__logger.error("failed to prepare the datum")
-            raise
+        #try:
+        #    self._prepare_datum()
+        #except Exception:
+        #    self.__logger.error("failed to prepare the datum")
+        #    raise
+        
+        # All the new shit 
+        handler = self.__tools.get("filehandler")
+        self.reader = handler.prepare_csv(pa.py_buffer(self.datum))
+        
+        _finfo = self._jp.meta.data[-1]
+           
+        _finfo.schema.size_bytes = handler.header_offset
+        _finfo.schema.header = handler.header
+        for col in handler.schema:
+            a_col = _finfo.schema.columns.add()
+            a_col.name = col
 
     @timethis
     def _execute_sampler(self):
         '''
         Random chunk sampling processing
-        '''
+        
 
         # Get the last in list
         _finfo = self._jp.meta.data[-1]
@@ -897,6 +923,9 @@ class Artemis():
             self.__logger.error("Problem closing stream")
             raise
         return True
+        '''
+        for batch in self.reader.sampler():
+            self.steer.execute(batch)
 
     @timethis
     def _execute(self):
@@ -910,7 +939,7 @@ class Artemis():
             loop over all blocks from file input
             retrieve raw bytes from file
             pass raw data to steering to process block
-        '''
+        
 
         # requestdata prepares the input and adds the FileInfo msg
         # Get the last in list
@@ -967,6 +996,31 @@ class Artemis():
             self.__logger.error("Problem closing stream")
             raise
         return True
+        '''
+
+        # All the new shit
+        _finfo = self._jp.meta.data[-1]
+        for batch in self.reader:
+            self.hbook.fill('artemis', 'blocksize',
+                            bytes_to_mb(batch.size))
+            try:
+                self.steer.execute(batch)
+            except Exception:
+                raise
+            _finfo.processed.size_bytes += batch.size 
+            self._jp.meta.summary.processed_bytes += batch.size 
+            self._check_malloc()
+        
+        self.__logger.info('Processed %i' %
+                           self._jp.meta.summary.processed_bytes)
+        
+        # Need to account for header in batch size
+        # if _finfo.processed.size_bytes != _finfo.raw.size_bytes:
+        #     self.__logger.error("Processing payload not complete")
+        #    raise IOError
+
+
+
 
     def _finalize_jobstate(self, state):
         self._update_state(state)

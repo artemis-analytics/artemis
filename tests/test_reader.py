@@ -19,6 +19,7 @@ import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
 
 from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow
+from artemis.generators.legacygen import GenMF
 from artemis.io.filehandler import FileHandlerTool
 logging.getLogger().setLevel(logging.INFO)
 
@@ -197,8 +198,62 @@ class ReaderTestCase(unittest.TestCase):
         print('Completed reading large chunks')
         #print(offsets)
         #print(lengths)
+    
+    def test_prepare_csv(self):
+        generator = GenCsvLikeArrow('test',
+                                    nbatches=1, 
+                                    num_cols=10, 
+                                    num_rows=100)
+        data, names, batch = generator.make_random_csv()
+        handler = FileHandlerTool('tool', delimiter='\r\n', blocksize=100 )
+        handler.initialize()
+        length = len(data)
+        buf = pa.py_buffer(data)
+        print(buf.size, pa.total_allocated_bytes())
+        reader = handler.prepare_csv(buf)
+        print(reader.header) 
+        print(type(reader))
+        #print(reader.rndblocks)
+        #for block in reader.rndblocks:
+        #   print(block)  
+            #iblock = self.generator.\
+            #    random_state.randint(0, len(_finfo.blocks) - 1)
+        print(pa.total_allocated_bytes())
+        for batch in reader.sampler():
+            print(batch.to_pybytes())
+        for batch in reader:
+            print(batch.to_pybytes())
+        reader.close()
+    
+    def test_prepare_legacy(self):
 
+        intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
+        intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+        strconf0 = {'utype': 'str', 'length': 4}
+        # Schema definition.
+        # Size of chunk to create.
+        # Create a generator objected, properly configured.
+        generator = GenMF('generator',
+                          column_a=intconf0,
+                          column_b=intuconf0,
+                          column_c=strconf0,
+                          num_rows=1000, 
+                          nbatches=1,
+                          loglevel='INFO')
+        data = next(generator.generate())
+        handler = FileHandlerTool('tool', legacy_data=True, blocksize=20*100 )
+        handler.initialize()
+        length = len(data)
+        buf = pa.py_buffer(data)
+        print(buf.size, pa.total_allocated_bytes())
+        reader = handler.prepare_legacy(buf)
+        for batch in reader:
+            print(batch.to_pybytes())
 
 if __name__ == '__main__':
-    unittest.main()
+    case = ReaderTestCase()
+    case.setUp()
+    case.test_prepare_csv() 
+    case.test_prepare_legacy()
+    #unittest.main()
 

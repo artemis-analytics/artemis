@@ -18,10 +18,13 @@ Extracting meta data from a header
 """
 import io
 import pathlib
+import pyarrow as pa
+import random 
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
-
+from artemis.logger import Logger
+from artemis.generators.common import BuiltinsGenerator
 
 @iterable
 class FileHandlerOptions:
@@ -30,6 +33,119 @@ class FileHandlerOptions:
     skip_header = False
     legacy_data = False
     offset_header = 0
+    seed = 42
+
+@Logger.logged
+class Reader():
+    
+    def __init__(self, 
+                 filepath_or_buffer, 
+                 header,
+                 header_offset,
+                 blocks,
+                 rnd,
+                 nsamples=4
+                 ):
+        self.stream = pa.input_stream(filepath_or_buffer)
+        self.header = header
+        self.header_offset = header_offset
+        self.blocks = blocks
+        self.iter_blocks = iter(blocks)
+        self.nsamples = nsamples
+        self.rnd = rnd
+        self._prepare()
+    
+    def _prepare(self):
+        header = self.stream.read(self.header_offset)
+        if header != self.header:
+            raise ValueError
+    
+    def sampler(self):
+        rndblocks = iter(self.rnd.choice(len(self.blocks),self.nsamples))
+        for iblock in rndblocks:
+            block = self.blocks[iblock]
+            self.stream.seek(block[0])
+            data = self.header
+            data += self.stream.read(block[1])
+            yield pa.py_buffer(data) 
+        self.__logger.info("Completed sampling")
+        self.stream.seek(self.header_offset)
+
+    def __iter__(self):
+        return self 
+    
+    def __next__(self):
+        try:
+            block = next(self.iter_blocks)
+        except StopIteration:
+            raise
+
+        if self.stream.tell() != block[0]:
+            self.__logger.error("Wrong block %i %i", 
+                                block[0], 
+                                self.stream.tell())
+            raise IOError
+        data = self.header
+        data += self.stream.read(block[1])
+        return pa.py_buffer(data)
+        # read into py_arrow buffer
+        # return self.stream.read_buffer(block[1])
+    
+    def close(self):
+        self.stream.close()
+
+@Logger.logged
+class LegacyReader():
+    
+    def __init__(self, 
+                 filepath_or_buffer, 
+                 header,
+                 header_offset,
+                 blocks,
+                 rnd,
+                 nsamples=4
+                 ):
+        self.stream = pa.input_stream(filepath_or_buffer)
+        self.header = header
+        self.header_offset = header_offset
+        self.blocks = blocks
+        self.iter_blocks = iter(blocks)
+        self.nsamples = nsamples
+        self.rnd = rnd
+        self._prepare()
+    
+    def _prepare(self):
+        header = self.stream.read(self.header_offset)
+        if header != self.header:
+            raise ValueError
+    
+    def sampler(self):
+        rndblocks = iter(self.rnd.choice(len(self.blocks),self.nsamples))
+        for iblock in rndblocks:
+            block = self.blocks[iblock]
+            self.stream.seek(block[0])
+            yield self.stream.read_buffer(block[1])
+        self.__logger.debug("Completed sampling")
+        self.stream.seek(self.header_offset)
+
+    def __iter__(self):
+        return self 
+    
+    def __next__(self):
+        try:
+            block = next(self.iter_blocks)
+        except StopIteration:
+            raise
+
+        if self.stream.tell() != block[0]:
+            self.__logger.error("Wrong block %i %i", 
+                                block[0], 
+                                self.stream.tell())
+            raise IOError
+        return self.stream.read_buffer(block[1])
+    
+    def close(self):
+        self.stream.close()
 
 
 class FileHandlerTool(ToolBase):
@@ -45,6 +161,19 @@ class FileHandlerTool(ToolBase):
         self._offset_header = None
         self._legacy_data = self.properties.legacy_data
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
+        
+        if hasattr(self.properties, 'seed'):
+            self._builtin_generator = BuiltinsGenerator(self.properties.seed)
+        else:
+            self._builtin_generator = BuiltinsGenerator()
+        # 
+        self.header = None
+        self.header_offset = None
+        self.footer_offset = None
+        self.footer = None
+        self.schema = None
+        self.blocks = []  # list of tuples (offset, length)
+        self.size = None
 
     def encode_delimiter(self):
         self._delimiter = bytes(self.properties.delimiter, 'utf8')
@@ -56,6 +185,117 @@ class FileHandlerTool(ToolBase):
         if hasattr(self.properties, 'delimiter'):
             self.encode_delimiter()
         self._offset_header = self.properties.offset_header
+
+    def prepare_csv(self, filepath_or_buffer):
+        
+        self.__logger.info("Prepare csv file")
+        stream = pa.input_stream(filepath_or_buffer)
+
+        if stream.tell() != 0:
+            stream.seek(0)
+
+        header_offset = self.readline(stream)
+        stream.seek(0)
+        header = stream.read(header_offset)
+        stream.seek(0, 2)
+        fsize = stream.tell()
+        try:
+            schema = header.decode().rstrip(self.properties.delimiter).\
+                split(self.properties.separator)
+        except Exception:
+            self.__logger.error("Unknown error occurred at file preparation")
+            raise
+        self.__logger.info("Csv info %s %s %s", header, header_offset, schema) 
+        if self.header is None:
+            self.header = header
+            self.header_offset = header_offset
+            self.schema = schema
+            self.size = fsize
+        else:
+            if self.header != header:
+                self.__logger.error("Cannot validate header")
+                self.__logger.error("Original %s", self.header)
+                self.__logger.error("New header %s", header)
+                raise ValueError
+            if self.header_offset != header_offset:
+                self.__logger.error("Cannot validate offset")
+                self.__logger.error("Original %i", self.header_offset)
+                self.__logger.error("New offset %i", header_offset)
+                raise ValueError
+            if schema != self.schema:
+                self.__logger.error("Cannot validate schema")
+                self.__logger.error("Original %s", self.schema)
+                self.__logger.error("New schema %s", schema)
+                raise ValueError
+
+        
+        stream.seek(header_offset)
+        pos=stream.tell()
+        blocks = []
+        size = self.properties.blocksize
+        while stream.tell() < fsize:
+            
+            self.__logger.debug("Current position %i size %i filesize %i",
+                                pos, size, fsize)
+            blocks.append(self._get_block(stream,
+                                          pos,
+                                          size,
+                                          fsize,
+                                          self._delimiter))
+            pos = stream.tell()
+       
+        stream.close()
+        return Reader(filepath_or_buffer, 
+                      header, 
+                      header_offset, 
+                      blocks,
+                      self._builtin_generator.rnd)
+
+    def prepare_legacy(self, filepath_or_buffer):
+        self.__logger.info("Prepare unicode file")
+        self.__logger.info("Offset %i", self._offset_header)
+        stream = pa.input_stream(filepath_or_buffer)
+
+        if stream.tell() != 0:
+            stream.seek(0)
+
+        header = stream.read(self._offset_header)
+        header_offset = self._offset_header  
+        # Seek to end (0 bytes relative to the end)
+        self.__logger.debug("FileHandler execute")
+        stream.seek(0, 2)
+        fsize = stream.tell()
+        self.__logger.debug("File size %i", fsize)
+        self.__logger.debug("Offset header size %i", self._offset_header)
+        stream.seek(header_offset)
+        pos = stream.tell()
+        self.__logger.debug("Start position %i", pos)
+        blocks = []  # tuples of length two (offset, length)
+        size = self.properties.blocksize
+        while stream.tell() < fsize:
+            self.__logger.debug("Current position %i size %i filesize %i",
+                                pos, size, fsize)
+            blocks.append(self._get_block(stream,
+                                          pos,
+                                          size,
+                                          fsize,
+                                          None))
+            pos = stream.tell()
+
+        # Seek back to start
+        stream.close() 
+
+        # Removes the footer from last block
+        self.__logger.info("Final block %s", blocks[-1])
+        if self._legacy_data is True:
+            blocks[-1] = (blocks[-1][0], blocks[-1][1] - self._offset_header)
+            self.__logger.info("Final block without footer %s", blocks[-1])
+
+        return LegacyReader(filepath_or_buffer, 
+                            header, 
+                            header_offset, 
+                            blocks,
+                            self._builtin_generator.rnd)
 
     def prepare(self, file_):
         '''
@@ -121,6 +361,30 @@ class FileHandlerTool(ToolBase):
         footer = file_.read(self._offset_header)
         file_seek(0)
     '''
+   
+    def readline(self, stream, size=-1):
+        '''
+        Using pyarrow input_stream
+        use cpython _pyio readline
+        '''
+        if size is None:
+            size = -1
+        else:
+            try:
+                size_index = size.__index__
+            except AttributeError:
+                raise TypeError(f"{size!r} is not an integer")
+            else:
+                size = size_index()
+        res = bytearray()
+        while size < 0 or len(res) < size:
+            b = stream.read(1)
+            if not b:
+                break
+            res += b
+            if res.endswith(b"\n"):
+                break
+        return stream.tell()
 
     def _seek_delimiter(self, file_, delimiter, blocksize):
         '''

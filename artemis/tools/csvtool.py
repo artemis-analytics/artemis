@@ -71,9 +71,9 @@ class CsvTool(ToolBase):
         pyarrow RecordBatch
         '''
         # create pyarrow buffer from raw bytes
-        buf_ = pa.py_buffer(block)
+        #buf_ = pa.py_buffer(block)
         try:
-            table = read_csv(buf_,
+            table = read_csv(block,
                              read_options=self._readopts,
                              parse_options=self._parseopts)
         except Exception:
