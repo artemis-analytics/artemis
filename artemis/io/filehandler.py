@@ -25,6 +25,8 @@ from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 from artemis.logger import Logger
 from artemis.generators.common import BuiltinsGenerator
+from artemis.io.readers import CsvReader, LegacyReader
+
 
 @iterable
 class FileHandlerOptions:
@@ -36,117 +38,6 @@ class FileHandlerOptions:
     seed = 42
     nsamples = 1
 
-@Logger.logged
-class Reader():
-    
-    def __init__(self, 
-                 filepath_or_buffer, 
-                 header,
-                 header_offset,
-                 blocks,
-                 rnd,
-                 nsamples=4
-                 ):
-        self.stream = pa.input_stream(filepath_or_buffer)
-        self.header = header
-        self.header_offset = header_offset
-        self.blocks = blocks
-        self.iter_blocks = iter(blocks)
-        self.nsamples = nsamples
-        self.rnd = rnd
-        self._prepare()
-    
-    def _prepare(self):
-        header = self.stream.read(self.header_offset)
-        if header != self.header:
-            raise ValueError
-    
-    def sampler(self):
-        rndblocks = iter(self.rnd.choice(len(self.blocks),self.nsamples))
-        for iblock in rndblocks:
-            block = self.blocks[iblock]
-            self.stream.seek(block[0])
-            data = self.header
-            data += self.stream.read(block[1])
-            yield pa.py_buffer(data) 
-        self.__logger.info("Completed sampling")
-        self.stream.seek(self.header_offset)
-
-    def __iter__(self):
-        return self 
-    
-    def __next__(self):
-        try:
-            block = next(self.iter_blocks)
-        except StopIteration:
-            raise
-
-        if self.stream.tell() != block[0]:
-            self.__logger.error("Wrong block %i %i", 
-                                block[0], 
-                                self.stream.tell())
-            raise IOError
-        data = self.header
-        data += self.stream.read(block[1])
-        return pa.py_buffer(data)
-        # read into py_arrow buffer
-        # return self.stream.read_buffer(block[1])
-    
-    def close(self):
-        self.stream.close()
-
-@Logger.logged
-class LegacyReader():
-    
-    def __init__(self, 
-                 filepath_or_buffer, 
-                 header,
-                 header_offset,
-                 blocks,
-                 rnd,
-                 nsamples=4
-                 ):
-        self.stream = pa.input_stream(filepath_or_buffer)
-        self.header = header
-        self.header_offset = header_offset
-        self.blocks = blocks
-        self.iter_blocks = iter(blocks)
-        self.nsamples = nsamples
-        self.rnd = rnd
-        self._prepare()
-    
-    def _prepare(self):
-        header = self.stream.read(self.header_offset)
-        if header != self.header:
-            raise ValueError
-    
-    def sampler(self):
-        rndblocks = iter(self.rnd.choice(len(self.blocks),self.nsamples))
-        for iblock in rndblocks:
-            block = self.blocks[iblock]
-            self.stream.seek(block[0])
-            yield self.stream.read_buffer(block[1])
-        self.__logger.debug("Completed sampling")
-        self.stream.seek(self.header_offset)
-
-    def __iter__(self):
-        return self 
-    
-    def __next__(self):
-        try:
-            block = next(self.iter_blocks)
-        except StopIteration:
-            raise
-
-        if self.stream.tell() != block[0]:
-            self.__logger.error("Wrong block %i %i", 
-                                block[0], 
-                                self.stream.tell())
-            raise IOError
-        return self.stream.read_buffer(block[1])
-    
-    def close(self):
-        self.stream.close()
 
 
 class FileHandlerTool(ToolBase):
@@ -247,7 +138,7 @@ class FileHandlerTool(ToolBase):
             pos = stream.tell()
        
         stream.close()
-        return Reader(filepath_or_buffer, 
+        return CsvReader(filepath_or_buffer, 
                       header, 
                       header_offset, 
                       self.blocks,
