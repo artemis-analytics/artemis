@@ -67,7 +67,7 @@ class LegacyDataAlgo(AlgoBase):
     def execute(self, element):
 
         _finfo = self._jp.meta.data[-1]
-        raw_ = element.get_data()
+        raw_ = element.get_data().to_pybytes()
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)

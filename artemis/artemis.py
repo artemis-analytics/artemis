@@ -645,7 +645,7 @@ class Artemis():
             self.datum = None
 
     def _request_data(self):
-        self.__logger.debug("Generator type %s", type(self.generator))
+        self.__logger.info("Generator type %s", type(self.generator))
         if isinstance(self.generator, GenCsvLikeArrow):
             self.__logger.debug("Expect bytes from GenCsvLikeArrow")
             try:
@@ -654,8 +654,7 @@ class Artemis():
             except StopIteration:
                 self.__logger.info("Request data: iterator complete")
                 raise
-        elif isinstance(self.generator, GenMF) or \
-                isinstance(self.generator, FileGenerator):
+        elif isinstance(self.generator, GenMF):
             #  Occurs when receiving a 1tuple from generator
             self.__logger.debug("expect bytes from GenMF")
             try:
@@ -665,7 +664,7 @@ class Artemis():
                 self.__logger.info("Request data: iterator complete")
                 raise
         elif isinstance(self.generator, FileGenerator):
-            self.__logger.debug("Expect filepath")
+            self.__logger.info("Expect filepath")
             try:
                 raw = next(self.data_handler)
             except StopIteration:
@@ -696,150 +695,7 @@ class Artemis():
 
         # Return the raw bytes
         return raw
-
-    def _request_block(self, file_, block_id, meta):
-        '''
-        Return a block of raw bytes for processing
-        Access random blocks
-        requies passing the meta (python), needs to moved to proto
-        '''
-        block = self._jp.meta.data[-1].blocks[block_id]
-        _chunk = bytearray(block.range.size_bytes)
-
-        chunk = self.__tools.get("filehandler").\
-            readinto_block(file_,
-                           _chunk,
-                           block.range.offset_bytes,
-                           meta)
-        return chunk
-
-    @timethis
-    def _prepare_schema(self, file_):
-        '''
-        Strips the header information (if requested)
-
-        Returns a python list for reading back chunk
-        '''
-        #  TODO
-        #  Improve file preparation for different input types
-        _finfo = self._jp.meta.data[-1]
-        try:
-            header, meta, off_head = \
-                self.__tools.get("filehandler").prepare(file_)
-            _finfo.schema.size_bytes = off_head
-            _finfo.schema.header = header
-            for col in meta:
-                a_col = _finfo.schema.columns.add()
-                a_col.name = col
-        except UnicodeDecodeError:
-            self.__logger.warning("Input data type is not utf8")
-            header, meta, off_head = \
-                self.__tools.get("filehandler").prepare_unicode(file_)
-            _finfo.schema.size_bytes = off_head
-            _finfo.schema.header = header
-            self.__logger.info("Header size %i", _finfo.schema.size_bytes)
-            meta = self.__tools.get("legacytool").columns
-            for col in meta:
-                a_col = _finfo.schema.columns.add()
-                a_col.name = col
-        except Exception:
-            self.__logger.error("Unknown error at file preparation")
-            raise
-
-        return meta  # should be removed and accessed through metastore
-
-    @timethis
-    def _prepare_blocks(self, file_, offset):
-        '''
-        file_ is pyarrow PythonFile
-        offset is header offset in bytes
-        For each raw byte input
-        define the block length and offset.
-        Update the FileInfo msg for each block
-        Need to place a check to ensure
-        the correct FileInfo instance is used
-        '''
-        blocks = self.__tools.get("filehandler").execute(file_)
-
-        # Prepare the block meta data
-        # FileInfo should already be available
-        # Get last FileInfo
-        _finfo = self._jp.meta.data[-1]
-        for i, block in enumerate(blocks):
-            msg = _finfo.blocks.add()
-            msg.range.offset_bytes = block[0]
-            msg.range.size_bytes = block[1]
-            self.__logger.debug(msg)
-        return True
-
-    def _prepare_datum(self):
-        '''
-        Prepare the input datum (file) for chunk processing
-        '''
-        # Request the data via the getter
-        # TODO
-        # Validate that we get the right data back!
-        try:
-            raw = self.datum
-        except Exception:
-            self.__logger.debug("Data generator completed file batches")
-            raise
-
-        # requestdata prepares the input and adds the FileInfo msg
-        # Get the last in list
-        _finfo = self._jp.meta.data[-1]
-
-        stream = FileFactory(raw)
-
-        file_ = pa.PythonFile(stream, mode='r')
-
-        # prepare the schema information for the file
-        try:
-            meta, time_ = self._prepare_schema(file_)
-            self.hbook.fill('artemis', 'time.prepschema', time_)
-        except Exception:
-            self.__logger.error("Problem obtaining schema")
-            raise
-
-        # seek past header
-        file_.seek(_finfo.schema.size_bytes)
-        self.__logger.info("Seek past header position: %i", file_.tell())
-        # Obtain the block information for the file
-        try:
-            results_, time_ = self._prepare_blocks(file_,
-                                                   _finfo.schema.size_bytes)
-            self.hbook.fill('artemis', 'time.prepblks', time_)
-        except Exception:
-            self.__logger.error("Unable to create blocks")
-            raise
-
-        # Monitoring
-        try:
-            _fsize = self._get_raw_size(raw)
-        except TypeError:
-            self.__logger.warning("Cannot determine type from raw datum")
-            _fsize = 0
-
-        self.hbook.fill('artemis', 'payload', bytes_to_mb(_fsize))
-        self.hbook.fill('artemis', 'nblocks', len(_finfo.blocks))
-
-        self.__logger.info("Blocks")
-        self.__logger.info("Size in bytes %2.3f in MB %2.3f" %
-                           (_fsize, bytes_to_mb(_fsize)))
-
-        _finfo.processed.size_bytes = _finfo.schema.size_bytes
-
-        try:
-            file_.close()
-        except Exception:
-            self.__logger.error("Problem closing file")
-            raise
-        try:
-            stream.close()
-        except Exception:
-            self.__logger.error("Problem closing stream")
-            raise
-
+    
     def _prepare(self):
         '''
         Requests the input data from the data handler
@@ -851,154 +707,45 @@ class Artemis():
             self.__logger.info("Processing complete: StopIteration")
             raise
         except Exception:
+            self.__logger.error("Failed to request data")
             raise
 
-        #try:
-        #    self._prepare_datum()
-        #except Exception:
-        #    self.__logger.error("failed to prepare the datum")
-        #    raise
-        
-        # All the new shit 
         handler = self.__tools.get("filehandler")
-        self.reader = handler.prepare_csv(pa.py_buffer(self.datum))
+        try:
+            self.reader = handler.prepare(self.datum)
+        except Exception:
+            self.__logger.error("Failed to prepare file")
+            raise
         
         _finfo = self._jp.meta.data[-1]
            
         _finfo.schema.size_bytes = handler.header_offset
         _finfo.schema.header = handler.header
-        for col in handler.schema:
-            a_col = _finfo.schema.columns.add()
-            a_col.name = col
+        self.__logger.info("Updating meta data from handler")
+        if handler.schema is not None:
+            for col in handler.schema:
+                a_col = _finfo.schema.columns.add()
+                a_col.name = col
+        
+        for i, block in enumerate(handler.blocks):
+            msg = _finfo.blocks.add()
+            msg.range.offset_bytes = block[0]
+            msg.range.size_bytes = block[1]
+            self.__logger.debug(msg)
 
     @timethis
     def _execute_sampler(self):
         '''
         Random chunk sampling processing
-        
+        ''' 
 
-        # Get the last in list
-        _finfo = self._jp.meta.data[-1]
-
-        meta = []
-        for column in _finfo.schema.columns:
-            meta.append(column.name)
-
-        stream = FileFactory(self.datum)
-
-        file_ = pa.PythonFile(stream, mode='r')
-
-        # Select a random block
-        # TODO add a configurable seed
-        # Use a single instance of random
-        # should be configured at job start
-        if self.generator:
-            iblock = self.generator.\
-                random_state.randint(0, len(_finfo.blocks) - 1)
-            self.__logger.debug("Selected random block %i with size %2.2f",
-                                iblock,
-                                _finfo.blocks[iblock].range.size_bytes)
-        else:
-            self.__logger.error("Generator not configured, abort sampling")
-            raise ValueError
-
-        try:
-            chunk = self._request_block(file_, iblock, meta)
-        except Exception:
-            self.__logger.error("Error requesting block")
-            raise
-        try:
-            self.steer.execute(chunk)  # Make chunk immutable
-        except Exception:
-            raise
-
-        try:
-            file_.close()
-        except Exception:
-            self.__logger.error("Problem closing file")
-            raise
-        try:
-            stream.close()
-        except Exception:
-            self.__logger.error("Problem closing stream")
-            raise
-        return True
-        '''
         for batch in self.reader.sampler():
             self.steer.execute(batch)
 
     @timethis
     def _execute(self):
         '''
-        Execute called for each input datum (e.g. a file)
-        File preprocessing
-            obtain the file schema information
-            scan the file and create byte blocks
-            update all the metadata
-        Block processing
-            loop over all blocks from file input
-            retrieve raw bytes from file
-            pass raw data to steering to process block
-        
-
-        # requestdata prepares the input and adds the FileInfo msg
-        # Get the last in list
-        _finfo = self._jp.meta.data[-1]
-
-        meta = []
-        for column in _finfo.schema.columns:
-            meta.append(column.name)
-
-        stream = FileFactory(self.datum)
-
-        file_ = pa.PythonFile(stream, mode='r')
-
-        # Execute steering over all blocks from raw input
-        for i, block in enumerate(_finfo.blocks):
-            self.hbook.fill('artemis', 'blocksize',
-                            bytes_to_mb(block.range.size_bytes))
-            try:
-                chunk = self._request_block(file_, i, meta)
-            except Exception:
-                self.__logger.error("Error requesting block")
-                raise
-            try:
-                self.steer.execute(chunk)  # Make chunk immutable
-            except Exception:
-                raise
-            self.__logger.debug("Chunk size %i, block size %i",
-                                len(chunk),
-                                block.range.size_bytes)
-            _finfo.processed.size_bytes += block.range.size_bytes
-            self._jp.meta.summary.processed_bytes += len(chunk)
-            chunk = None
-
-            # Now check whether to fill buffers and flush tree
-            self._check_malloc()
-
-        self.__logger.info('Processed %i' %
-                           self._jp.meta.summary.processed_bytes)
-
-        if _finfo.processed.size_bytes != _finfo.raw.size_bytes:
-            if _finfo.processed.size_bytes != \
-                    (_finfo.raw.size_bytes - _finfo.schema.size_bytes):
-                self.__logger.error("Processing payload not complete")
-                raise IOError
-
-        try:
-            file_.close()
-        except Exception:
-            self.__logger.error("Problem closing file")
-            raise
-        try:
-            stream.close()
-        except Exception:
-            self.__logger.error("Problem closing stream")
-            raise
-        return True
         '''
-
-        # All the new shit
         _finfo = self._jp.meta.data[-1]
         for batch in self.reader:
             self.hbook.fill('artemis', 'blocksize',

@@ -34,6 +34,7 @@ class FileHandlerOptions:
     legacy_data = False
     offset_header = 0
     seed = 42
+    nsamples = 1
 
 @Logger.logged
 class Reader():
@@ -160,6 +161,7 @@ class FileHandlerTool(ToolBase):
         self._delimiter = None
         self._offset_header = None
         self._legacy_data = self.properties.legacy_data
+        self.nsamples = self.properties.nsamples
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
         
         if hasattr(self.properties, 'seed'):
@@ -231,13 +233,13 @@ class FileHandlerTool(ToolBase):
         
         stream.seek(header_offset)
         pos=stream.tell()
-        blocks = []
+        self.blocks = []
         size = self.properties.blocksize
         while stream.tell() < fsize:
             
             self.__logger.debug("Current position %i size %i filesize %i",
                                 pos, size, fsize)
-            blocks.append(self._get_block(stream,
+            self.blocks.append(self._get_block(stream,
                                           pos,
                                           size,
                                           fsize,
@@ -248,8 +250,9 @@ class FileHandlerTool(ToolBase):
         return Reader(filepath_or_buffer, 
                       header, 
                       header_offset, 
-                      blocks,
-                      self._builtin_generator.rnd)
+                      self.blocks,
+                      self._builtin_generator.rnd,
+                      self.nsamples)
 
     def prepare_legacy(self, filepath_or_buffer):
         self.__logger.info("Prepare unicode file")
@@ -267,15 +270,21 @@ class FileHandlerTool(ToolBase):
         fsize = stream.tell()
         self.__logger.debug("File size %i", fsize)
         self.__logger.debug("Offset header size %i", self._offset_header)
+        
+        if self.header is None:
+            self.header = header
+            self.header_offset = header_offset
+            self.size = fsize
+        
         stream.seek(header_offset)
         pos = stream.tell()
         self.__logger.debug("Start position %i", pos)
-        blocks = []  # tuples of length two (offset, length)
+        self.blocks = []  # tuples of length two (offset, length)
         size = self.properties.blocksize
         while stream.tell() < fsize:
             self.__logger.debug("Current position %i size %i filesize %i",
                                 pos, size, fsize)
-            blocks.append(self._get_block(stream,
+            self.blocks.append(self._get_block(stream,
                                           pos,
                                           size,
                                           fsize,
@@ -286,22 +295,28 @@ class FileHandlerTool(ToolBase):
         stream.close() 
 
         # Removes the footer from last block
-        self.__logger.info("Final block %s", blocks[-1])
+        self.__logger.info("Final block %s", self.blocks[-1])
         if self._legacy_data is True:
-            blocks[-1] = (blocks[-1][0], blocks[-1][1] - self._offset_header)
-            self.__logger.info("Final block without footer %s", blocks[-1])
+            self.blocks[-1] = (self.blocks[-1][0], self.blocks[-1][1] - self._offset_header)
+            self.__logger.info("Final block without footer %s", self.blocks[-1])
 
         return LegacyReader(filepath_or_buffer, 
                             header, 
                             header_offset, 
-                            blocks,
-                            self._builtin_generator.rnd)
+                            self.blocks,
+                            self._builtin_generator.rnd,
+                            self.nsamples)
 
-    def prepare(self, file_):
+    def prepare(self, filepath_or_buffer):
+        if self._legacy_data is True:
+            return self.prepare_legacy(filepath_or_buffer)
+        else:
+            return self.prepare_csv(filepath_or_buffer)
+        
         '''
         try to read the first line of file
         filehandle, f, is pa.PythonFile
-        '''
+        
 
         #  TODO
         #  Implement proper way to handle legacy fixed-width no header data
@@ -324,6 +339,7 @@ class FileHandlerTool(ToolBase):
         file_.seek(0)
         self._offset_header = offset
         return header, meta, offset
+        '''
 
     def prepare_unicode(self, file_):
         self.__logger.info("Prepare unicode file")
