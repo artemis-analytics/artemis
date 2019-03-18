@@ -32,18 +32,18 @@ class GlobalConfigOptions:
     in inherited configurations
     or must be set by the user
     '''
-    # Required 
+    # Required
     jobname = None  # Common to all jobs using the same menu and configuration
-    output_repo = None  # Absolute path to write output meta data, tables and logs
+    output_repo = None  # Absolute path to write output
     dbkey = None  # Unique key to store/retrieve the configuration from the DB
-    
+
     # Optional is using filegenerator
     input_repo = None  # Absolute path to dataset
     input_glob = None
 
     # Defaults
-    max_malloc = 2147483648  # Maximum memory allowed in Arrow memory pool per subjob
-    max_buffer_size = 2147483648  # Maximum size of serialize arrow data in a given output buffer 
+    max_malloc = 2147483648  # Maximum memory allowed in Arrow memory pool
+    max_buffer_size = 2147483648  # Maximum size serialized ipc message
     write_csv = True  # Output csv files
     sample_ndatums = 1  # Preprocess job to sample files from dataset
     sample_nchunks = 10  # Preprocess job to sample chunks from a file
@@ -51,7 +51,6 @@ class GlobalConfigOptions:
     # Set by the config classes
     generator_type = None
     filehandler_type = None
-    
 
 
 @Logger.logged
@@ -66,13 +65,13 @@ class Configurable():
 
         # add attribute from options
         for name, value in options.items():
-            setattr(self, name, value) 
-        
+            setattr(self, name, value)
+
         if self.dbkey:
             self._msg = self.retrieve_from_db()
         else:
             self._msg = artemis_pb2.JobConfig()
-        
+
         self._msg.max_malloc_size_bytes = self.max_malloc
         self._tools = []
 
@@ -86,10 +85,10 @@ class Configurable():
     @property
     def job_config(self):
         return self._msg
-    
+
     def retrieve_from_db(self):
         '''
-        Create DB connection 
+        Create DB connection
         Not required to run full configuration
         completes the job configuration process
         '''

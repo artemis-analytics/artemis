@@ -12,7 +12,8 @@
 from artemis.logger import Logger
 from artemis.decorators import iterable
 
-from artemis.configurables.configurable import Configurable, GlobalConfigOptions
+from artemis.configurables.configurable import Configurable
+from artemis.configurables.configurable import GlobalConfigOptions
 from artemis.tools.csvtool import CsvTool
 
 
@@ -47,7 +48,7 @@ class CsvGenConfig(Configurable):
 
         # Ensure block_size for arrow parser greater than
         # file chunk size
-        csvtool = CsvTool('csvtool', block_size= (2 * self.blocksize))
+        csvtool = CsvTool('csvtool', block_size=(2 * self.blocksize))
         self._tools.append(csvtool.to_msg())
         self._config_sampler()
         self._config_writer()
