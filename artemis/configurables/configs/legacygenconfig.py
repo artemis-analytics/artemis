@@ -11,7 +11,8 @@
 """
 from artemis.logger import Logger
 from artemis.decorators import iterable
-from artemis.configurables.configurable import Configurable, GlobalConfigOptions
+from artemis.configurables.configurable import Configurable
+from artemis.configurables.configurable import GlobalConfigOptions
 
 from artemis.tools.mftool import MfTool
 

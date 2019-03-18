@@ -17,7 +17,6 @@ owns the stores needed by the user algorithms
 # Python libraries
 import sys
 import os
-import uuid
 import pathlib
 import traceback
 
@@ -58,19 +57,19 @@ from artemis.generators.legacygen import GenMF
 
 class ArtemisFactory:
     '''
-    Factory class 
+    Factory class
     Update the configuration message from JobInfo message
     Allows for configuration to be static or predefined
     Reused for new datasets with different input and output data repos
-    
-    Requires updating 
+
+    Requires updating
     bufferwriter tool with output repo path
     file generator tool with input repo path
     also replace a data generator with a file generator
     '''
     def __new__(cls, jobinfo, loglevel='INFO'):
         dirpath = jobinfo.output.repo
-        
+
         if jobinfo.HasField('input'):
             if jobinfo.input.HasField('atom'):
                 inpath = jobinfo.input.atom.repo
@@ -82,13 +81,13 @@ class ArtemisFactory:
                             p.value = inpath
                         if p.name == 'glob':
                             p.value = glob
-        
+
         for tool in jobinfo.config.tools:
             if tool.name == 'bufferwriter':
                 for p in tool.properties.property:
                     if p.name == 'path':
                         p.value = dirpath
-            
+
         return Artemis(jobinfo, loglevel=loglevel)
 
 
@@ -99,24 +98,24 @@ class Artemis():
         self.properties = Properties()
         self._jp = JobProperties()
         self._jp.meta.CopyFrom(jobinfo)
-        
+
         # TODO
         # Validate the metadata
         #
         self._job_id = self._jp.meta.name + '-' + self._jp.meta.job_id
-        
+
         # Logging
-        Logger.configure(self, 
-                        jobname = self._job_id,
-                        path = self._jp.meta.output.repo,
-                        loglevel = kwargs['loglevel'])
+        Logger.configure(self,
+                         jobname=self._job_id,
+                         path=self._jp.meta.output.repo,
+                         loglevel=kwargs['loglevel'])
         #######################################################################
-        # Initialize summary info in meta data 
+        # Initialize summary info in meta data
         self._jp.meta.started.GetCurrentTime()
         self._update_state(artemis_pb2.JOB_STARTING)
         self._jp.meta.summary.processed_bytes = 0
         self._jp.meta.summary.processed_ndatums = 0
-       
+
         # Define internal properties from job configuration
         self._path = self._jp.meta.output.repo
         self.MALLOC_MAX_SIZE = self._jp.meta.config.max_malloc_size_bytes
