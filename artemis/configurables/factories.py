@@ -39,7 +39,7 @@ class GeneratorFactory():
                                  glob=kwargs['glob'],
                                  nbatches=kwargs['nbatches'])
         else:
-            raise ValueError 
+            raise ValueError
 
 
 class FileHandlerFactory():
@@ -76,7 +76,7 @@ class MenuFactory():
             from artemis.configurables.menus.legacygenmenu import LegacyGenMenu
             return LegacyGenMenu(name)
         else:
-            raise ValueError 
+            raise ValueError
 
 
 class JobConfigFactory():
