@@ -92,7 +92,7 @@ class BufferOutputWriter(ToolBase):
         - schema
         '''
         try:
-            reader = pa.open_file(self._buffer)
+            reader = pa.ipc.open_file(self._buffer)
         except Exception:
             raise
         self.__logger.info("Batches in file %i", reader.num_record_batches)
@@ -394,7 +394,7 @@ class BufferOutputWriter(ToolBase):
         # Convert table to dataframe
         # use_threads can be enabled
         # frame = table.to_pandas(use_threads=False)
-        frame = pa.open_file(buf).read_pandas()
+        frame = pa.ipc.open_file(buf).read_pandas()
 
         from pandas.io.formats.csvs import CSVFormatter
         formatter = CSVFormatter(frame, path_or_buf,
