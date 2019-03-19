@@ -23,18 +23,17 @@ import pyarrow as pa
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 from artemis.generators.common import BuiltinsGenerator
-from artemis.io.readers import ReaderFactory 
+from artemis.io.readers import ReaderFactory
 
 
 @iterable
 class FileHandlerOptions:
     blocksize = 2**27
     separator = ','
-    skip_header = False
-    legacy_data = False
     offset_header = 0
     seed = 42
     nsamples = 1
+    filetype = 'csv'
 
 
 class FileHandlerTool(ToolBase):
@@ -48,8 +47,8 @@ class FileHandlerTool(ToolBase):
         #  If not set, no finding end of line with delimiter search
         self._delimiter = None
         self._offset_header = None
-        self._legacy_data = self.properties.legacy_data
         self.nsamples = self.properties.nsamples
+        self.filetype = self.properties.filetype
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
 
         if hasattr(self.properties, 'seed'):
@@ -77,9 +76,6 @@ class FileHandlerTool(ToolBase):
         self._offset_header = self.properties.offset_header
 
     def execute(self, filepath_or_buffer):
-        input_type = 'csv'
-        if self._legacy_data is True:
-            input_type = 'legacy'
 
         self.__logger.info("Prepare csv file")
         stream = pa.input_stream(filepath_or_buffer)
@@ -87,16 +83,19 @@ class FileHandlerTool(ToolBase):
         if stream.tell() != 0:
             stream.seek(0)
 
-        if input_type == 'csv':
+        if self.filetype == 'csv':
             header = self._readline(stream)
-        if input_type == 'legacy':
+        elif self.filetype == 'legacy':
             header = stream.read(self._offset_header)
+        else:
+            self.__logger.error("Unknown filetype")
+            raise TypeError
         header_offset = stream.tell()
         stream.seek(0, 2)
         fsize = stream.tell()
-        
+
         schema = None
-        if input_type == 'csv':
+        if self.filetype == 'csv':
             try:
                 schema = header.decode().rstrip(self.properties.delimiter).\
                     split(self.properties.separator)
@@ -143,13 +142,13 @@ class FileHandlerTool(ToolBase):
 
         stream.close()
 
-        if self._legacy_data is True:
+        if self.filetype == 'legacy':
             self.blocks[-1] = (self.blocks[-1][0],
                                self.blocks[-1][1] - self._offset_header)
             self.__logger.info("Final block w/o footer %s", self.blocks[-1])
 
         self.__logger.info("Create Reader n samples %i", self.nsamples)
-        return ReaderFactory(input_type, filepath_or_buffer,
+        return ReaderFactory(self.filetype, filepath_or_buffer,
                              header,
                              header_offset,
                              self.blocks,

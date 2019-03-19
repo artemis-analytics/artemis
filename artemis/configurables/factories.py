@@ -48,21 +48,14 @@ class FileHandlerFactory():
                 ctype,
                 blocksize=2**16,
                 delimiter='\r\n',
-                offset_header=None):
+                offset_header=0):
 
-        if ctype == 'csv':
-            return FileHandlerTool('filehandler',
-                                   blocksize=blocksize,
-                                   skip_header=True,
-                                   delimiter=delimiter)
-        elif ctype == 'legacy':
-            return FileHandlerTool('filehandler',
-                                   blocksize=blocksize,
-                                   skip_header=True,
-                                   legacy_data=True,
-                                   offset_header=offset_header)
-        else:
-            raise ValueError
+        return FileHandlerTool('filehandler',
+                               filetype=ctype,
+                               blocksize=blocksize,
+                               #skip_header=True,
+                               delimiter=delimiter,
+                               offset_header=offset_header)
 
 
 class MenuFactory():
