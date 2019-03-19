@@ -12,7 +12,6 @@
 """
 import unittest
 import logging
-import csv
 import io
 from ast import literal_eval
 import pyarrow as pa
@@ -94,7 +93,7 @@ class ReaderTestCase(unittest.TestCase):
         buf = pa.py_buffer(data)
         #file_ = pa.PythonFile(buf, mode='r')
         
-        self._handler.prepare(buf)
+        self._handler.execute(buf)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
@@ -114,83 +113,6 @@ class ReaderTestCase(unittest.TestCase):
         # print(offsets)
         # print(lengths)
     
-    '''
-    def test_readinto(self):
-        generator = GenCsvLikeArrow('test')
-        data, names, batch = generator.make_random_csv()
-        
-        length = len(data)
-        
-        # IO Buffer bytestream
-        #buf = io.BytesIO(data)
-        #file_ = pa.PythonFile(buf, mode='r')
-        buf = pa.py_buffer(data)
-        self._handler.prepare(buf)
-        
-        print("Generated buffer is %s bytes" % length)
-        print("Arrow buffer is %s bytes" % buf.size)
-        # IO Buffer bytestream
-        #buf = io.BytesIO(data)
-        #file_ = pa.PythonFile(buf, mode='r')
-
-        blocks = self._handler.blocks
-        chunks = [bytearray(block[1]) for block in blocks]
-        for i, block in enumerate(blocks):
-            self._handler.readinto_block(buf, chunks[i], block[0])
-            print(chunks[i].decode())
-        print(blocks) 
-        #print(offsets)
-        #print(lengths)
-    
-    def test_readinto_large(self):
-        generator = GenCsvLikeArrow('test',
-                                    nbatches=1, 
-                                    num_cols=20, 
-                                    num_rows=10000)
-        data, names, batch = generator.make_random_csv()
-        
-        length = len(data)
-        print("Generated large file %i" % length)
-        # IO Buffer bytestream
-        #buf = io.BytesIO(data)
-        #file_ = pa.PythonFile(buf, mode='r')
-        buf = pa.py_buffer(data)
-
-        self._handler.prepare(buf)
-        
-        print("Generated buffer is %s bytes" % length)
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-
-        # offsets, lengths = self._handler.get_blocks(file_, 6, b'\r\n', off_head)
-        blocks = self._handler.blocks
-        chunks = [bytearray(block[1]) for block in blocks]
-        for i, block in enumerate(blocks):
-            self._handler.readinto_block(file_, chunks[i], block[0])
-            #print(chunks[i].decode())
-        print(blocks)
-        print(chunks[-1])
-        print("Test last chunk read")
-        with io.BytesIO(chunks[-1]) as raw:
-            with io.TextIOWrapper(raw) as file_:
-                print(file_.read())
-        
-        print("Read all chunks")
-        for chunk in chunks:
-            with io.BytesIO(chunk) as raw:
-                with io.TextIOWrapper(raw) as file_:
-                    reader = csv.reader(file_)
-                    try:
-                        for row in reader:
-                            pass
-                    except Exception:
-                        print('problem at last chunk')
-                        print(chunk)
-        print('Completed reading large chunks')
-        #print(offsets)
-        #print(lengths)
-    '''
     def test_prepare_csv(self):
         generator = GenCsvLikeArrow('test',
                                     nbatches=1, 
@@ -202,7 +124,7 @@ class ReaderTestCase(unittest.TestCase):
         length = len(data)
         buf = pa.py_buffer(data)
         print(buf.size, pa.total_allocated_bytes())
-        reader = handler.prepare_csv(buf)
+        reader = handler.execute(buf)
         print(reader.header) 
         print(type(reader))
         #print(reader.rndblocks)
@@ -238,7 +160,7 @@ class ReaderTestCase(unittest.TestCase):
         length = len(data)
         buf = pa.py_buffer(data)
         print(buf.size, pa.total_allocated_bytes())
-        reader = handler.prepare_legacy(buf)
+        reader = handler.execute(buf)
         for batch in reader:
             print(batch.to_pybytes())
 
