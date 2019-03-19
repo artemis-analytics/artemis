@@ -695,7 +695,7 @@ class Artemis():
 
         handler = self.__tools.get("filehandler")
         try:
-            self.reader = handler.prepare(self.datum)
+            self.reader = handler.execute(self.datum)
         except Exception:
             self.__logger.error("Failed to prepare file")
             raise

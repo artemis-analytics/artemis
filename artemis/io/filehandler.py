@@ -19,13 +19,11 @@ Extracting meta data from a header
 import io
 import pathlib
 import pyarrow as pa
-import random 
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
-from artemis.logger import Logger
 from artemis.generators.common import BuiltinsGenerator
-from artemis.io.readers import CsvReader, LegacyReader
+from artemis.io.readers import ReaderFactory 
 
 
 @iterable
@@ -37,7 +35,6 @@ class FileHandlerOptions:
     offset_header = 0
     seed = 42
     nsamples = 1
-
 
 
 class FileHandlerTool(ToolBase):
@@ -54,12 +51,12 @@ class FileHandlerTool(ToolBase):
         self._legacy_data = self.properties.legacy_data
         self.nsamples = self.properties.nsamples
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
-        
+
         if hasattr(self.properties, 'seed'):
             self._builtin_generator = BuiltinsGenerator(self.properties.seed)
         else:
             self._builtin_generator = BuiltinsGenerator()
-        # 
+        #
         self.header = None
         self.header_offset = None
         self.footer_offset = None
@@ -79,26 +76,34 @@ class FileHandlerTool(ToolBase):
             self.encode_delimiter()
         self._offset_header = self.properties.offset_header
 
-    def prepare_csv(self, filepath_or_buffer):
-        
+    def execute(self, filepath_or_buffer):
+        input_type = 'csv'
+        if self._legacy_data is True:
+            input_type = 'legacy'
+
         self.__logger.info("Prepare csv file")
         stream = pa.input_stream(filepath_or_buffer)
 
         if stream.tell() != 0:
             stream.seek(0)
 
-        header_offset = self.readline(stream)
-        stream.seek(0)
-        header = stream.read(header_offset)
+        if input_type == 'csv':
+            header = self._readline(stream)
+        if input_type == 'legacy':
+            header = stream.read(self._offset_header)
+        header_offset = stream.tell()
         stream.seek(0, 2)
         fsize = stream.tell()
-        try:
-            schema = header.decode().rstrip(self.properties.delimiter).\
-                split(self.properties.separator)
-        except Exception:
-            self.__logger.error("Unknown error occurred at file preparation")
-            raise
-        self.__logger.info("Csv info %s %s %s", header, header_offset, schema) 
+        
+        schema = None
+        if input_type == 'csv':
+            try:
+                schema = header.decode().rstrip(self.properties.delimiter).\
+                    split(self.properties.separator)
+            except Exception:
+                self.__logger.error("Error converting icsv header to list")
+                raise
+        self.__logger.info("Csv info %s %s %s", header, header_offset, schema)
         if self.header is None:
             self.header = header
             self.header_offset = header_offset
@@ -121,89 +126,35 @@ class FileHandlerTool(ToolBase):
                 self.__logger.error("New schema %s", schema)
                 raise ValueError
 
-        
         stream.seek(header_offset)
-        pos=stream.tell()
+        pos = stream.tell()
         self.blocks = []
         size = self.properties.blocksize
         while stream.tell() < fsize:
-            
+
             self.__logger.debug("Current position %i size %i filesize %i",
                                 pos, size, fsize)
             self.blocks.append(self._get_block(stream,
-                                          pos,
-                                          size,
-                                          fsize,
-                                          self._delimiter))
+                                               pos,
+                                               size,
+                                               fsize,
+                                               self._delimiter))
             pos = stream.tell()
-       
+
         stream.close()
+
+        if self._legacy_data is True:
+            self.blocks[-1] = (self.blocks[-1][0],
+                               self.blocks[-1][1] - self._offset_header)
+            self.__logger.info("Final block w/o footer %s", self.blocks[-1])
+
         self.__logger.info("Create Reader n samples %i", self.nsamples)
-        return CsvReader(filepath_or_buffer, 
-                      header, 
-                      header_offset, 
-                      self.blocks,
-                      self._builtin_generator.rnd,
-                      self.nsamples)
-
-    def prepare_legacy(self, filepath_or_buffer):
-        self.__logger.info("Prepare unicode file")
-        self.__logger.info("Offset %i", self._offset_header)
-        stream = pa.input_stream(filepath_or_buffer)
-
-        if stream.tell() != 0:
-            stream.seek(0)
-
-        header = stream.read(self._offset_header)
-        header_offset = self._offset_header  
-        # Seek to end (0 bytes relative to the end)
-        self.__logger.debug("FileHandler execute")
-        stream.seek(0, 2)
-        fsize = stream.tell()
-        self.__logger.debug("File size %i", fsize)
-        self.__logger.debug("Offset header size %i", self._offset_header)
-        
-        if self.header is None:
-            self.header = header
-            self.header_offset = header_offset
-            self.size = fsize
-        
-        stream.seek(header_offset)
-        pos = stream.tell()
-        self.__logger.debug("Start position %i", pos)
-        self.blocks = []  # tuples of length two (offset, length)
-        size = self.properties.blocksize
-        while stream.tell() < fsize:
-            self.__logger.debug("Current position %i size %i filesize %i",
-                                pos, size, fsize)
-            self.blocks.append(self._get_block(stream,
-                                          pos,
-                                          size,
-                                          fsize,
-                                          None))
-            pos = stream.tell()
-
-        # Seek back to start
-        stream.close() 
-
-        # Removes the footer from last block
-        self.__logger.info("Final block %s", self.blocks[-1])
-        if self._legacy_data is True:
-            self.blocks[-1] = (self.blocks[-1][0], self.blocks[-1][1] - self._offset_header)
-            self.__logger.info("Final block without footer %s", self.blocks[-1])
-
-        return LegacyReader(filepath_or_buffer, 
-                            header, 
-                            header_offset, 
-                            self.blocks,
-                            self._builtin_generator.rnd,
-                            self.nsamples)
-
-    def prepare(self, filepath_or_buffer):
-        if self._legacy_data is True:
-            return self.prepare_legacy(filepath_or_buffer)
-        else:
-            return self.prepare_csv(filepath_or_buffer)
+        return ReaderFactory(input_type, filepath_or_buffer,
+                             header,
+                             header_offset,
+                             self.blocks,
+                             self._builtin_generator.rnd,
+                             self.nsamples)
 
     def _create_header(self, schema):
         linesep = self.properties.delimiter
@@ -215,7 +166,7 @@ class FileHandlerTool(ToolBase):
         csv = csv.getvalue().encode()
         return bytearray(csv)
 
-    def readline(self, stream, size=-1):
+    def _readline(self, stream, size=-1):
         '''
         Using pyarrow input_stream
         use cpython _pyio readline
@@ -237,7 +188,7 @@ class FileHandlerTool(ToolBase):
             res += b
             if res.endswith(b"\n"):
                 break
-        return stream.tell()
+        return bytes(res)
 
     def _seek_delimiter(self, file_, delimiter, blocksize):
         '''
@@ -351,86 +302,6 @@ class FileHandlerTool(ToolBase):
 
             file_.seek(offset)
         return file_.read(length)
-  
-    '''
-    def readinto_block(self, file_, bobj, offset, schema=None):
-   
-        Dask-like block read of data in bytes
-        Assumes length of block fixed and preallocated bytearray provided
-        Assumes the blocksize and line delimiter already handled
-
-        # Requires inserting header into each block
-     
-        if schema is None:
-            block_ = bytearray()
-            if offset != file_.tell():
-                file_.seek(offset)
-            file_.readinto(bobj)
-            block_.extend(bobj)
-            return block_
-        elif self._legacy_data is True:
-            block_ = bytearray()
-            if offset != file_.tell():
-                file_.seek(offset)
-            file_.readinto(bobj)
-            block_.extend(bobj)
-            return block_
-        else:
-            block_ = self._create_header(schema)
-
-            if offset != file_.tell():
-                file_.seek(offset)
-            file_.readinto(bobj)
-            block_.extend(bobj)
-            return block_
-    '''
-    def execute(self, file_):
-        '''
-        Creates a generator to return blocks of data from IO bytestream
-
-        Parameters
-        ---------
-        file_ : pyarrow NativeFile
-
-        '''
-        # Seek to end (0 bytes relative to the end)
-        self.__logger.debug("FileHandler execute")
-        file_.seek(0, 2)
-        fsize = file_.tell()
-        self.__logger.debug("File size %i", fsize)
-        self.__logger.debug("Offset header size %i", self._offset_header)
-        if self.properties.skip_header:
-            file_.seek(self._offset_header)
-        else:
-            file_.seek(0)
-        pos = file_.tell()
-        self.__logger.debug("Start position %i", pos)
-        blocks = []  # tuples of length two (offset, length)
-        while file_.tell() < fsize:
-            if pos == 0 and self._offset_header is not None:
-                size = self.properties.blocksize + \
-                    self._offset_header
-            else:
-                size = self.properties.blocksize
-            self.__logger.debug("Current position %i size %i filesize %i",
-                                pos, size, fsize)
-            blocks.append(self._get_block(file_,
-                                          pos,
-                                          size,
-                                          fsize,
-                                          self._delimiter))
-            pos = file_.tell()
-
-        # Seek back to start
-        file_.seek(0)
-
-        # Removes the footer from last block
-        self.__logger.info("Final block %s", blocks[-1])
-        if self._legacy_data is True:
-            blocks[-1] = (blocks[-1][0], blocks[-1][1] - self._offset_header)
-            self.__logger.info("Final block without footer %s", blocks[-1])
-
-        return blocks
 
 
 class FileFactory():
