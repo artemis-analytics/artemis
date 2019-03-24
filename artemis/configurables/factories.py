@@ -47,13 +47,13 @@ class FileHandlerFactory():
     def __new__(cls,
                 ctype,
                 blocksize=2**16,
-                delimiter='\r\n',
+                delimiter=',',
+                linesep='\r\n',
                 offset_header=0):
 
         return FileHandlerTool('filehandler',
                                filetype=ctype,
                                blocksize=blocksize,
-                               #skip_header=True,
                                delimiter=delimiter,
                                offset_header=offset_header)
 

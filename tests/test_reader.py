@@ -119,13 +119,13 @@ class ReaderTestCase(unittest.TestCase):
                                     num_cols=10, 
                                     num_rows=100)
         data, names, batch = generator.make_random_csv()
-        handler = FileHandlerTool('tool', delimiter='\r\n', blocksize=100 )
+        handler = FileHandlerTool('tool', linesep='\r\n', blocksize=100 )
         handler.initialize()
         length = len(data)
         buf = pa.py_buffer(data)
         print(buf.size, pa.total_allocated_bytes())
         reader = handler.execute(buf)
-        print(reader.header) 
+        #print(reader.header) 
         print(type(reader))
         #print(reader.rndblocks)
         #for block in reader.rndblocks:
@@ -137,7 +137,7 @@ class ReaderTestCase(unittest.TestCase):
             print(batch.to_pybytes())
         for batch in reader:
             print(batch.to_pybytes())
-        reader.close()
+        #reader.close()
     
     def test_prepare_legacy(self):
 
@@ -155,14 +155,17 @@ class ReaderTestCase(unittest.TestCase):
                           nbatches=1,
                           loglevel='INFO')
         data = next(generator.generate())
-        handler = FileHandlerTool('tool', legacy_data=True, blocksize=20*100 )
+        handler = FileHandlerTool('tool', 
+                                  filetype='legacy', 
+                                  blocksize=20*100,
+                                  encoding='cp500')
         handler.initialize()
         length = len(data)
         buf = pa.py_buffer(data)
         print(buf.size, pa.total_allocated_bytes())
         reader = handler.execute(buf)
-        for batch in reader:
-            print(batch.to_pybytes())
+        #for batch in reader:
+        #    print(batch.to_pybytes())
 
 if __name__ == '__main__':
     unittest.main()

@@ -29,11 +29,18 @@ from artemis.io.readers import ReaderFactory
 @iterable
 class FileHandlerOptions:
     blocksize = 2**27
-    separator = ','
-    offset_header = 0
+    delimiter = ','
+    linesep = '\r\n'
+    header_offset = 0
+    header = ''
+    footer_offset = 0
+    footer = ''
     seed = 42
     nsamples = 1
     filetype = 'csv'
+    encoding = 'utf8'
+    schema = []
+    header_rows = 1
 
 
 class FileHandlerTool(ToolBase):
@@ -42,13 +49,23 @@ class FileHandlerTool(ToolBase):
         options = dict(FileHandlerOptions())
         options.update(kwargs)
         super().__init__(name, **options)
-        #  Default delimiter value is None
-        #  Force set of delimiter in configuration options
-        #  If not set, no finding end of line with delimiter search
-        self._delimiter = None
-        self._offset_header = None
+        
+        self.encoding = self.properties.encoding
+        
+        self.delimiter = self.properties.delimiter
+        self.linesep = self.properties.linesep
+        self.header = bytes(self.properties.header, self.encoding)
+        self.footer = bytes(self.properties.header, self.encoding)
+        
+        self.header_offset = self.properties.header_offset
+        self.footer_offset = self.properties.footer_offset
+        self.schema = self.properties.schema
+        self.header_rows = self.properties.header_rows
+
         self.nsamples = self.properties.nsamples
         self.filetype = self.properties.filetype
+        self.blocksize = self.properties.blocksize
+
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
 
         if hasattr(self.properties, 'seed'):
@@ -56,114 +73,140 @@ class FileHandlerTool(ToolBase):
         else:
             self._builtin_generator = BuiltinsGenerator()
         #
-        self.header = None
-        self.header_offset = None
-        self.footer_offset = None
-        self.footer = None
-        self.schema = None
         self.blocks = []  # list of tuples (offset, length)
         self.size = None
-
-    def encode_delimiter(self):
-        self._delimiter = bytes(self.properties.delimiter, 'utf8')
+        self.cache_header = None
+        self.cache_schema = None
 
     def initialize(self):
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
-        if hasattr(self.properties, 'delimiter'):
-            self.encode_delimiter()
-        self._offset_header = self.properties.offset_header
+    
+    def prepare_csv(self, stream):
+        '''
+        '''
+        self.__logger.info("%s %s", self.linesep, self.delimiter)
+        if self.header_rows == 0:
+            # Requires schema
+            if len(self.schema) == 0:
+                self.__logger.error("File does not include header, provide schema")
+                raise ValueError
+            header = self._create_header(self.schema)
+        elif self.header_rows == 1:
+            header = self._readline(stream)
+            header_offset = stream.tell()
+            schema = header.decode().rstrip(self.linesep).\
+                split(self.delimiter)
+            self.__logger.info("Schema %s", schema)
+            # User supplied schema, update header
+            if self.schema:
+                self.__logger.info("Updating schema %s", self.schema)
+                if len(self.schema) != len(schema):
+                    self.__logger.error("User schema does not conform to file schema")
+                    self.__logger.error("Schema %s", schema)
+                    self.__logger.error("Cached %s", self.schema)
+                    raise ValueError
+                schema = self.schema
+            header = self._create_header(schema)
+        else:
+            # TODO
+            # Store multiline header
+            # Replace with user defined schema
+            header = b''
+            for row in self.header_rows:
+                header += self._readline(stream)
+            header_offset = stream.tell()
+            # Replace multiline header with user-defined schema 
+            if self.schema:
+                header = self._create_schema(schema)
+        
+        self.header = header
+        self.header_offset = header_offset
+        self.schema = schema
+        self.__logger.info("Stream info header: %s Offset: %s Schema: %s", 
+                           self.header, 
+                           self.header_offset, 
+                           self.schema)
+    
+    def prepare_legacy(self, stream):
+        '''
+        Assumes schema is supplied to the parser tool
+        '''
+        self.header = stream.read(self.header_offset)
+
+    def prepare(self, stream):
+        if stream.tell() != 0:
+            stream.seek(0)
+        if self.filetype == 'csv':
+            self.prepare_csv(stream) 
+        elif self.filetype == 'legacy':
+            self.prepare_legacy(stream) 
+        else:
+            self.__logger.error("Unknown filetype")
+            raise TypeError
+        stream.seek(0, 2)
+        self.size = stream.tell()
+        stream.seek(self.header_offset)
+        self.__logger.info("Stream info header: %s Offset: %s Schema: %s Size: %i", 
+                           self.header, 
+                           self.header_offset, 
+                           self.schema,
+                           self.size)
+
+    def validate(self):
+        '''
+       
+        '''
+        pass
 
     def execute(self, filepath_or_buffer):
 
         self.__logger.info("Prepare csv file")
         stream = pa.input_stream(filepath_or_buffer)
 
-        if stream.tell() != 0:
-            stream.seek(0)
-
-        if self.filetype == 'csv':
-            header = self._readline(stream)
-        elif self.filetype == 'legacy':
-            header = stream.read(self._offset_header)
-        else:
-            self.__logger.error("Unknown filetype")
-            raise TypeError
-        header_offset = stream.tell()
-        stream.seek(0, 2)
-        fsize = stream.tell()
-
-        schema = None
-        if self.filetype == 'csv':
-            try:
-                schema = header.decode().rstrip(self.properties.delimiter).\
-                    split(self.properties.separator)
-            except Exception:
-                self.__logger.error("Error converting icsv header to list")
-                raise
-        self.__logger.info("Csv info %s %s %s", header, header_offset, schema)
-        if self.header is None:
-            self.header = header
-            self.header_offset = header_offset
-            self.schema = schema
-            self.size = fsize
-        else:
-            if self.header != header:
-                self.__logger.error("Cannot validate header")
-                self.__logger.error("Original %s", self.header)
-                self.__logger.error("New header %s", header)
-                raise ValueError
-            if self.header_offset != header_offset:
-                self.__logger.error("Cannot validate offset")
-                self.__logger.error("Original %i", self.header_offset)
-                self.__logger.error("New offset %i", header_offset)
-                raise ValueError
-            if schema != self.schema:
-                self.__logger.error("Cannot validate schema")
-                self.__logger.error("Original %s", self.schema)
-                self.__logger.error("New schema %s", schema)
-                raise ValueError
-
-        stream.seek(header_offset)
+        self.prepare(stream)
         pos = stream.tell()
         self.blocks = []
-        size = self.properties.blocksize
-        while stream.tell() < fsize:
+        while stream.tell() < self.size:
 
-            self.__logger.debug("Current position %i size %i filesize %i",
-                                pos, size, fsize)
+            self.__logger.info("Current position %i size %i filesize %i",
+                                pos, self.blocksize, self.size)
             self.blocks.append(self._get_block(stream,
                                                pos,
-                                               size,
-                                               fsize,
-                                               self._delimiter))
+                                               self.blocksize,
+                                               self.size,
+                                               bytes(self.linesep, self.encoding)))
             pos = stream.tell()
 
         stream.close()
 
         if self.filetype == 'legacy':
             self.blocks[-1] = (self.blocks[-1][0],
-                               self.blocks[-1][1] - self._offset_header)
+                               self.blocks[-1][1] - self.header_offset)
             self.__logger.info("Final block w/o footer %s", self.blocks[-1])
 
         self.__logger.info("Create Reader n samples %i", self.nsamples)
+        self.__logger.info("header %s", self.header)
+        self.__logger.info("Schema %s", self.schema)
         return ReaderFactory(self.filetype, filepath_or_buffer,
-                             header,
-                             header_offset,
+                             self.header,
+                             self.header_offset,
                              self.blocks,
                              self._builtin_generator.rnd,
                              self.nsamples)
 
     def _create_header(self, schema):
-        linesep = self.properties.delimiter
+        #linesep = self.linesep.decode(self.encoding)
+        #delimiter = self.delimiter.decode(self.encoding)
         csv = io.StringIO()
         csv.write(u",".join(schema))
-        csv.write(linesep)
+        csv.write(self.linesep)
 
         # bytes object with unicode encoding
         csv = csv.getvalue().encode()
-        return bytearray(csv)
+        self.__logger.info(csv)
+        return bytes(csv)
 
     def _readline(self, stream, size=-1):
         '''

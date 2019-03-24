@@ -62,7 +62,6 @@ class ArtemisTestCase(unittest.TestCase):
                                       filehandler_type='csv',
                                       nbatches=1,
                                       num_rows=10000,
-                                      delimiter='\r\n',
                                       max_file_size=1073741824,
                                       write_csv=True,
                                       input_repo=dirpath,
