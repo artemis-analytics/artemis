@@ -158,7 +158,8 @@ class ReaderTestCase(unittest.TestCase):
         handler = FileHandlerTool('tool', 
                                   filetype='legacy', 
                                   blocksize=20*100,
-                                  encoding='cp500')
+                                  encoding='cp500',
+                                  schema=['column_a', 'column_b', 'column_c'])
         handler.initialize()
         length = len(data)
         buf = pa.py_buffer(data)

@@ -49,14 +49,14 @@ class FileHandlerTool(ToolBase):
         options = dict(FileHandlerOptions())
         options.update(kwargs)
         super().__init__(name, **options)
-        
+
         self.encoding = self.properties.encoding
-        
+
         self.delimiter = self.properties.delimiter
         self.linesep = self.properties.linesep
         self.header = bytes(self.properties.header, self.encoding)
         self.footer = bytes(self.properties.header, self.encoding)
-        
+
         self.header_offset = self.properties.header_offset
         self.footer_offset = self.properties.footer_offset
         self.schema = self.properties.schema
@@ -75,14 +75,51 @@ class FileHandlerTool(ToolBase):
         #
         self.blocks = []  # list of tuples (offset, length)
         self.size = None
-        self.cache_header = None
-        self.cache_schema = None
+        self._cache_header = None
+        self._cache_schema = None
+        self._cache_header_offset = None
 
     def initialize(self):
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
-    
+
+    def cache_header(self, header):
+        if self._cache_header is None:
+            self._cache_header = header
+        return self._cache_header
+
+    def cache_schema(self, schema):
+        if self._cache_schema is None:
+            self._cache_schema = schema
+        return self._cache_schema
+
+    def cache_header_offset(self, offset):
+        if self._cache_header_offset is None:
+            self._cache_header_offset = offset
+        return self._cache_header_offset
+
+    def validate(self, header, header_offset, schema):
+        cache_header = self.cache_header(header)
+        cache_offset = self.cache_header_offset(header_offset)
+        cache_schema = self.cache_schema(schema)
+
+        if cache_header != header:
+            self.__logger.error("Header not valid")
+            raise ValueError
+        if cache_offset != header_offset:
+            self.__logger.error("Offset not valid")
+            raise ValueError
+        if cache_schema != schema:
+            self.__logger.error("Schema not valid")
+            raise ValueError
+
+        self.header = header
+        self.header_offset = header_offset
+        self.schema = schema
+
+        return True
+
     def prepare_csv(self, stream):
         '''
         '''
@@ -90,7 +127,7 @@ class FileHandlerTool(ToolBase):
         if self.header_rows == 0:
             # Requires schema
             if len(self.schema) == 0:
-                self.__logger.error("File does not include header, provide schema")
+                self.__logger.error("No header, schema required")
                 raise ValueError
             header = self._create_header(self.schema)
         elif self.header_rows == 1:
@@ -98,12 +135,13 @@ class FileHandlerTool(ToolBase):
             header_offset = stream.tell()
             schema = header.decode().rstrip(self.linesep).\
                 split(self.delimiter)
-            self.__logger.info("Schema %s", schema)
+
+            self.__logger.debug("Schema %s", schema)
             # User supplied schema, update header
             if self.schema:
                 self.__logger.info("Updating schema %s", self.schema)
                 if len(self.schema) != len(schema):
-                    self.__logger.error("User schema does not conform to file schema")
+                    self.__logger.error("User schema != file schema")
                     self.__logger.error("Schema %s", schema)
                     self.__logger.error("Cached %s", self.schema)
                     raise ValueError
@@ -117,66 +155,89 @@ class FileHandlerTool(ToolBase):
             for row in self.header_rows:
                 header += self._readline(stream)
             header_offset = stream.tell()
-            # Replace multiline header with user-defined schema 
+            # Replace multiline header with user-defined schema
             if self.schema:
                 header = self._create_schema(schema)
-        
-        self.header = header
-        self.header_offset = header_offset
-        self.schema = schema
-        self.__logger.info("Stream info header: %s Offset: %s Schema: %s", 
-                           self.header, 
-                           self.header_offset, 
+
+        try:
+            self.validate(header, header_offset, schema)
+        except ValueError:
+            self.__logger.error("Cannot validate file")
+            raise
+
+        self.__logger.info("Stream info header: %s Offset: %s Schema: %s",
+                           self.header,
+                           self.header_offset,
                            self.schema)
-    
+
     def prepare_legacy(self, stream):
         '''
         Assumes schema is supplied to the parser tool
         '''
-        self.header = stream.read(self.header_offset)
+        try:
+            header = stream.read(self.header_offset)
+        except IOError:
+            self.__logger.error("Failed to read header for legacy")
+            raise
+        except Exception:
+            self.__logger.error("Unknown error in legacy header")
+            raise
+
+        try:
+            self.validate(header, self.header_offset, None)
+        except ValueError:
+            self.__logger.error("Legacy header not valid")
+            raise
 
     def prepare(self, stream):
         if stream.tell() != 0:
             stream.seek(0)
         if self.filetype == 'csv':
-            self.prepare_csv(stream) 
+            try:
+                self.prepare_csv(stream)
+            except Exception:
+                raise
         elif self.filetype == 'legacy':
-            self.prepare_legacy(stream) 
+            try:
+                self.prepare_legacy(stream)
+            except Exception:
+                raise
         else:
             self.__logger.error("Unknown filetype")
             raise TypeError
+
         stream.seek(0, 2)
         self.size = stream.tell()
         stream.seek(self.header_offset)
-        self.__logger.info("Stream info header: %s Offset: %s Schema: %s Size: %i", 
-                           self.header, 
-                           self.header_offset, 
+        self.__logger.info("Stream info header: %s Offset: %s Schema: %s Size: %i",
+                           self.header,
+                           self.header_offset,
                            self.schema,
                            self.size)
-
-    def validate(self):
-        '''
-       
-        '''
-        pass
 
     def execute(self, filepath_or_buffer):
 
         self.__logger.info("Prepare csv file")
         stream = pa.input_stream(filepath_or_buffer)
 
-        self.prepare(stream)
+        try:
+            self.prepare(stream)
+        except Exception:
+            self.__logger.error("Failed file prep")
+            raise
+
         pos = stream.tell()
         self.blocks = []
+        linesep = bytes(self.linesep, self.encoding)
         while stream.tell() < self.size:
 
-            self.__logger.info("Current position %i size %i filesize %i",
+            self.__logger.debug("Current position %i size %i filesize %i",
                                 pos, self.blocksize, self.size)
             self.blocks.append(self._get_block(stream,
                                                pos,
                                                self.blocksize,
                                                self.size,
-                                               bytes(self.linesep, self.encoding)))
+                                               linesep))
             pos = stream.tell()
 
         stream.close()
@@ -197,8 +258,6 @@ class FileHandlerTool(ToolBase):
                              self.nsamples)
 
     def _create_header(self, schema):
-        #linesep = self.linesep.decode(self.encoding)
-        #delimiter = self.delimiter.decode(self.encoding)
         csv = io.StringIO()
         csv.write(u",".join(schema))
         csv.write(self.linesep)

@@ -720,6 +720,7 @@ class Artemis():
         _finfo.schema.size_bytes = handler.header_offset
         _finfo.schema.header = handler.header
         self.__logger.info("Updating meta data from handler")
+        self.__logger.debug("File schema %s", handler.schema)
         if handler.schema is not None:
             for col in handler.schema:
                 a_col = _finfo.schema.columns.add()

@@ -49,13 +49,16 @@ class FileHandlerFactory():
                 blocksize=2**16,
                 delimiter=',',
                 linesep='\r\n',
-                offset_header=0):
+                header_offset=0,
+                schema=[]):
 
         return FileHandlerTool('filehandler',
                                filetype=ctype,
                                blocksize=blocksize,
                                delimiter=delimiter,
-                               offset_header=offset_header)
+                               linesep=linesep,
+                               header_offset=header_offset,
+                               schema=schema)
 
 
 class MenuFactory():
