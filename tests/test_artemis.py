@@ -115,7 +115,8 @@ class ArtemisTestCase(unittest.TestCase):
                                   nbatches=10,
                                   num_cols=20,
                                   num_rows=10000,
-                                  delimiter='\r\n',
+                                  linesep='\r\n',
+                                  delimiter=",",
                                   max_buffer_size=10485760,
                                   max_malloc=2147483648,
                                   write_csv=True,
@@ -154,7 +155,8 @@ class ArtemisTestCase(unittest.TestCase):
             filetool = FileHandlerTool('filehandler',
                                        blocksize=2**16,
                                        skip_header=True,
-                                       delimiter='\r\n',
+                                       linesep='\r\n',
+                                       delimiter=",",
                                        loglevel='INFO')
             filetoolcfg = filetool.to_msg()
             
