@@ -12,13 +12,13 @@
 """
 import unittest
 import logging
-import csv
 import io
 from ast import literal_eval
 import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions
 
 from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow
+from artemis.generators.legacygen import GenMF
 from artemis.io.filehandler import FileHandlerTool
 logging.getLogger().setLevel(logging.INFO)
 
@@ -34,18 +34,6 @@ class ReaderTestCase(unittest.TestCase):
 
     def tearDown(self):
         pass
-    
-    def test_header(self):
-        generator = GenCsvLikeArrow('test')
-        data, names, batch = generator.make_random_csv()
-        
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-
-        header, meta, offset = self._handler.prepare(file_)
-
-        assert meta == names
      
     def test_read_block(self):
         delimiter = b'\n'
@@ -101,10 +89,11 @@ class ReaderTestCase(unittest.TestCase):
         length = len(data)
         
         # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
+        #buf = io.BytesIO(data)
+        buf = pa.py_buffer(data)
+        #file_ = pa.PythonFile(buf, mode='r')
         
-        header, meta, off_head = self._handler.prepare(file_)
+        self._handler.execute(buf)
         
         print("Generated buffer is %s bytes" % length)
         # IO Buffer bytestream
@@ -113,7 +102,7 @@ class ReaderTestCase(unittest.TestCase):
         
         blocksum = 0
 
-        blocks = self._handler.execute(file_) 
+        blocks = self._handler.blocks
         for blk in blocks:
             blocksum += blk[1]
         try:
@@ -124,79 +113,89 @@ class ReaderTestCase(unittest.TestCase):
         # print(offsets)
         # print(lengths)
     
-    def test_readinto(self):
-        generator = GenCsvLikeArrow('test')
-        data, names, batch = generator.make_random_csv()
-        
-        length = len(data)
-        
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-        
-        header, meta, off_head = self._handler.prepare(file_)
-        
-        print("Generated buffer is %s bytes" % length)
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-
-        blocks = self._handler.execute(file_)
-        chunks = [bytearray(block[1]) for block in blocks]
-        for i, block in enumerate(blocks):
-            self._handler.readinto_block(file_, chunks[i], block[0])
-            print(chunks[i].decode())
-        print(blocks) 
-        #print(offsets)
-        #print(lengths)
-    
-    def test_readinto_large(self):
+    def test_execute_csv(self):
         generator = GenCsvLikeArrow('test',
                                     nbatches=1, 
-                                    num_cols=20, 
-                                    num_rows=10000)
+                                    num_cols=10, 
+                                    num_rows=100)
         data, names, batch = generator.make_random_csv()
-        
+        handler = FileHandlerTool('tool', linesep='\r\n', blocksize=100 )
+        handler.initialize()
         length = len(data)
-        print("Generated large file %i" % length)
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-        
-        header, meta, off_head = self._handler.prepare(file_)
-        
-        print("Generated buffer is %s bytes" % length)
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
+        buf = pa.py_buffer(data)
+        print(buf.size, pa.total_allocated_bytes())
+        reader = handler.execute(buf)
+        print(type(reader))
+        print(pa.total_allocated_bytes())
+        for batch in reader.sampler():
+            print(batch.to_pybytes())
+        for batch in reader:
+            print(batch.to_pybytes())
 
-        # offsets, lengths = self._handler.get_blocks(file_, 6, b'\r\n', off_head)
-        blocks = self._handler.execute(file_) 
-        chunks = [bytearray(block[1]) for block in blocks]
-        for i, block in enumerate(blocks):
-            self._handler.readinto_block(file_, chunks[i], block[0])
-            #print(chunks[i].decode())
-        print(blocks)
-        print(chunks[-1])
-        print("Test last chunk read")
-        with io.BytesIO(chunks[-1]) as raw:
-            with io.TextIOWrapper(raw) as file_:
-                print(file_.read())
-        
-        print("Read all chunks")
-        for chunk in chunks:
-            with io.BytesIO(chunk) as raw:
-                with io.TextIOWrapper(raw) as file_:
-                    reader = csv.reader(file_)
-                    try:
-                        for row in reader:
-                            pass
-                    except Exception:
-                        print('problem at last chunk')
-                        print(chunk)
-        print('Completed reading large chunks')
-        #print(offsets)
-        #print(lengths)
+    
+    def test_execute_legacy(self):
+
+        intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
+        intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+        strconf0 = {'utype': 'str', 'length': 4}
+        # Schema definition.
+        # Size of chunk to create.
+        # Create a generator objected, properly configured.
+        generator = GenMF('generator',
+                          column_a=intconf0,
+                          column_b=intuconf0,
+                          column_c=strconf0,
+                          num_rows=1000, 
+                          nbatches=1,
+                          loglevel='INFO')
+        data = next(generator.generate())
+        handler = FileHandlerTool('tool', 
+                                  filetype='legacy', 
+                                  blocksize=20*100,
+                                  encoding='cp500',
+                                  schema=['column_a', 'column_b', 'column_c'])
+        handler.initialize()
+        length = len(data)
+        buf = pa.py_buffer(data)
+        print(buf.size, pa.total_allocated_bytes())
+        reader = handler.execute(buf)
+
+    def test_prepare_csv(self):
+        generator = GenCsvLikeArrow('test',
+                                    nbatches=1, 
+                                    num_cols=10, 
+                                    num_rows=100)
+        data, names, batch = generator.make_random_csv()
+        buf = pa.py_buffer(data)
+        handler = FileHandlerTool('tool', linesep='\r\n', blocksize=100)
+        stream = pa.input_stream(buf)
+        handler.prepare_csv(stream)
+        assert len(handler.schema) == 10
+    
+    def test_prepare_legacy(self):
+
+        intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
+        intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+        strconf0 = {'utype': 'str', 'length': 4}
+        # Schema definition.
+        # Size of chunk to create.
+        # Create a generator objected, properly configured.
+        generator = GenMF('generator',
+                          column_a=intconf0,
+                          column_b=intuconf0,
+                          column_c=strconf0,
+                          num_rows=1000, 
+                          nbatches=1,
+                          loglevel='INFO')
+        data = next(generator.generate())
+        buf = pa.py_buffer(data)
+        handler = FileHandlerTool('tool', 
+                                  filetype='legacy', 
+                                  blocksize=20*100,
+                                  encoding='cp500',
+                                  schema=['column_a', 'column_b', 'column_c'])
+        stream = pa.input_stream(buf) 
+        handler.prepare_legacy(stream)
 
 
 if __name__ == '__main__':

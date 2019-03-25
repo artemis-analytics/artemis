@@ -24,7 +24,8 @@ class CsvGenOptions:
     nbatches = 10
     num_cols = 20
     num_rows = 10000
-    delimiter = '\r\n'
+    linesep = '\r\n'
+    delimiter = ","
     blocksize = 2**16
 
 

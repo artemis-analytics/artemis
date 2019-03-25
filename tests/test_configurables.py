@@ -60,7 +60,8 @@ class ConfigurableTestCase(unittest.TestCase):
                                       nbatches=10,
                                       num_cols=20,
                                       num_rows=10000,
-                                      delimiter='\r\n',
+                                      linesep='\r\n',
+                                      delimiter=',',
                                       max_file_size=10485760,
                                       write_csv=True,
                                       output_repo=dirpath

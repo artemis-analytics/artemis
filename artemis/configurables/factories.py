@@ -47,22 +47,18 @@ class FileHandlerFactory():
     def __new__(cls,
                 ctype,
                 blocksize=2**16,
-                delimiter='\r\n',
-                offset_header=None):
+                delimiter=',',
+                linesep='\r\n',
+                header_offset=0,
+                schema=[]):
 
-        if ctype == 'csv':
-            return FileHandlerTool('filehandler',
-                                   blocksize=blocksize,
-                                   skip_header=True,
-                                   delimiter=delimiter)
-        elif ctype == 'legacy':
-            return FileHandlerTool('filehandler',
-                                   blocksize=blocksize,
-                                   skip_header=True,
-                                   legacy_data=True,
-                                   offset_header=offset_header)
-        else:
-            raise ValueError
+        return FileHandlerTool('filehandler',
+                               filetype=ctype,
+                               blocksize=blocksize,
+                               delimiter=delimiter,
+                               linesep=linesep,
+                               header_offset=header_offset,
+                               schema=schema)
 
 
 class MenuFactory():
