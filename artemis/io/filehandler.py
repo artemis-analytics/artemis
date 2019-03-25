@@ -277,6 +277,7 @@ class FileHandlerTool(ToolBase):
             self.exec_dict[self.filetype](stream)
         except Exception:
             self.__logger.error("Failed execute")
+            raise
 
         stream.close()
 
