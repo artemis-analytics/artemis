@@ -39,7 +39,6 @@ from artemis.core.tool import ToolStore
 
 # IO
 from artemis.core.physt_wrapper import Physt_Wrapper
-from artemis.io.filehandler import FileFactory
 
 # Protobuf
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
@@ -210,7 +209,6 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        
 
         try:
             self._rebook()
@@ -219,7 +217,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        
+
         try:
             self._init_buffers()
         except Exception as e:
@@ -227,7 +225,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        
+
         # Clear all memory and raw data
         try:
             Tree().flush()
@@ -237,7 +235,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        
+
         self.__logger.info("artemis: sampleing complete malloc %i",
                            pa.total_allocated_bytes())
         try:
@@ -247,7 +245,7 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        
+
         try:
             self._finalize()
         except Exception as e:
@@ -338,8 +336,6 @@ class Artemis():
         for toolcfg in self._jp.meta.config.tools:
             self.__logger.info("Add Tool %s", toolcfg.name)
             self.__tools.add(self.__logger, toolcfg)
-            if toolcfg.name == 'filehandler':
-                self.__tools.get('filehandler').initialize()
 
     def _gen_config(self):
         self.__logger.info('Loading generator from protomsg')
@@ -386,6 +382,13 @@ class Artemis():
         except Exception:
             self.__logger.error('Cannot initialize Steering')
             raise
+        for toolcfg in self._jp.meta.config.tools:
+            if toolcfg.name == "bufferwriter":
+                continue
+            try:
+                self.__tools.get(toolcfg.name).initialize()
+            except Exception:
+                self.__logger.error("Cannot initialize %s", toolcfg.name)
 
     def _book(self):
         self.__logger.info("{}: Book".format('artemis'))
@@ -675,10 +678,9 @@ class Artemis():
                                 type(self.generator))
             raise TypeError
 
-
         # Return the raw bytes
         return raw
-    
+
     def _prepare(self):
         '''
         Requests the input data from the data handler
@@ -699,7 +701,7 @@ class Artemis():
         except Exception:
             self.__logger.error("Failed to prepare file")
             raise
-        
+
         # Add fileinfo to message
         # TODO
         # Create file UUID, check UUID when creating block info???
@@ -716,7 +718,7 @@ class Artemis():
         self.__logger.info("Payload size %i", _rinfo.size_bytes)
         # Update datum input count
         self._jp.meta.summary.processed_ndatums += 1
-           
+
         _finfo.schema.size_bytes = handler.header_offset
         _finfo.schema.header = handler.header
         self.__logger.info("Updating meta data from handler")
@@ -725,7 +727,7 @@ class Artemis():
             for col in handler.schema:
                 a_col = _finfo.schema.columns.add()
                 a_col.name = col
-        
+
         for i, block in enumerate(handler.blocks):
             msg = _finfo.blocks.add()
             msg.range.offset_bytes = block[0]
@@ -736,7 +738,7 @@ class Artemis():
     def _execute_sampler(self):
         '''
         Random chunk sampling processing
-        ''' 
+        '''
 
         for batch in self.reader.sampler():
             self.steer.execute(batch)
@@ -753,20 +755,17 @@ class Artemis():
                 self.steer.execute(batch)
             except Exception:
                 raise
-            _finfo.processed.size_bytes += batch.size 
-            self._jp.meta.summary.processed_bytes += batch.size 
+            _finfo.processed.size_bytes += batch.size
+            self._jp.meta.summary.processed_bytes += batch.size
             self._check_malloc()
-        
+
         self.__logger.info('Processed %i' %
                            self._jp.meta.summary.processed_bytes)
-        
+
         # Need to account for header in batch size
         # if _finfo.processed.size_bytes != _finfo.raw.size_bytes:
         #     self.__logger.error("Processing payload not complete")
         #    raise IOError
-
-
-
 
     def _finalize_jobstate(self, state):
         self._update_state(state)

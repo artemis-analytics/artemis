@@ -115,7 +115,7 @@ class CsvReader(BaseReader):
 
 @Logger.logged
 class LegacyReader(BaseReader):
-    
+
     def __init__(self,
                  filepath_or_buffer,
                  header,

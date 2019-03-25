@@ -184,7 +184,9 @@ class FileHandlerTool(ToolBase):
             raise
 
         try:
-            self.validate(header, self.header_offset, None)
+            # No validation of header_offset or schema
+            # User defined
+            self.validate(header, self.header_offset, self.schema)
         except ValueError:
             self.__logger.error("Legacy header not valid")
             raise
@@ -209,15 +211,10 @@ class FileHandlerTool(ToolBase):
         stream.seek(0, 2)
         self.size = stream.tell()
         stream.seek(self.header_offset)
-        self.__logger.info("Stream info header: %s Offset: %s Schema: %s Size: %i",
-                           self.header,
-                           self.header_offset,
-                           self.schema,
-                           self.size)
 
     def execute(self, filepath_or_buffer):
 
-        self.__logger.info("Prepare csv file")
+        self.__logger.info("Prepare input stream")
         stream = pa.input_stream(filepath_or_buffer)
 
         try:
@@ -248,8 +245,11 @@ class FileHandlerTool(ToolBase):
             self.__logger.info("Final block w/o footer %s", self.blocks[-1])
 
         self.__logger.info("Create Reader n samples %i", self.nsamples)
-        self.__logger.info("header %s", self.header)
+        self.__logger.info("Header %s", self.header)
+        self.__logger.info("Offset %s", self.header_offset)
         self.__logger.info("Schema %s", self.schema)
+        self.__logger.info("File size %s", self.size)
+
         return ReaderFactory(self.filetype, filepath_or_buffer,
                              self.header,
                              self.header_offset,

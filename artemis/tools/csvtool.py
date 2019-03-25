@@ -10,7 +10,6 @@
 """
 
 """
-import pyarrow as pa
 from pyarrow.csv import read_csv, ReadOptions, ParseOptions
 
 from artemis.decorators import iterable
@@ -64,14 +63,12 @@ class CsvTool(ToolBase):
 
         Parameters
         ----------
-        buf: bytearray object containing raw bytes from csv file
+        block: pa.py_buffer
 
         Returns
         ---------
         pyarrow RecordBatch
         '''
-        # create pyarrow buffer from raw bytes
-        #buf_ = pa.py_buffer(block)
         try:
             table = read_csv(block,
                              read_options=self._readopts,
