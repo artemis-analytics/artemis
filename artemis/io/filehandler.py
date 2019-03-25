@@ -73,16 +73,32 @@ class FileHandlerTool(ToolBase):
         else:
             self._builtin_generator = BuiltinsGenerator()
         #
-        self.blocks = []  # list of tuples (offset, length)
         self.size = None
+        self.blocks = []
         self._cache_header = None
         self._cache_schema = None
         self._cache_header_offset = None
+
+        # Supported types
+        self.prepare_dict = {}
+        self.prepare_dict['csv'] = self.prepare_csv
+        self.prepare_dict['legacy'] = self.prepare_legacy
+        self.prepare_dict['sas'] = self.prepare_sas
+        self.prepare_dict['ipc'] = self.prepare_ipc
+
+        self.exec_dict = {}
+        self.exec_dict['csv'] = self.exec_csv
+        self.exec_dict['legacy'] = self.exec_legacy
+        self.exec_dict['sas'] = self.exec_sas
+        self.exec_dict['ipc'] = self.exec_ipc
 
     def initialize(self):
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
+        if self.filetype not in self.prepare_dict.keys():
+            self.__logger.error("Unknown filetype %s", self.filetype)
+            raise ValueError
 
     def cache_header(self, header):
         if self._cache_header is None:
@@ -165,6 +181,10 @@ class FileHandlerTool(ToolBase):
             self.__logger.error("Cannot validate file")
             raise
 
+        stream.seek(0, 2)
+        self.size = stream.tell()
+        stream.seek(self.header_offset)
+
         self.__logger.info("Stream info header: %s Offset: %s Schema: %s",
                            self.header,
                            self.header_offset,
@@ -191,38 +211,41 @@ class FileHandlerTool(ToolBase):
             self.__logger.error("Legacy header not valid")
             raise
 
-    def prepare(self, stream):
-        if stream.tell() != 0:
-            stream.seek(0)
-        if self.filetype == 'csv':
-            try:
-                self.prepare_csv(stream)
-            except Exception:
-                raise
-        elif self.filetype == 'legacy':
-            try:
-                self.prepare_legacy(stream)
-            except Exception:
-                raise
-        else:
-            self.__logger.error("Unknown filetype")
-            raise TypeError
-
         stream.seek(0, 2)
         self.size = stream.tell()
         stream.seek(self.header_offset)
 
-    def execute(self, filepath_or_buffer):
+    def prepare_sas(self, stream):
+        pass
 
-        self.__logger.info("Prepare input stream")
-        stream = pa.input_stream(filepath_or_buffer)
+    def prepare_ipc(self, stream):
+        pass
 
+    def exec_csv(self, stream):
         try:
-            self.prepare(stream)
+            self.exec_blocks(stream)
         except Exception:
-            self.__logger.error("Failed file prep")
+            self.__logger.error("Cannot process chunks")
             raise
 
+    def exec_legacy(self, stream):
+        try:
+            self.exec_blocks(stream)
+        except Exception:
+            self.__logger.error("Cannot process chunks")
+            raise
+
+        self.blocks[-1] = (self.blocks[-1][0],
+                           self.blocks[-1][1] - self.header_offset)
+        self.__logger.info("Final block w/o footer %s", self.blocks[-1])
+
+    def exec_sas(self, stream):
+        pass
+
+    def exec_ipc(self, stream):
+        pass
+
+    def exec_blocks(self, stream):
         pos = stream.tell()
         self.blocks = []
         linesep = bytes(self.linesep, self.encoding)
@@ -237,12 +260,25 @@ class FileHandlerTool(ToolBase):
                                                linesep))
             pos = stream.tell()
 
-        stream.close()
+    def execute(self, filepath_or_buffer):
 
-        if self.filetype == 'legacy':
-            self.blocks[-1] = (self.blocks[-1][0],
-                               self.blocks[-1][1] - self.header_offset)
-            self.__logger.info("Final block w/o footer %s", self.blocks[-1])
+        self.__logger.info("Prepare input stream")
+        stream = pa.input_stream(filepath_or_buffer)
+
+        if stream.tell() != 0:
+            stream.seek(0)
+
+        try:
+            self.prepare_dict[self.filetype](stream)
+        except Exception:
+            raise
+
+        try:
+            self.exec_dict[self.filetype](stream)
+        except Exception:
+            self.__logger.error("Failed execute")
+
+        stream.close()
 
         self.__logger.info("Create Reader n samples %i", self.nsamples)
         self.__logger.info("Header %s", self.header)
