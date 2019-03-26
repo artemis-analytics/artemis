@@ -10,7 +10,7 @@
 """
 
 """
-from pyarrow.csv import read_csv, ReadOptions, ParseOptions
+from pyarrow.csv import read_csv, ReadOptions, ParseOptions, ConvertOptions
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
@@ -20,7 +20,6 @@ from artemis.core.tool import ToolBase
 class CsvToolOptions:
 
     # Add user-defined options for Artemis.CsvTool
-    dummy = 'brain'
     pass
 
 
@@ -33,15 +32,17 @@ class CsvTool(ToolBase):
         # Create a final dictionary to store all properties
         ropts = self._get_opts(ReadOptions(), **kwargs)
         popts = self._get_opts(ParseOptions(), **kwargs)
-        options = {**ropts, **popts, **dict(CsvToolOptions())}
+        copts = self._get_opts(ConvertOptions(), **kwargs)
+        options = {**ropts, **popts, **copts, **dict(CsvToolOptions())}
         options.update(kwargs)
 
         super().__init__(name, **options)
         self.__logger.info(options)
         self._readopts = ReadOptions(**ropts)
         self._parseopts = ParseOptions(**popts)
-        self._convertopts = None  # Coming in 0.12
-        self.__logger.info('%s: __init__ CsvTool' % self.name)
+        self._convertopts = ConvertOptions(**copts)
+        self.__logger.info('%s: __init__ CsvTool', self.name)
+        self.__logger.info("Options %s", options)
 
     def _get_opts(self, cls, **kwargs):
         options = {}
@@ -72,7 +73,8 @@ class CsvTool(ToolBase):
         try:
             table = read_csv(block,
                              read_options=self._readopts,
-                             parse_options=self._parseopts)
+                             parse_options=self._parseopts,
+                             convert_options=self._convertopts)
         except Exception:
             self.__logger.error("Problem converting csv to table")
             raise
