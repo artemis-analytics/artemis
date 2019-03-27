@@ -17,7 +17,6 @@ owns the stores needed by the user algorithms
 # Python libraries
 import sys
 import os
-import pathlib
 import traceback
 
 # Externals
@@ -275,23 +274,6 @@ class Artemis():
 
     def _update_state(self, state):
         self._jp.meta.state = state
-
-    def _get_raw_size(self, raw):
-        '''
-        Given raw data payload
-        determine size
-        Supports
-        bytes (when running simulation)
-        pathlib.PosixPath (when obtaining files from FileGenerator)
-        '''
-        if isinstance(raw, bytes):
-            return len(raw)
-        if isinstance(raw, pa.lib.Buffer):
-            return raw.size
-        elif isinstance(raw, pathlib.PosixPath):
-            return os.path.getsize(raw)
-        else:
-            raise TypeError
 
     def _launch(self):
         self.logger.info('Artemis is ready')
@@ -647,13 +629,9 @@ class Artemis():
         _finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
 
         # Update the raw metadata
-        _rinfo = _finfo.raw
-        try:
-            _rinfo.size_bytes = self._get_raw_size(self.datum)
-        except TypeError:
-            self.__logger.warning("Cannot determine type from raw datum")
-            _rinfo.size_bytes = 0
-        self.__logger.info("Payload size %i", _rinfo.size_bytes)
+        _finfo.raw.size_bytes = handler.size_bytes
+        self.__logger.info("Payload size %i", _finfo.raw.size_bytes)
+
         # Update datum input count
         self._jp.meta.summary.processed_ndatums += 1
 

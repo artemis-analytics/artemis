@@ -73,7 +73,7 @@ class FileHandlerTool(ToolBase):
         else:
             self._builtin_generator = BuiltinsGenerator()
         #
-        self.size = None
+        self._size = None
         self.blocks = []
         self._cache_header = None
         self._cache_schema = None
@@ -99,6 +99,10 @@ class FileHandlerTool(ToolBase):
         if self.filetype not in self.prepare_dict.keys():
             self.__logger.error("Unknown filetype %s", self.filetype)
             raise ValueError
+
+    @property
+    def size_bytes(self):
+        return self._size
 
     def cache_header(self, header):
         if self._cache_header is None:
@@ -182,7 +186,7 @@ class FileHandlerTool(ToolBase):
             raise
 
         stream.seek(0, 2)
-        self.size = stream.tell()
+        self._size = stream.tell()
         stream.seek(self.header_offset)
 
         self.__logger.info("Stream info header: %s Offset: %s Schema: %s",
@@ -212,7 +216,7 @@ class FileHandlerTool(ToolBase):
             raise
 
         stream.seek(0, 2)
-        self.size = stream.tell()
+        self._size = stream.tell()
         stream.seek(self.header_offset)
 
     def prepare_sas(self, stream):
@@ -249,14 +253,14 @@ class FileHandlerTool(ToolBase):
         pos = stream.tell()
         self.blocks = []
         linesep = bytes(self.linesep, self.encoding)
-        while stream.tell() < self.size:
+        while stream.tell() < self._size:
 
             self.__logger.debug("Current position %i size %i filesize %i",
-                                pos, self.blocksize, self.size)
+                                pos, self.blocksize, self._size)
             self.blocks.append(self._get_block(stream,
                                                pos,
                                                self.blocksize,
-                                               self.size,
+                                               self._size,
                                                linesep))
             pos = stream.tell()
 
@@ -285,7 +289,7 @@ class FileHandlerTool(ToolBase):
         self.__logger.info("Header %s", self.header)
         self.__logger.info("Offset %s", self.header_offset)
         self.__logger.info("Schema %s", self.schema)
-        self.__logger.info("File size %s", self.size)
+        self.__logger.info("File size %s", self._size)
 
         return ReaderFactory(self.filetype, filepath_or_buffer,
                              self.header,
