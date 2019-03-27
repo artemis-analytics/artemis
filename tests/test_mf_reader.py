@@ -74,15 +74,15 @@ def get_legacy_record_layout():
               'column_ax': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
               'column_ay': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
               'column_az': {'utype': 'str', 'length': 10},  # date
-              'column_ba': {'utype': 'str', 'length': 30}, 
-              'column_bb': {'utype': 'str', 'length': 30}, 
-              'column_bc': {'utype': 'str', 'length': 30}, 
-              'column_bd': {'utype': 'str', 'length': 30}, 
+              'column_ba': {'utype': 'str', 'length': 30},
+              'column_bb': {'utype': 'str', 'length': 30},
+              'column_bc': {'utype': 'str', 'length': 30},
+              'column_bd': {'utype': 'str', 'length': 30},
               'column_be': {'utype': 'str', 'length': 30},
-              'column_bf': {'utype': 'str', 'length': 27}, 
-              'column_bg': {'utype': 'str', 'length': 2},  
-              'column_bh': {'utype': 'str', 'length': 2},  
-              'column_bi': {'utype': 'str', 'length': 9},  
+              'column_bf': {'utype': 'str', 'length': 27},
+              'column_bg': {'utype': 'str', 'length': 2},
+              'column_bh': {'utype': 'str', 'length': 2},
+              'column_bi': {'utype': 'str', 'length': 9},
               'column_bj': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
               'column_bk': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
               'column_bl': {'utype': 'uint', 'length': 1, 'min_val': 0, 'max_val': 1},
@@ -117,6 +117,7 @@ def get_legacy_record_layout():
               'column_cp': {'utype': 'str', 'length': 8}} # Empty column padding 8 bytes
     return fields
 
+
 class Test_MF_Reader(unittest.TestCase):
 
     def setUp(self):
@@ -131,27 +132,27 @@ class Test_MF_Reader(unittest.TestCase):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-    
+
     def test_mf_reader(self):
         '''
         This test simply tests the reader function of the code.
         '''
 
         # Field definitions.
-        intconf0 = {'utype':'int', 'length':10}
-        intconf1 = {'utype':'uint', 'length':6}
-        strconf0 = {'utype':'str', 'length':4}
+        intconf0 = {'utype': 'int', 'length': 10}
+        intconf1 = {'utype': 'uint', 'length': 6}
+        strconf0 = {'utype': 'str', 'length': 4}
         # Schema definition for all fields.
         schema = [intconf0, strconf0, intconf1]
         # Test data block.
         block = "012345678AABCD012345012345678BABCD012345"\
-                 + "012345678CABC 012345012345678DABCD012345"\
-                 + "012345678EABCD012345012345678FABCD012345"\
-                 + "012345678AABC 012345012345678BABCD012345"\
-                 + "012345678CABCD012345012345678DABCD012345"\
-                 + "012345678EABC 012345012345678FABCD012345"\
-                 + "012345678AABCD012345012345678BABCD012345"\
-                 + "012345678CABC 012345"
+                + "012345678CABC 012345012345678DABCD012345"\
+                + "012345678EABCD012345012345678FABCD012345"\
+                + "012345678AABC 012345012345678BABCD012345"\
+                + "012345678CABCD012345012345678DABCD012345"\
+                + "012345678EABC 012345012345678FABCD012345"\
+                + "012345678AABCD012345012345678BABCD012345"\
+                + "012345678CABC 012345"
         # Show block in unencoded format.
         print('Block: ')
         print(block)
@@ -179,32 +180,35 @@ class Test_MF_Reader(unittest.TestCase):
         # Size of chunk to create.
         size = 10
         # Create a generator objected, properly configured.
-        my_gen = GenMF('test', ds_schema=schema, num_rows=size, loglevel='INFO')
+        my_gen = GenMF('test',
+                       ds_schema=schema, num_rows=size, loglevel='INFO')
         # Create a data chunk.
         chunk = my_gen.gen_chunk()
         # Create MfTool object, properly configured.
         my_read = MfTool('reader', ds_schema=schema)
         # Read generated data chunk.
         batch = my_read.execute(chunk)
-        print("Batch columns %i, rows %i" % (batch.num_columns, batch.num_rows))
+        print("Batch columns %i, rows %i" %
+              (batch.num_columns, batch.num_rows))
         print(batch.schema)
-    
+
     def test_mfartemis(self):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        
-        
+
         with tempfile.TemporaryDirectory() as dirpath:
             mb = MenuFactory('legacygen')
             msgmenu = mb.build()
-            intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
-            intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+            intconf0 = {'utype': 'int',
+                        'length': 10, 'min_val': 0, 'max_val': 10}
+            intuconf0 = {'utype': 'uint',
+                         'length': 6, 'min_val': 0, 'max_val': 10}
             strconf0 = {'utype': 'str', 'length': 4}
             # Schema definition.
             # Size of chunk to create.
             # Create a generator objected, properly configured.
-            
+
             config = JobConfigFactory('legacygen', msgmenu,
                                       generator_type='legacy',
                                       nbatches=1,
@@ -221,9 +225,9 @@ class Test_MF_Reader(unittest.TestCase):
                              column_c=strconf0)
 
             msg = config.job_config  # Or retrieve from a DB
-           
+
             #  For each subjob, requires a new JobInfo
-            #  Driver application would generate a new JobInfo object per input datum
+            #  Driver application generates new JobInfo object per input datum
             #  All input metadata resides in memory
             #  Define menu and config
             #  Retrieve menu and config from either existing message or from DB
@@ -239,25 +243,26 @@ class Test_MF_Reader(unittest.TestCase):
             job.job_id = 'example'
             job.output.repo = dirpath
             job.config.CopyFrom(msg)
-            #job.job_id = str(uuid.uuid4())
+
             print(job)
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
-    
+
     def test_mfartemisio(self):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        prtcfg = ''
         mb = MenuFactory('legacygen')
         with tempfile.TemporaryDirectory() as dirpath:
             try:
                 msgmenu = mb.build()
             except Exception:
                 raise
-            
-            intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
-            intuconf0 = {'utype': 'uint', 'length': 6, 'min_val': 0, 'max_val': 10}
+
+            intconf0 = {'utype': 'int',
+                        'length': 10, 'min_val': 0, 'max_val': 10}
+            intuconf0 = {'utype': 'uint',
+                         'length': 6, 'min_val': 0, 'max_val': 10}
             strconf0 = {'utype': 'str', 'length': 4}
             # Schema definition.
             # Size of chunk to create.
@@ -266,7 +271,11 @@ class Test_MF_Reader(unittest.TestCase):
                               column_a=intconf0,
                               column_b=intuconf0,
                               column_c=strconf0,
-                              num_rows=10000, 
+                              header='header',
+                              header_offset=20,
+                              footer='footer',
+                              footer_size=20,
+                              num_rows=10000,
                               nbatches=1,
                               suffix='.txt',
                               prefix='testio',
@@ -298,18 +307,23 @@ class Test_MF_Reader(unittest.TestCase):
             job.job_id = 'example'
             job.output.repo = dirpath
             job.config.CopyFrom(msg)
-            #job.job_id = str(uuid.uuid4())
-            print(job)
+
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
-    
+            
+            nrecords = 0
+            for table in bow._jp.meta.summary.tables:
+                nrecords += table.num_rows
+
+            assert(nrecords == 10000)
+
     def test_legacyds(self):
-        
+
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
         mb = MenuFactory('legacygen')
-        
+
         try:
             msgmenu = mb.build()
         except Exception:
@@ -353,8 +367,6 @@ class Test_MF_Reader(unittest.TestCase):
             atom.repo = dirpath
             atom.glob = 'legacyio*.txt'
             job.config.CopyFrom(msg)
-            #job.job_id = str(uuid.uuid4())
-            print(job)
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
 

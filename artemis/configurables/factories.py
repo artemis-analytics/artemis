@@ -50,6 +50,7 @@ class FileHandlerFactory():
                 delimiter=',',
                 linesep='\r\n',
                 header_offset=0,
+                footer_size=0,
                 schema=[]):
 
         return FileHandlerTool('filehandler',
@@ -58,6 +59,7 @@ class FileHandlerFactory():
                                delimiter=delimiter,
                                linesep=linesep,
                                header_offset=header_offset,
+                               footer_size=footer_size,
                                schema=schema)
 
 
