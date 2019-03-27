@@ -33,7 +33,7 @@ class FileHandlerOptions:
     linesep = '\r\n'
     header_offset = 0
     header = ''
-    footer_offset = 0
+    footer_size = 0
     footer = ''
     seed = 42
     nsamples = 1
@@ -58,7 +58,7 @@ class FileHandlerTool(ToolBase):
         self.footer = bytes(self.properties.header, self.encoding)
 
         self.header_offset = self.properties.header_offset
-        self.footer_offset = self.properties.footer_offset
+        self.footer_size = self.properties.footer_size
         self.schema = self.properties.schema
         self.header_rows = self.properties.header_rows
 
@@ -236,7 +236,7 @@ class FileHandlerTool(ToolBase):
             raise
 
         self.blocks[-1] = (self.blocks[-1][0],
-                           self.blocks[-1][1] - self.header_offset)
+                           self.blocks[-1][1] - self.footer_size)
         self.__logger.info("Final block w/o footer %s", self.blocks[-1])
 
     def exec_sas(self, stream):

@@ -33,6 +33,10 @@ class GenMFOptions:
                 '3': 'L', '4': 'M',
                 '5': 'N', '6': 'O', '7': 'P',
                 '8': 'Q', '9': 'R'}
+    header = ''
+    header_offset = 0
+    footer = ''
+    footer_size = 0
 
 
 class GenMF(GeneratorBase):
@@ -66,6 +70,12 @@ class GenMF(GeneratorBase):
         # Specific characters used for encoding signed integers.
         self.pos_char = self.properties.pos_char
         self.neg_char = self.properties.neg_char
+
+        # Meta data
+        self.header = self.properties.header
+        self.header_offset = self.properties.header_offset
+        self.footer = self.properties.footer
+        self.footer_size = self.properties.footer_size
 
     def gen_column(self, dataset, size):
         '''
@@ -124,11 +134,25 @@ class GenMF(GeneratorBase):
         self.__logger.debug(rand_col)
         return rand_col
 
+    def pad_header(self):
+        len_pad = self.header_offset - len(self.header)
+        pad_type = ' '
+        return self.header + (pad_type * len_pad)
+
+    def pad_footer(self):
+        len_pad = self.footer_size - len(self.footer)
+        pad_type = ' '
+        return self.footer + (pad_type * len_pad)
+
     def gen_chunk(self):
         '''
         Generates a chunk of data as per configured instance.
         '''
-        chunk = ''
+
+        header = self.pad_header()
+        footer = self.pad_footer()
+
+        chunk = header
         cols = []
 
         # Creates a column of data for each field.
@@ -142,6 +166,8 @@ class GenMF(GeneratorBase):
             for column in cols:
                 chunk = chunk + column[i]
             i = i + 1
+
+        chunk = chunk + footer
 
         self.__logger.debug('Chunk: %s', chunk)
         # Encode data chunk in cp500.

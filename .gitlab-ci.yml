@@ -148,7 +148,7 @@ validate:
     variables:
         DOCKER_DRIVER: overlay2
     script:
-        - diff test.log valid.log
+        - diff valid.log test.log
     allow_failure: true
     only:
         - branches

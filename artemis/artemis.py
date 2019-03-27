@@ -895,9 +895,8 @@ class Artemis():
         self.__logger.info("=================================")
         self.__logger.info("Job %s", self._jp.meta.name)
         self.__logger.info("Job id %s", self._jp.meta.job_id)
-        self.__logger.info("Total job time %s",
-                           text_format.MessageToString(
-                                self._jp.meta.summary.job_time))
+        self.__logger.info("Total job time %i seconds",
+                           self._jp.meta.summary.job_time.seconds)
         self.__logger.info("Processed file summary")
         for f in self._jp.meta.data:
             self.__logger.info(text_format.MessageToString(f))

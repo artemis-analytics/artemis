@@ -54,6 +54,7 @@ class LegacyGenConfig(Configurable):
         self._config_filehandler(blocksize=blocksize,
                                  delimiter=self.delimiter,
                                  header_offset=rsize,
+                                 footer_size=rsize,
                                  schema=schema)
 
         # Ensure block_size for arrow parser greater than
@@ -104,6 +105,7 @@ class LegacyIOConfig(Configurable):
         self._config_filehandler(blocksize=blocksize,
                                  delimiter=self.delimiter,
                                  header_offset=rsize,
+                                 footer_size=rsize,
                                  schema=schema)
 
         # Ensure block_size for arrow parser greater than
