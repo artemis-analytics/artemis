@@ -137,6 +137,7 @@ class GenCsvLike:
 @iterable
 class GenCsvLikeArrowOptions:
     nbatches = 1
+    nsamples = 1
     num_cols = 2
     num_rows = 10
     linesep = u'\r\n'
@@ -167,12 +168,12 @@ class GenCsvLikeArrow(GeneratorBase):
 
         super().__init__(name, **options)
 
-        self._nbatches = self.properties.nbatches
         self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
         self.linesep = self.properties.linesep
         self.seed = self.properties.seed
         self.header = self.properties.header
+        self.nsamples = self.properties.nsamples
 
         # Build the random columns names once
         self.col_names = list(itertools.islice(self.generate_col_names(),
@@ -274,6 +275,26 @@ class GenCsvLikeArrow(GeneratorBase):
             yield data, batch
             self._nbatches -= 1
             self.__logger.debug("Batch %i", self._nbatches)
+
+    def sampler(self):
+        while self.nsamples > 0:
+            self.__logger.info("%s: Generating datum " %
+                               (self.__class__.__name__))
+            data, col_names, batch = self.make_mixed_random_csv()
+            self.__logger.debug('%s: type data: %s' %
+                                (self.__class__.__name__, type(data)))
+            yield data
+            self.nsamples -= 1
+            self.__logger.debug("Batch %i", self.nsamples)
+
+    def __next__(self):
+        next(self._batch_iter)
+        self.__logger.info("%s: Generating datum " %
+                           (self.__class__.__name__))
+        data, col_names, batch = self.make_mixed_random_csv()
+        self.__logger.debug('%s: type data: %s' %
+                            (self.__class__.__name__, type(data)))
+        return data
 
     def write(self):
         self.__logger.info("Batch %i", self._nbatches)

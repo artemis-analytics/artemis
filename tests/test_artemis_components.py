@@ -108,8 +108,8 @@ class ArtemisTestCase(unittest.TestCase):
             bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
-            bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
             print('Initializing')
+            bow._configure()
             bow._initialize()
 
     def test_book(self):
@@ -147,7 +147,7 @@ class ArtemisTestCase(unittest.TestCase):
             bow.hbook.book('artemis', 'time.execute', range(10))
             bow.hbook.book('artemis', 'blocksize', range(10))
             bow.hbook.book('artemis', 'time.collect', range(10))
-            bow._gen_config()
+            bow._configure()
             tree = Tree('artemis')
             try:
                 bow._run()
@@ -177,7 +177,9 @@ class ArtemisTestCase(unittest.TestCase):
             bow.hbook.book('artemis', 'time.prepschema', range(10))
             bow.hbook.book('artemis', 'time.execute', range(10))
             bow.hbook.book('artemis', 'time.collect', range(10))
-            bow._gen_config()
+            bow._configure()
+            bow._initialize()
+            bow._book()
             print('Finalizing')
             bow._finalize()
             print('Job finished')

@@ -37,7 +37,7 @@ from artemis.logger import Logger
 from artemis.core.algo import AbcAlgoBase
 from artemis.core.properties import JobProperties, Properties
 from artemis.io.protobuf.artemis_pb2 import Algo as Algo_pb
-
+from artemis.errors import AbstractMethodError
 
 KILOBYTE = 1 << 10
 MEGABYTE = KILOBYTE * KILOBYTE
@@ -160,6 +160,7 @@ class GeneratorBase(metaclass=AbcAlgoBase):
         Logger.configure(self, **kwargs)
 
         self.__logger.debug('__init__ GeneratorBase')
+
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
@@ -173,6 +174,12 @@ class GeneratorBase(metaclass=AbcAlgoBase):
         else:
             self._builtin_generator = BuiltinsGenerator()
 
+        if hasattr(self.properties, 'nbatches'):
+            self._nbatches = self.properties.nbatches
+            self._batch_iter = iter(range(self.properties.nbatches))
+        else:
+            self.__logger.warning("Number of batches not defined")
+
     @property
     def random_state(self):
         return self._builtin_generator.rnd
@@ -183,6 +190,12 @@ class GeneratorBase(metaclass=AbcAlgoBase):
         Algorithm name
         '''
         return self.__name
+
+    def reset(self):
+        if hasattr(self, '_nbatches'):
+            self._batch_iter = iter(range(self._nbatches))
+        else:
+            self.__logger.warning("Override reset in concrete class")
 
     def to_msg(self):
         message = Algo_pb()
@@ -240,6 +253,15 @@ class GeneratorBase(metaclass=AbcAlgoBase):
 
     def initialize(self):
         pass
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        raise AbstractMethodError(self)
+
+    def sampler(self):
+        raise AbstractMethodError(self)
 
 
 class BuiltinsGenerator(object):

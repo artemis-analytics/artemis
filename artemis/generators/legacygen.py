@@ -24,6 +24,7 @@ class GenMFOptions:
     '''
     seed = 42
     nbatches = 1
+    nsamples = 1
     num_rows = 10
     pos_char = {'0': '{', '1': 'A',
                 '2': 'B', '3': 'C', '4': 'D',
@@ -64,8 +65,8 @@ class GenMF(GeneratorBase):
                 if 'column' in key:
                     self.ds_schema.append(options[key])
 
-        self._nbatches = self.properties.nbatches
         self.num_rows = self.properties.num_rows
+        self.nsamples = self.properties.nsamples
 
         # Specific characters used for encoding signed integers.
         self.pos_char = self.properties.pos_char
@@ -187,6 +188,21 @@ class GenMF(GeneratorBase):
             yield data
             self._nbatches -= 1
             self.__logger.debug("Batch %i", self._nbatches)
+
+    def sampler(self):
+        while self.nsamples > 0:
+            self.__logger.info("%s: Generating datum " %
+                               (self.__class__.__name__))
+            data = self.gen_chunk()
+            self.__logger.debug('%s: type data: %s' %
+                                (self.__class__.__name__, type(data)))
+            yield data
+            self.nsamples -= 1
+            self.__logger.debug("Batch %i", self.nsamples)
+
+    def __next__(self):
+        next(self._batch_iter)
+        return self.gen_chunk()
 
     def write(self):
         self.__logger.info("Batch %i", self._nbatches)

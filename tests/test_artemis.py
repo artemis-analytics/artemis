@@ -134,6 +134,11 @@ class ArtemisTestCase(unittest.TestCase):
         bow = ArtemisFactory(job, 'INFO')
         bow.control()
         copyfile('arrowproto-example.log', 'test.log')
+        nrecords = 0
+        for table in bow._jp.meta.summary.tables:
+            nrecords += table.num_rows
+
+        assert(nrecords == 100000)
     
     def test_proto(self):
         if use_factories_test is True:
