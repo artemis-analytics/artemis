@@ -12,6 +12,7 @@
 import pyarrow as pa
 
 from artemis.logger import Logger
+from artemis.errors import AbstractMethodError
 
 
 class BaseReader():
@@ -23,7 +24,7 @@ class BaseReader():
         return self
 
     def __next__(self):
-        pass
+        raise AbstractMethodError(self)
 
     def close(self):
         pass

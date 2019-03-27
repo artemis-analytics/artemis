@@ -48,11 +48,6 @@ from artemis.utils.utils import bytes_to_mb, range_positive
 from google.protobuf import text_format
 from artemis.decorators import timethis
 
-# Generators
-from artemis.generators.filegen import FileGenerator
-from artemis.generators.csvgen import GenCsvLikeArrow
-from artemis.generators.legacygen import GenMF
-
 
 class ArtemisFactory:
     '''
@@ -325,39 +320,18 @@ class Artemis():
         # Create Steering instance
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
 
-        # Configure the generator
+        # Configure the data handler
+        _msggen = self._jp.meta.config.input.generator.config
         try:
-            self._gen_config()
+            self.data_handler = AlgoBase.from_msg(self.__logger, _msggen)
         except Exception:
-            self.__logger.error("Cannot configure generator")
+            self.__logger.info("Failed to load generator from protomsg")
             raise
 
         # Add tools
         for toolcfg in self._jp.meta.config.tools:
             self.__logger.info("Add Tool %s", toolcfg.name)
             self.__tools.add(self.__logger, toolcfg)
-
-    def _gen_config(self):
-        self.__logger.info('Loading generator from protomsg')
-        _msggen = self._jp.meta.config.input.generator.config
-        self.__logger.info(text_format.MessageToString(_msggen))
-        try:
-            self.generator = AlgoBase.from_msg(self.__logger, _msggen)
-        except Exception:
-            self.__logger.info("Failed to load generator from protomsg")
-            raise
-        try:
-            self.generator.initialize()
-        except Exception:
-            self.__logger.error("Cannot initialize algo %s" % 'generator')
-            raise
-
-        # Data Handler is just the generator function which returns a generator
-        try:
-            self.data_handler = self.generator.generate()
-        except TypeError:
-            self.__logger.error("Cannot set generator")
-            raise
 
     def _lock(self):
         '''
@@ -382,6 +356,13 @@ class Artemis():
         except Exception:
             self.__logger.error('Cannot initialize Steering')
             raise
+
+        try:
+            self.data_handler.initialize()
+        except Exception:
+            self.__logger.error("Cannot initialize algo %s" % 'generator')
+            raise
+
         for toolcfg in self._jp.meta.config.tools:
             if toolcfg.name == "bufferwriter":
                 continue
@@ -440,11 +421,11 @@ class Artemis():
         bins = [x for x in range_positive(0., avg_*factor, 2.)]
         self.hbook.rebook('artemis', 'time.execute', bins, 'ms')
 
-        if self.generator:
-            self.generator.num_batches = self.generator.properties.nbatches
-            self.data_handler = self.generator.generate()
-            self.__logger.info("Expected batches to generate %i",
-                               self.generator.num_batches)
+        self.__logger.info("artemis: allocated before reset %i",
+                           pa.total_allocated_bytes())
+        self.data_handler.reset()
+        self.__logger.info("artemis: allocated after reset %i",
+                           pa.total_allocated_bytes())
 
         # Reset all meta data needed for processing all job info
         _summary = self._jp.meta.summary
@@ -586,13 +567,19 @@ class Artemis():
         '''
         self.__logger.info("Sample nchunks for preprocess profiling %i",
                            self._nchunk_samples)
-        try:
-            self._prepare()
-        except Exception:
-            self.__logger.error("Failed data prep")
-            raise
 
-        for _ in range(self._nchunk_samples):
+        for datum in self.data_handler.sampler():
+            if isinstance(datum, bytes):
+                self.datum = pa.py_buffer(datum)
+            else:
+                self.datum = datum
+
+            try:
+                self._prepare()
+            except Exception:
+                self.__logger.error("Failed data prep")
+                raise
+
             try:
                 result_, time_ = self._execute_sampler()
                 self.__timers.fill('artemis', 'execute', time_)
@@ -608,6 +595,7 @@ class Artemis():
         Process each chunk, passing to Steering
         After all chunks processed, collect to output buffers
         Clear all data, move to next datum
+
         '''
         self.__logger.info("artemis: Run")
         self.__logger.debug('artemis: Count at run call %i',
@@ -615,18 +603,15 @@ class Artemis():
 
         self.__logger.info("artemis: Run: pyarrow malloc %i",
                            pa.total_allocated_bytes())
-        while True:
-            self.__logger.info("artemis: request %i malloc %i",
-                               self._jp.meta.summary.processed_ndatums,
-                               pa.total_allocated_bytes())
+        for datum in self.data_handler:
+            if isinstance(datum, bytes):
+                self.datum = pa.py_buffer(datum)
+            else:
+                self.datum = datum
             self.hbook.fill('artemis', 'counts',
                             self._jp.meta.summary.processed_ndatums)
             try:
                 self._prepare()
-            except StopIteration:
-                self.__logger.info("Quit run")
-                self.datum = None
-                break
             except Exception:
                 self.__logger.error("Failed data prep")
                 raise
@@ -643,58 +628,11 @@ class Artemis():
                                pa.total_allocated_bytes())
             self.hbook.fill('artemis', 'time.execute', time_)
 
-            # Reset the raw datum, processing complete
-            self.datum = None
-
-    def _request_data(self):
-        self.__logger.info("Generator type %s", type(self.generator))
-        if isinstance(self.generator, GenCsvLikeArrow):
-            self.__logger.debug("Expect bytes from GenCsvLikeArrow")
-            try:
-                data, batch = next(self.data_handler)
-                raw = pa.py_buffer(data)
-            except StopIteration:
-                self.__logger.info("Request data: iterator complete")
-                raise
-        elif isinstance(self.generator, GenMF):
-            #  Occurs when receiving a 1tuple from generator
-            self.__logger.debug("expect bytes from GenMF")
-            try:
-                data = next(self.data_handler)
-                raw = pa.py_buffer(data)
-            except StopIteration:
-                self.__logger.info("Request data: iterator complete")
-                raise
-        elif isinstance(self.generator, FileGenerator):
-            self.__logger.info("Expect filepath")
-            try:
-                raw = next(self.data_handler)
-            except StopIteration:
-                self.__logger.info("Request data: iterator complete")
-                raise
-
-        else:
-            self.__logger.error("Unknown data handler type %s",
-                                type(self.generator))
-            raise TypeError
-
-        # Return the raw bytes
-        return raw
-
     def _prepare(self):
         '''
         Requests the input data from the data handler
         calls all data preparation methods
         '''
-        try:
-            self.datum = self._request_data()
-        except StopIteration:
-            self.__logger.info("Processing complete: StopIteration")
-            raise
-        except Exception:
-            self.__logger.error("Failed to request data")
-            raise
-
         handler = self.__tools.get("filehandler")
         try:
             self.reader = handler.execute(self.datum)

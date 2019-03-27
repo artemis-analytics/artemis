@@ -95,10 +95,8 @@ class Test_MF_Gen(unittest.TestCase):
                          num_rows=10,
                          nbatches=10, loglevel='INFO')
 
-        iter_ = test_gen.generate()
-
-        for i, chunk in enumerate(iter_):
-            print('Batch', i)
+        for chunk in test_gen:
+            print('Batch')
             print(chunk)
 
     def test_meta(self):
@@ -116,7 +114,7 @@ class Test_MF_Gen(unittest.TestCase):
                          footer_size=10,
                          loglevel='INFO')
 
-        chunk = next(test_gen.generate())
+        chunk = next(test_gen)
         assert len(chunk) == 120
 
 if __name__ == "__main__":

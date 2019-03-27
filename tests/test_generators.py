@@ -325,11 +325,16 @@ class GeneratorTestCase(unittest.TestCase):
                     path=dirpath)
             generator.write()
             generator = FileGenerator('test', path=dirpath, glob='*.csv')
-            for item in generator.generate():
+            batches = 0
+            for item in generator:
                 print(item)
-
-            iter_ = generator.generate()
-            print(next(iter_))
+                batches += 1
+            assert(batches == 3)
+            generator.reset()
+            for item in generator.sampler():
+                print(item)
+            #iter_ = generator.generate()
+            #print(next(iter_))
 
     def test_multiple(self):
         print("Testing multiple generators with same seed")
@@ -339,8 +344,55 @@ class GeneratorTestCase(unittest.TestCase):
         print(gen1.generate_int_list(10, 0.1))
         print(gen2.generate_int_list(10, 0.1))
 
+    def test_iter_csv(self):
+
+        generator = GenCsvLikeArrow('test', 
+                                    nbatches=4, 
+                                    num_cols=100, 
+                                    num_rows=10000)
+        nbatch = 0
+        for batch in generator:
+            nbatch += 1
+
+        assert(nbatch == 4)
+
+        nsamples = 0
+        for batch in generator.sampler():
+            nsamples += 1
+        
+        assert(nsamples == 1)
 
 
+    def test_reset(self):
+        generator = GenCsvLikeArrow('test', 
+                                    nbatches=4, 
+                                    num_cols=100, 
+                                    num_rows=10000)
+        nbatch = 0
+        for batch in generator:
+            nbatch += 1
+        
+        generator.reset()
+        for batch in generator:
+            nbatch += 1
+        
+        assert(nbatch == 8)
+        with tempfile.TemporaryDirectory() as dirpath:
+            generator = GenCsvLikeArrow('test', 
+                    nbatches=3, 
+                    suffix='.csv', 
+                    prefix='test', 
+                    path=dirpath)
+            generator.write()
+            generator = FileGenerator('test', path=dirpath, glob='*.csv')
+            batches = 0
+            for item in generator:
+                batches += 1
+            generator.reset()
+            for item in generator:
+                batches += 1
+
+            assert(batches == 6)
 
 
 if __name__ == "__main__":

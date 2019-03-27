@@ -12,7 +12,14 @@ Class for generating lists of input files from OS
 """
 import pathlib
 
+from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
+
+
+@iterable
+class FileGenOptions:
+    nsamples = 1
+    seed = 42
 
 
 class FileGenerator(GeneratorBase):
@@ -22,22 +29,33 @@ class FileGenerator(GeneratorBase):
     '''
     def __init__(self, name, **kwargs):
 
-        self._defaults = self._set_defaults()
-        # Override the defaults from the kwargs
-        for key in kwargs:
-            self._defaults[key] = kwargs[key]
-        # Set the properties with the full configuration
-        super().__init__(name, **self._defaults)
+        options = dict(FileGenOptions())
+        options.update(kwargs)
+
+        super().__init__(name, **options)
 
         self._path = self.properties.path
         self._glob = self.properties.glob
         self._seed = self.properties.seed
+        self._nsamples = self.properties.nsamples
+
+        self._batch_iter = pathlib.Path(self._path).glob(self._glob)
         self.__logger.info("Path %s", self._path)
         self.__logger.info("Glob %s", self._glob)
 
-    def _set_defaults(self):
-        defaults = {'seed': 42}
-        return defaults
+    def reset(self):
+        self._batch_iter = pathlib.Path(self._path).glob(self._glob)
+
+    def sampler(self):
+        lst = list(self._batch_iter)
+        self.__logger.info("File list %s", lst)
+        rndidx = iter(self.random_state.choice(len(lst),
+                      self._nsamples))
+        for idx in rndidx:
+            yield lst[idx]
+
+    def __next__(self):
+        return next(self._batch_iter)
 
     def generate(self):
         self.__logger.debug("Generating the file paths")
