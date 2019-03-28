@@ -51,6 +51,7 @@ class GlobalConfigOptions:
     # Set by the config classes
     generator_type = None
     filehandler_type = None
+    seed = None
 
 
 @Logger.logged

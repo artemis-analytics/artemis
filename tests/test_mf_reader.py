@@ -294,7 +294,8 @@ class Test_MF_Reader(unittest.TestCase):
                                       write_csv=True,
                                       input_repo=dirpath,
                                       input_glob='testio*.txt',
-                                      output_repo=dirpath
+                                      output_repo=dirpath,
+                                      seed=42
                                       )
             config.configure(column_a=intconf0,
                              column_b=intuconf0,
@@ -339,6 +340,7 @@ class Test_MF_Reader(unittest.TestCase):
                               prefix='legacyio',
                               path=dirpath,
                               loglevel='INFO',
+                              seed=42,
                               **fields)
             generator.write()
             config = JobConfigFactory('legacyio', msgmenu,
@@ -352,7 +354,8 @@ class Test_MF_Reader(unittest.TestCase):
                                       write_csv=True,
                                       input_repo=dirpath,
                                       input_glob='legacyio*.txt',
-                                      output_repo=dirpath
+                                      output_repo=dirpath,
+                                      seed=42
                                       )
             config.configure(**fields)
 

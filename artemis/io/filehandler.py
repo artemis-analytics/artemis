@@ -35,7 +35,7 @@ class FileHandlerOptions:
     header = ''
     footer_size = 0
     footer = ''
-    seed = 42
+    # seed = 42
     nsamples = 1
     filetype = 'csv'
     encoding = 'utf8'

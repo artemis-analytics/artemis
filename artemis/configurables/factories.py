@@ -22,7 +22,8 @@ class GeneratorFactory():
             return GenCsvLikeArrow('generator',
                                    nbatches=kwargs['nbatches'],
                                    num_cols=kwargs['num_cols'],
-                                   num_rows=kwargs['num_rows'])
+                                   num_rows=kwargs['num_rows'],
+                                   seed=kwargs['seed'])
         elif ctype == 'legacy':
             columns = {}
             for key in kwargs:
@@ -32,12 +33,14 @@ class GeneratorFactory():
                          nbatches=kwargs['nbatches'],
                          # num_cols=kwargs['num_cols'],
                          num_rows=kwargs['num_rows'],
+                         seed=kwargs['seed'],
                          **columns)
         elif ctype == 'file':
             return FileGenerator('generator',
                                  path=kwargs['path'],
                                  glob=kwargs['glob'],
-                                 nbatches=kwargs['nbatches'])
+                                 nbatches=kwargs['nbatches'],
+                                 seed=kwargs['seed'])
         else:
             raise ValueError
 
@@ -51,7 +54,8 @@ class FileHandlerFactory():
                 linesep='\r\n',
                 header_offset=0,
                 footer_size=0,
-                schema=[]):
+                schema=[],
+                seed=None):
 
         return FileHandlerTool('filehandler',
                                filetype=ctype,
@@ -60,7 +64,8 @@ class FileHandlerFactory():
                                linesep=linesep,
                                header_offset=header_offset,
                                footer_size=footer_size,
-                               schema=schema)
+                               schema=schema,
+                               seed=seed)
 
 
 class MenuFactory():

@@ -170,7 +170,8 @@ class GeneratorBase(metaclass=AbcAlgoBase):
         self._jp = JobProperties()
 
         if hasattr(self.properties, 'seed'):
-            self._builtin_generator = BuiltinsGenerator(self.properties.seed)
+            self._builtin_generator = \
+                    BuiltinsGenerator(seed=self.properties.seed)
         else:
             self._builtin_generator = BuiltinsGenerator()
 
@@ -266,7 +267,10 @@ class GeneratorBase(metaclass=AbcAlgoBase):
 
 class BuiltinsGenerator(object):
 
-    def __init__(self, seed=42):
+    def __init__(self, seed=None):
+        '''
+        seed propagated from the calling class
+        '''
         self.rnd = check_random_state(seed)
 
     def sprinkle(self, lst, prob, value):

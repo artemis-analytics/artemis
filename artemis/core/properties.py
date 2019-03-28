@@ -56,7 +56,9 @@ class Properties():
                       'dict': dict}
         properties = {}
         for p in msg.property:
-            if p.type == 'dict' or p.type == 'bool' or p.type == 'list':
+            if p.type == 'NoneType':
+                continue
+            elif p.type == 'dict' or p.type == 'bool' or p.type == 'list':
                 properties[p.name] = eval(p.value)
             else:
                 properties[p.name] = _supported[p.type](p.value)
@@ -74,6 +76,8 @@ class Properties():
     def to_msg(self):
         message = Properties_pb()
         for key in self.properties:
+            if self.properties[key] is None:
+                continue
             pbuf = message.property.add()
             pbuf.name = key
             pbuf.type = type(self.properties[key]).__name__
