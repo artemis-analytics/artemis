@@ -24,6 +24,7 @@ from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 from artemis.generators.common import BuiltinsGenerator
 from artemis.io.readers import ReaderFactory
+from artemis.core.properties import JobProperties
 
 
 @iterable
@@ -92,6 +93,9 @@ class FileHandlerTool(ToolBase):
         self.exec_dict['sas'] = self.exec_sas
         self.exec_dict['ipc'] = self.exec_ipc
 
+        # JobProperties
+        self.jp = None
+
     def initialize(self):
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
@@ -99,6 +103,8 @@ class FileHandlerTool(ToolBase):
         if self.filetype not in self.prepare_dict.keys():
             self.__logger.error("Unknown filetype %s", self.filetype)
             raise ValueError
+
+        self.jp = JobProperties()
 
     @property
     def size_bytes(self):
@@ -291,12 +297,42 @@ class FileHandlerTool(ToolBase):
         self.__logger.info("Schema %s", self.schema)
         self.__logger.info("File size %s", self._size)
 
+        self._update()
+
         return ReaderFactory(self.filetype, filepath_or_buffer,
                              self.header,
                              self.header_offset,
                              self.blocks,
                              self._builtin_generator.rnd,
                              self.nsamples)
+
+    def _update(self):
+        # Add fileinfo to message
+        # TODO
+        # Create file UUID, check UUID when creating block info???
+        finfo = self.jp.meta.data.add()
+        finfo.name = 'file_' + str(self.jp.meta.summary.processed_ndatums)
+
+        # Update the raw metadata
+        finfo.raw.size_bytes = self._size
+
+        # Update datum input count
+        self.jp.meta.summary.processed_ndatums += 1
+
+        finfo.schema.size_bytes = self.header_offset
+        finfo.schema.header = self.header
+
+        if self.schema is not None:
+            for col in self.schema:
+                a_col = finfo.schema.columns.add()
+                a_col.name = col
+
+        for i, block in enumerate(self.blocks):
+            msg = finfo.blocks.add()
+            msg.range.offset_bytes = block[0]
+            msg.range.size_bytes = block[1]
+            finfo.processed.size_bytes += block[1]
+            self.__logger.debug(msg)
 
     def _create_header(self, schema):
         csv = io.StringIO()

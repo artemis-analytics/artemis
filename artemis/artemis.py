@@ -118,8 +118,8 @@ class Artemis():
         # Define the internal objects for Artemis
         self.steer = None
         self.generator = None
-        self.data_handler = None
-        self.file_handler = None
+        self.datahandler = None
+        self.filehandler = None
         self.collector = None
         self._raw = None
         self._schema = {}
@@ -287,7 +287,7 @@ class Artemis():
         # Configure the data handler
         _msggen = self._jp.meta.config.input.generator.config
         try:
-            self.data_handler = AlgoBase.from_msg(self.__logger, _msggen)
+            self.datahandler = AlgoBase.from_msg(self.__logger, _msggen)
         except Exception:
             self.__logger.info("Failed to load generator from protomsg")
             raise
@@ -322,7 +322,7 @@ class Artemis():
             raise
 
         try:
-            self.data_handler.initialize()
+            self.datahandler.initialize()
         except Exception:
             self.__logger.error("Cannot initialize algo %s" % 'generator')
             raise
@@ -335,7 +335,7 @@ class Artemis():
             except Exception:
                 self.__logger.error("Cannot initialize %s", toolcfg.name)
 
-        self.file_handler = self.__tools.get("filehandler")
+        self.filehandler = self.__tools.get("filehandler")
 
     def book(self):
         self.__logger.info("{}: Book".format('artemis'))
@@ -389,7 +389,7 @@ class Artemis():
 
         self.__logger.info("artemis: allocated before reset %i",
                            pa.total_allocated_bytes())
-        self.data_handler.reset()
+        self.datahandler.reset()
         self.__logger.info("artemis: allocated after reset %i",
                            pa.total_allocated_bytes())
 
@@ -408,20 +408,14 @@ class Artemis():
         self.__logger.info("Sample nchunks for preprocess profiling %i",
                            self._nchunk_samples)
 
-        for datum in self.data_handler.sampler():
+        for datum in self.datahandler.sampler():
             if isinstance(datum, bytes):
                 datum = pa.py_buffer(datum)
 
             try:
-                reader = self.file_handler.execute(datum)
+                reader = self.filehandler.execute(datum)
             except Exception:
                 self.__logger.error("Failed to prepare file")
-                raise
-
-            try:
-                self._prepare()
-            except Exception:
-                self.__logger.error("Failed data prep")
                 raise
 
             # Timing decorator / wrapper
@@ -450,28 +444,21 @@ class Artemis():
 
         self.__logger.info("artemis: Run: pyarrow malloc %i",
                            pa.total_allocated_bytes())
-        for datum in self.data_handler:
+        for datum in self.datahandler:
             if isinstance(datum, bytes):
                 datum = pa.py_buffer(datum)
 
             self.hbook.fill('artemis', 'counts',
                             self._jp.meta.summary.processed_ndatums)
             try:
-                reader = self.file_handler.execute(datum)
+                reader = self.filehandler.execute(datum)
             except Exception:
                 self.__logger.error("Failed to prepare file")
-                raise
-            try:
-                self._prepare()
-            except Exception:
-                self.__logger.error("Failed data prep")
                 raise
 
             self.__logger.info("artemis: flush before execute %i",
                                pa.total_allocated_bytes())
 
-            # Timing decorator / wrapper
-            _finfo = self._jp.meta.data[-1]
             for batch in reader:
                 self.hbook.fill('artemis', 'blocksize',
                                 bytes_to_mb(batch.size))
@@ -485,7 +472,6 @@ class Artemis():
                                     pa.total_allocated_bytes())
                 self.hbook.fill('artemis', 'time.execute', time_)
 
-                _finfo.processed.size_bytes += batch.size
                 self._jp.meta.summary.processed_bytes += batch.size
 
                 try:
@@ -496,40 +482,6 @@ class Artemis():
 
             self.__logger.info('Processed %i' %
                                self._jp.meta.summary.processed_bytes)
-
-    def _prepare(self):
-        '''
-        Requests the input data from the data handler
-        calls all data preparation methods
-        '''
-
-        # Add fileinfo to message
-        # TODO
-        # Create file UUID, check UUID when creating block info???
-        _finfo = self._jp.meta.data.add()
-        _finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
-
-        # Update the raw metadata
-        _finfo.raw.size_bytes = self.file_handler.size_bytes
-        self.__logger.info("Payload size %i", _finfo.raw.size_bytes)
-
-        # Update datum input count
-        self._jp.meta.summary.processed_ndatums += 1
-
-        _finfo.schema.size_bytes = self.file_handler.header_offset
-        _finfo.schema.header = self.file_handler.header
-        self.__logger.info("Updating meta data from handler")
-        self.__logger.debug("File schema %s", self.file_handler.schema)
-        if self.file_handler.schema is not None:
-            for col in self.file_handler.schema:
-                a_col = _finfo.schema.columns.add()
-                a_col.name = col
-
-        for i, block in enumerate(self.file_handler.blocks):
-            msg = _finfo.blocks.add()
-            msg.range.offset_bytes = block[0]
-            msg.range.size_bytes = block[1]
-            self.__logger.debug(msg)
 
     def _finalize_jobstate(self, state):
         self._update_state(state)
