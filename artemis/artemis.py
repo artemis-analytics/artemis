@@ -33,10 +33,10 @@ from artemis.core.steering import Steering
 from artemis.core.tree import Tree
 from artemis.core.algo import AlgoBase
 from artemis.core.timerstore import TimerSvc
-from artemis.core.datastore import ArrowSets
 from artemis.core.tool import ToolStore
 
 # IO
+from artemis.io.collector import Collector
 from artemis.core.physt_wrapper import Physt_Wrapper
 
 # Protobuf
@@ -119,7 +119,9 @@ class Artemis():
         self.steer = None
         self.generator = None
         self.data_handler = None
+        self.file_handler = None
         self.reader = None
+        self.collector = None
         self._raw = None
         self._schema = {}
 
@@ -213,7 +215,7 @@ class Artemis():
             return False
 
         try:
-            self._init_buffers()
+            self.collector.initialize()
         except Exception as e:
             self.logger.error('Caught error in init_buffers')
             self.__logger.error("Reason: %s" % e)
@@ -244,14 +246,6 @@ class Artemis():
             self._finalize()
         except Exception as e:
             self.logger.error("Unexcepted error caught in finalize")
-            self.__logger.error("Reason: %s" % e)
-            self.abort(e)
-            return False
-
-        try:
-            self._finalize_buffer()
-        except Exception as e:
-            self.logger.error("Unexcepted error caught in finalizing errors")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -301,6 +295,11 @@ class Artemis():
 
         # Create Steering instance
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
+        self.collector = Collector('collector',
+                                   max_malloc=self.MALLOC_MAX_SIZE,
+                                   job_id=self._job_id,
+                                   path=self._path,
+                                   loglevel=Logger.CONFIGURED_LEVEL)
 
         # Configure the data handler
         _msggen = self._jp.meta.config.input.generator.config
@@ -352,6 +351,8 @@ class Artemis():
                 self.__tools.get(toolcfg.name).initialize()
             except Exception:
                 self.__logger.error("Cannot initialize %s", toolcfg.name)
+
+        self.file_handler = self.__tools.get("filehandler")
 
     def _book(self):
         self.__logger.info("{}: Book".format('artemis'))
@@ -415,132 +416,6 @@ class Artemis():
         _summary.processed_ndatums = 0
         del self._jp.meta.data[:]  # Remove all the fileinfo msgs
 
-    def _check_malloc(self):
-        '''
-        Check total allocated memory in Arrow
-        and call collect
-        Collect does not ensure the file flushed
-        Tuning on total allocated memory and the max output buffer
-        size before spill
-        '''
-        if pa.total_allocated_bytes() > self.MALLOC_MAX_SIZE:
-            # TODO: Insert collect for datastore/nodes/tree.
-            # TODO: Test memory release.
-            # TODO: Add histogram for number of forced collects
-            self.__logger.info("COLLECT: Total memory reached")
-            try:
-                result_, time_ = self._collect()
-            except Exception:
-                self.__logger.error("Problem collecting")
-                raise
-            self.__logger.info("Allocated %i", pa.total_allocated_bytes())
-            self.hbook.fill('artemis', 'time.collect', time_)
-
-    @timethis
-    def _collect(self):
-        '''
-        Collect all batches from the leaves
-        Occurs after single input source is chunked
-        Each chunked converted to a batch
-        Batches on leaves collected
-        Input file -> Output Arrow RecordBatches
-        '''
-        self.__logger.info("artemis: collect: pyarrow malloc %i",
-                           pa.total_allocated_bytes())
-        _tree = Tree()  # Singleton!
-
-        self.__logger.info("Leaves %s", _tree.leaves)
-        for leaf in _tree.leaves:
-            self.__logger.info("Leaf node %s", leaf)
-            node = _tree.get_node_by_key(leaf)
-            els = node.payload
-            self.__logger.info('Batches of leaf %s', len(els))
-            _name = "writer_"+node.key
-            if isinstance(els[-1].get_data(), pa.lib.RecordBatch):
-                self.__logger.info("RecordBatch")
-                self.__logger.info("Allocated %i", pa.total_allocated_bytes())
-                _schema_batch = els[-1].get_data().schema
-                # TODO
-                # Get the pyarrow schema as early as possible
-                # Store/retrieive from the metastore
-                # Do not assume each file has same schema!!!!
-                try:
-                    self.__tools.get("writer_"+node.key)._schema = \
-                        _schema_batch
-                    self.__tools.get("writer_"+node.key).write(els)
-                    self.__logger.info("Records %i Batches %i",
-                                       self.__tools.get(_name)._nrecords,
-                                       self.__tools.get(_name)._nbatches)
-                except Exception:
-                    self.__logger.error("Error in buffer writer")
-                    raise
-            else:
-                self.__logger.info("%s", type(els[-1].get_data()))
-
-        # Batches serialized, clear the tree to flush memory
-        try:
-            Tree().flush()
-        except Exception:
-            self.__logger("Problem flushing")
-            raise
-
-        self.__logger.info("Allocated after write %i",
-                           pa.total_allocated_bytes())
-        self.__logger.info
-        return True
-
-    def _init_buffers(self):
-        '''
-        Create new buffer output stream and writers
-        '''
-        self.__logger.info("artemis: _init_buffers")
-        # Configure the output data streams
-        # Each stream associated with leaf in Tree
-        # Store consistent Arrow Table for each process chain
-        # Currently the tree does not enforce a leaf to write out
-        # record batches, so we could get spurious output buffers
-
-        # Buffer stream requires a fixed pyArrow schema!
-        _tree = Tree()  # Singleton!
-        _msgcfg = self._jp.meta.config
-        _wrtcfg = None
-        for toolcfg in _msgcfg.tools:
-            if toolcfg.name == "bufferwriter":
-                _wrtcfg = toolcfg
-
-        try:
-            for leaf in _tree.leaves:
-                self.__logger.info("Leave node %s", leaf)
-                node = _tree.get_node_by_key(leaf)
-                key = node.key
-                try:
-                    _last = node.payload[-1].get_data()
-                except IndexError:
-                    self.__logger.error("Cannot retrieve payload! %s", key)
-                    raise
-
-                # TODO
-                # Properly configure the properties in the job config
-                # This is a workaround which overwrites any set properties
-                if isinstance(_last, pa.lib.RecordBatch):
-                    _wrtcfg.name = "writer_" + key
-                    self.__logger.info("Add Tool %s", _wrtcfg.name)
-                    self.__tools.add(self.__logger, _wrtcfg)
-                    self.__tools.get(_wrtcfg.name)._schema = _last.schema
-                    self.__tools.get(_wrtcfg.name)._fbasename = self._job_id
-                    self.__tools.get(_wrtcfg.name)._path = self._path
-                    self.__tools.get(_wrtcfg.name).initialize()
-        except Exception:
-            self.__logger.error("Problem creating output streams")
-            raise
-
-        # Batches serialized, clear the tree
-        try:
-            Tree().flush()
-        except Exception:
-            self.__logger("Problem flushing")
-            raise
-
     def _sample_chunks(self):
         '''
         Random sampling of chunks from a datum
@@ -552,9 +427,13 @@ class Artemis():
 
         for datum in self.data_handler.sampler():
             if isinstance(datum, bytes):
-                self.datum = pa.py_buffer(datum)
-            else:
-                self.datum = datum
+                datum = pa.py_buffer(datum)
+
+            try:
+                self.reader = self.file_handler.execute(datum)
+            except Exception:
+                self.__logger.error("Failed to prepare file")
+                raise
 
             try:
                 self._prepare()
@@ -587,11 +466,15 @@ class Artemis():
                            pa.total_allocated_bytes())
         for datum in self.data_handler:
             if isinstance(datum, bytes):
-                self.datum = pa.py_buffer(datum)
-            else:
-                self.datum = datum
+                datum = pa.py_buffer(datum)
+
             self.hbook.fill('artemis', 'counts',
                             self._jp.meta.summary.processed_ndatums)
+            try:
+                self.reader = self.file_handler.execute(datum)
+            except Exception:
+                self.__logger.error("Failed to prepare file")
+                raise
             try:
                 self._prepare()
             except Exception:
@@ -615,12 +498,6 @@ class Artemis():
         Requests the input data from the data handler
         calls all data preparation methods
         '''
-        handler = self.__tools.get("filehandler")
-        try:
-            self.reader = handler.execute(self.datum)
-        except Exception:
-            self.__logger.error("Failed to prepare file")
-            raise
 
         # Add fileinfo to message
         # TODO
@@ -629,22 +506,22 @@ class Artemis():
         _finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
 
         # Update the raw metadata
-        _finfo.raw.size_bytes = handler.size_bytes
+        _finfo.raw.size_bytes = self.file_handler.size_bytes
         self.__logger.info("Payload size %i", _finfo.raw.size_bytes)
 
         # Update datum input count
         self._jp.meta.summary.processed_ndatums += 1
 
-        _finfo.schema.size_bytes = handler.header_offset
-        _finfo.schema.header = handler.header
+        _finfo.schema.size_bytes = self.file_handler.header_offset
+        _finfo.schema.header = self.file_handler.header
         self.__logger.info("Updating meta data from handler")
-        self.__logger.debug("File schema %s", handler.schema)
-        if handler.schema is not None:
-            for col in handler.schema:
+        self.__logger.debug("File schema %s", self.file_handler.schema)
+        if self.file_handler.schema is not None:
+            for col in self.file_handler.schema:
                 a_col = _finfo.schema.columns.add()
                 a_col.name = col
 
-        for i, block in enumerate(handler.blocks):
+        for i, block in enumerate(self.file_handler.blocks):
             msg = _finfo.blocks.add()
             msg.range.offset_bytes = block[0]
             msg.range.size_bytes = block[1]
@@ -673,7 +550,7 @@ class Artemis():
                 raise
             _finfo.processed.size_bytes += batch.size
             self._jp.meta.summary.processed_bytes += batch.size
-            self._check_malloc()
+            self.collector.execute()
 
         self.__logger.info('Processed %i' %
                            self._jp.meta.summary.processed_bytes)
@@ -697,75 +574,6 @@ class Artemis():
         elif duration.seconds > 0 and duration.nanos < 0:
             duration.seconds -= 1
             duration.nanos += 1000000000
-
-    def _finalize_buffer(self):
-        '''
-        Ensure the data store is empty
-        Spill any remaining arrow buffers to disk
-        '''
-        # Ensure all data has been sent to buffer
-        _store = ArrowSets()
-        if _store.is_empty() is False:
-            self.__logger.info("Collecting remaining data")
-            try:
-                result_, time_ = self._collect()
-            except Exception:
-                self.__logger.error("Problem collecting")
-                raise
-            self.__logger.info("Allocated %i", pa.total_allocated_bytes())
-            self.hbook.fill('artemis', 'time.collect', time_)
-        # Spill any remaining buffers to disk
-        # Set the output file metadata
-        summary = self._jp.meta.summary
-        _wnames = []
-        for leaf in Tree().leaves:
-            self.__logger.info("Leave node %s", leaf)
-            node = Tree().get_node_by_key(leaf)
-            key = node.key
-            _wnames.append("writer_" + node.key)
-
-        for key in _wnames:
-            try:
-                writer = self.__tools.get(key)
-            except KeyError:
-                continue
-            try:
-                writer._finalize()
-            except Exception:
-                self.__logger.error("Finalize buffer stream fails %s", key)
-                raise
-
-            self.__logger.info("File summary statistics")
-            for table in writer._finfo:
-                tableinfo = summary.tables.add()
-                tableinfo.CopyFrom(table)
-                self.__logger.info(text_format.MessageToString(tableinfo))
-
-            self.__logger.info("Dataset summary statistics")
-            self.__logger.info("%s Records: %i Batches: %i Files: %i",
-                               writer.name,
-                               writer.total_records,
-                               writer.total_batches,
-                               writer.total_files)
-
-    def _flush_buffer(self):
-        _wnames = []
-        for leaf in Tree().leaves:
-            self.__logger.info("Leave node %s", leaf)
-            node = Tree().get_node_by_key(leaf)
-            key = node.key
-            _wnames.append("writer_" + node.key)
-
-        for key in _wnames:
-            try:
-                writer = self.__tools.get(key)
-            except KeyError:
-                continue
-            try:
-                writer.flush()
-            except Exception:
-                self.__logger.error("Flush buffer stream fails %s", key)
-                raise
 
     def _finalize(self):
         self.__logger.info("Finalizing Artemis job %s" %
@@ -830,6 +638,12 @@ class Artemis():
             self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
         self.__logger.info("This is a test of your greater survival")
         self.__logger.info("=================================")
+
+        try:
+            self.collector.finalize()
+        except Exception:
+            self.__logger.error("Collector fails to finalize buffer")
+            raise
 
     def abort(self, *args, **kwargs):
         self._jp.meta.state = artemis_pb2.JOB_ABORT
