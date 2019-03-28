@@ -638,7 +638,7 @@ class Artemis():
             self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
         self.__logger.info("This is a test of your greater survival")
         self.__logger.info("=================================")
-
+        
         try:
             self.collector.finalize()
         except Exception:
@@ -649,16 +649,12 @@ class Artemis():
         self._jp.meta.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")
         self.__logger.error("Reason %s" % args[0])
+
         try:
-            self._finalize_buffer()
+            self.collector.finalize()
         except Exception:
-            self.__logger.error("Cannot finalize buffer")
-            try:
-                self._flush_buffer()
-            except Exception as e:
-                error_message = traceback.format_exc()
-                self.__logger.error("Flush fails. Reason: %s", e)
-                self.__logger.error(error_message)
+            self.__logger.error("Collector fails to finalize buffer")
+            raise
 
         self._jp.meta.finished.GetCurrentTime()
         jobinfoname = self._job_id + '_meta.dat'

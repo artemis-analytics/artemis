@@ -336,7 +336,7 @@ class Test_MF_Reader(unittest.TestCase):
                               num_rows=10000, 
                               nbatches=1,
                               suffix='.txt',
-                              prefix='legacyaio',
+                              prefix='legacyio',
                               path=dirpath,
                               loglevel='INFO',
                               **fields)
