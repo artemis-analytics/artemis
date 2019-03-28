@@ -74,7 +74,7 @@ class ArtemisTestCase(unittest.TestCase):
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Launching')
-            bow._launch()
+            bow.launch()
             print('End Launch')
 
     def test_configure(self):
@@ -88,7 +88,7 @@ class ArtemisTestCase(unittest.TestCase):
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Configuring')
-            bow._configure()
+            bow.configure()
 
     def test_lock(self):
         self.reset()
@@ -99,7 +99,7 @@ class ArtemisTestCase(unittest.TestCase):
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Locking')
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
-            bow._lock()
+            bow.lock()
 
     def test_initialize(self):
         self.reset()
@@ -109,8 +109,8 @@ class ArtemisTestCase(unittest.TestCase):
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
             print('Initializing')
-            bow._configure()
-            bow._initialize()
+            bow.configure()
+            bow.initialize()
 
     def test_book(self):
         self.reset() 
@@ -123,7 +123,7 @@ class ArtemisTestCase(unittest.TestCase):
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
             print('Booking')
             bow.hbook = Physt_Wrapper()
-            bow._book()
+            bow.book()
 
     def test_run(self):
         self.reset()
@@ -148,11 +148,11 @@ class ArtemisTestCase(unittest.TestCase):
             bow.hbook.book('artemis', 'time.execute', range(10))
             bow.hbook.book('artemis', 'blocksize', range(10))
             bow.hbook.book('artemis', 'time.collect', range(10))
-            bow._configure()
-            bow._initialize()
+            bow.configure()
+            bow.initialize()
             tree = Tree('artemis')
             try:
-                bow._run()
+                bow._execute()
             except StopIteration:
                 print("Process complete")
             except Exception:
@@ -184,13 +184,13 @@ class ArtemisTestCase(unittest.TestCase):
             bow.hbook.book('artemis', 'time.prepschema', range(10))
             bow.hbook.book('artemis', 'time.execute', range(10))
             bow.hbook.book('artemis', 'time.collect', range(10))
-            bow._configure()
-            bow._initialize()
-            bow._book()
+            bow.configure()
+            bow.initialize()
+            bow.book()
             tree = Tree('artemis')
             bow.collector.initialize()
             print('Finalizing')
-            bow._finalize()
+            bow.finalize()
             print('Job finished')
     
     def test_abort(self):
@@ -200,10 +200,10 @@ class ArtemisTestCase(unittest.TestCase):
             bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
-            bow._configure() 
-            bow._initialize()
-            bow._book()
-            bow._sample_chunks()
+            bow.configure() 
+            bow.initialize()
+            bow.book()
+            bow.sampler()
             bow.collector.initialize()
             print('Finalizing')
             bow.abort("abort")
