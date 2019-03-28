@@ -22,7 +22,7 @@ class GenMFOptions:
     '''
     Class to hold dictionary of required options
     '''
-    seed = 42
+    # seed = 42
     nbatches = 1
     nsamples = 1
     num_rows = 10

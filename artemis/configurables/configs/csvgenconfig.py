@@ -42,10 +42,12 @@ class CsvGenConfig(Configurable):
 
         self._config_generator(nbatches=self.nbatches,
                                num_cols=self.num_cols,
-                               num_rows=self.num_rows)
+                               num_rows=self.num_rows,
+                               seed=self.seed)
 
         self._config_filehandler(blocksize=self.blocksize,
-                                 delimiter=self.delimiter)
+                                 delimiter=self.delimiter,
+                                 seed=self.seed)
 
         # Ensure block_size for arrow parser greater than
         # file chunk size
@@ -69,10 +71,12 @@ class CsvIOConfig(Configurable):
     def configure(self):
         self._config_generator(path=self.input_repo,
                                glob=self.input_glob,
-                               nbatches=self.nbatches)
+                               nbatches=self.nbatches,
+                               seed=self.seed)
 
         self._config_filehandler(blocksize=self.blocksize,
-                                 delimiter=self.delimiter)
+                                 delimiter=self.delimiter,
+                                 seed=self.seed)
 
         # Ensure block_size for arrow parser greater than
         # file chunk size

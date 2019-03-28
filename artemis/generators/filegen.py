@@ -19,7 +19,7 @@ from artemis.generators.common import GeneratorBase
 @iterable
 class FileGenOptions:
     nsamples = 1
-    seed = 42
+    # seed = 42
 
 
 class FileGenerator(GeneratorBase):
@@ -36,12 +36,14 @@ class FileGenerator(GeneratorBase):
 
         self._path = self.properties.path
         self._glob = self.properties.glob
-        self._seed = self.properties.seed
+        # self._seed = self.properties.seed
         self._nsamples = self.properties.nsamples
 
         self._batch_iter = pathlib.Path(self._path).glob(self._glob)
         self.__logger.info("Path %s", self._path)
         self.__logger.info("Glob %s", self._glob)
+        # self.__logger.info("Seed %s", self._seed)
+        self.__logger.info("Samples %s", self._nsamples)
 
     def reset(self):
         self._batch_iter = pathlib.Path(self._path).glob(self._glob)
@@ -49,8 +51,13 @@ class FileGenerator(GeneratorBase):
     def sampler(self):
         lst = list(self._batch_iter)
         self.__logger.info("File list %s", lst)
-        rndidx = iter(self.random_state.choice(len(lst),
-                      self._nsamples))
+        try:
+            rndidx = iter(self.random_state.choice(len(lst),
+                          self._nsamples))
+        except ValueError:
+            self.__logger.info("Cannot obtain random file list")
+            raise
+
         for idx in rndidx:
             yield lst[idx]
 

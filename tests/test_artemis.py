@@ -120,7 +120,8 @@ class ArtemisTestCase(unittest.TestCase):
                                   max_buffer_size=10485760,
                                   max_malloc=2147483648,
                                   write_csv=True,
-                                  output_repo=dirpath
+                                  output_repo=dirpath,
+                                  seed=42
                                   )
         config.configure()
         msg = config.job_config

@@ -49,13 +49,15 @@ class LegacyGenConfig(Configurable):
 
         self._config_generator(nbatches=self.nbatches,
                                num_rows=self.num_rows,
+                               seed=self.seed,
                                **columns)
 
         self._config_filehandler(blocksize=blocksize,
                                  delimiter=self.delimiter,
                                  header_offset=rsize,
                                  footer_size=rsize,
-                                 schema=schema)
+                                 schema=schema,
+                                 seed=self.seed)
 
         # Ensure block_size for arrow parser greater than
         # file chunk size
@@ -92,7 +94,8 @@ class LegacyIOConfig(Configurable):
 
         self._config_generator(path=self.input_repo,
                                glob=self.input_glob,
-                               nbatches=self.nbatches)
+                               nbatches=self.nbatches,
+                               seed=self.seed)
 
         mftool = MfTool('legacytool', **columns)
         blocksize = mftool.record_size * self.nrecords_per_block
@@ -106,7 +109,8 @@ class LegacyIOConfig(Configurable):
                                  delimiter=self.delimiter,
                                  header_offset=rsize,
                                  footer_size=rsize,
-                                 schema=schema)
+                                 schema=schema,
+                                 seed=self.seed)
 
         # Ensure block_size for arrow parser greater than
         # file chunk size

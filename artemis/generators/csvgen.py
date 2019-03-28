@@ -141,7 +141,7 @@ class GenCsvLikeArrowOptions:
     num_cols = 2
     num_rows = 10
     linesep = u'\r\n'
-    seed = 42
+    # seed = 42
     header = True
 
 
@@ -171,7 +171,7 @@ class GenCsvLikeArrow(GeneratorBase):
         self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
         self.linesep = self.properties.linesep
-        self.seed = self.properties.seed
+        # self.seed = self.properties.seed
         self.header = self.properties.header
         self.nsamples = self.properties.nsamples
 

@@ -638,7 +638,7 @@ class Artemis():
             self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
         self.__logger.info("This is a test of your greater survival")
         self.__logger.info("=================================")
-        
+
         try:
             self.collector.finalize()
         except Exception:
