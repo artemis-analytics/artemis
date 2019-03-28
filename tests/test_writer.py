@@ -22,7 +22,7 @@ import pyarrow as pa
 logging.getLogger().setLevel(logging.INFO)
 
 
-class WritterTestCase(unittest.TestCase):
+class WriterTestCase(unittest.TestCase):
 
     def setUp(self):
         print("================================================")
