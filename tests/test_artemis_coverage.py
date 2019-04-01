@@ -20,6 +20,8 @@ from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
+from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.core.timerstore import TimerSvc
 from artemis.core.properties import JobProperties
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
@@ -37,7 +39,10 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-
+        Singleton.reset(Physt_Wrapper)
+        Singleton.reset(TimerSvc)
+    
+    
     def test_proto(self):
         cov = coverage.Coverage()
         cov.start()

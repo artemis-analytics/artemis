@@ -15,7 +15,6 @@ import logging
 import random
 
 from artemis.core.algo import AlgoBase
-from artemis.core.physt_wrapper import Physt_Wrapper
 
 
 class DummyAlgo1(AlgoBase):
@@ -32,8 +31,7 @@ class DummyAlgo1(AlgoBase):
 
     def book(self):
         self.__timers = {}
-        self.hbook = Physt_Wrapper()
-        self.hbook.book(self.name, "testh1", range(10))
+        self._jp.hbook.book(self.name, "testh1", range(10))
 
     def execute(self, payload):
         if(logging.getLogger().isEnabledFor(logging.DEBUG) or
@@ -47,7 +45,7 @@ class DummyAlgo1(AlgoBase):
             # Check logging level if formatting requiered
             self.__logger.debug('{}: execute: payload {}'.
                                 format(self.name, sys.getsizeof(payload)))
-            self.hbook.fill(self.name, "testh1", random.randint(0, 10))
+            self._jp.hbook.fill(self.name, "testh1", random.randint(0, 10))
 
     def finalize(self):
         pass

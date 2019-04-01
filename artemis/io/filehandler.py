@@ -132,6 +132,9 @@ class FileHandlerTool(ToolBase):
 
         if cache_header != header:
             self.__logger.error("Header not valid")
+            self.__logger.error("Cache %s, header %s",
+                                cache_header.decode(self.encoding),
+                                header.decode(self.encoding))
             raise ValueError
         if cache_offset != header_offset:
             self.__logger.error("Offset not valid")
@@ -391,7 +394,8 @@ class FileHandlerTool(ToolBase):
                 file_.seek(file_.tell() - (len(full) - i) + len(delimiter))
                 return
             except (OSError, ValueError):
-                print("Problem at last seek")
+                pass
+
             last = full[-len(delimiter):]
 
     def _get_block(self, file_, offset, length, size, delimiter=None):

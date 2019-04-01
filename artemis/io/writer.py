@@ -47,6 +47,7 @@ class BufferOutputWriter(ToolBase):
         self._sizeof_batches = 0
         self._nbatches = 0  # batches per file
         self._nrecords = 0  # records per file
+        self._ncolumns = 0  # columns per file
         self._total_records = 0  # total records written
         self._total_batches = 0  # total number of batches written
         self._filecounter = 0  # total files
@@ -120,6 +121,7 @@ class BufferOutputWriter(ToolBase):
         metainfo.name = self._fname
         metainfo.num_rows = self._nrecords
         metainfo.num_batches = self._nbatches
+        metainfo.num_columns = self._ncolumns
         self._finfo.append(metainfo)
 
     def _finalize_file(self):
@@ -291,6 +293,7 @@ class BufferOutputWriter(ToolBase):
                 raise
             try:
                 self.__logger.debug("Write to sink")
+                self._ncolumns = batch.num_columns
                 self._nrecords += batch.num_rows
                 self._nbatches += 1
                 self._sizeof_batches += pa.get_record_batch_size(batch)

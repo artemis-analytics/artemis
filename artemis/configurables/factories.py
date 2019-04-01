@@ -34,6 +34,11 @@ class GeneratorFactory():
                          # num_cols=kwargs['num_cols'],
                          num_rows=kwargs['num_rows'],
                          seed=kwargs['seed'],
+                         encoding=kwargs['encoding'],
+                         header=kwargs['header'],
+                         footer=kwargs['footer'],
+                         header_offset=kwargs['header_offset'],
+                         footer_size=kwargs['footer_size'],
                          **columns)
         elif ctype == 'file':
             return FileGenerator('generator',
@@ -52,9 +57,12 @@ class FileHandlerFactory():
                 blocksize=2**16,
                 delimiter=',',
                 linesep='\r\n',
+                header='',
+                footer='',
                 header_offset=0,
                 footer_size=0,
                 schema=[],
+                encoding='utf8',
                 seed=None):
 
         return FileHandlerTool('filehandler',
@@ -62,9 +70,12 @@ class FileHandlerFactory():
                                blocksize=blocksize,
                                delimiter=delimiter,
                                linesep=linesep,
+                               header=header,
+                               footer=footer,
                                header_offset=header_offset,
                                footer_size=footer_size,
                                schema=schema,
+                               encoding=encoding,
                                seed=seed)
 
 

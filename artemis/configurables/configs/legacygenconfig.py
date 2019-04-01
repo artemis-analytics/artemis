@@ -25,6 +25,9 @@ class LegacyOptions:
     num_rows = 10000
     delimiter = '\r\n'
     nrecords_per_block = 4095
+    encoding = 'cp500'
+    header = ''
+    footer = ''
 
 
 @Logger.logged
@@ -50,12 +53,20 @@ class LegacyGenConfig(Configurable):
         self._config_generator(nbatches=self.nbatches,
                                num_rows=self.num_rows,
                                seed=self.seed,
+                               header=self.header,
+                               footer=self.footer,
+                               header_offset=self.header_offset,
+                               footer_size=self.footer_size,
+                               encoding=self.encoding,
                                **columns)
 
         self._config_filehandler(blocksize=blocksize,
                                  delimiter=self.delimiter,
+                                 header=self.header,
+                                 footer=self.footer,
                                  header_offset=rsize,
                                  footer_size=rsize,
+                                 encoding=self.encoding,
                                  schema=schema,
                                  seed=self.seed)
 
@@ -79,6 +90,9 @@ class LegacyIOOptions:
     nbatches = 10
     num_rows = 10000
     nrecords_per_block = 4095
+    encoding = 'cp500'
+    header = ''
+    footer = ''
 
 
 @Logger.logged
@@ -107,9 +121,12 @@ class LegacyIOConfig(Configurable):
 
         self._config_filehandler(blocksize=blocksize,
                                  delimiter=self.delimiter,
+                                 header=self.header,
+                                 footer=self.footer,
                                  header_offset=rsize,
                                  footer_size=rsize,
                                  schema=schema,
+                                 encoding=self.encoding,
                                  seed=self.seed)
 
         # Ensure block_size for arrow parser greater than

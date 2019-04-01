@@ -8,6 +8,7 @@
 # Distributed under terms of the  license.
 
 import numpy as np
+import os
 
 from physt.histogram1d import Histogram1D
 from physt.io.protobuf import write_many
@@ -21,6 +22,24 @@ from artemis.logger import Logger
 class Physt_Wrapper(metaclass=Singleton):
     def __init__(self):
         self.hbook = {}
+        self._job_id = None
+        self._path = None
+
+    @property
+    def job_id(self):
+        return self._job_id
+
+    @job_id.setter
+    def job_id(self, value):
+        self._job_id = value
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
 
     def book(self, algname, name, bins, axis_name=None):
         name_ = '.'
@@ -38,6 +57,7 @@ class Physt_Wrapper(metaclass=Singleton):
                                     stats={"sum": 0.0, "sum2": 0.0})
             except Exception:
                 self.__logger.error("Physt fails to book")
+                raise
 
         if axis_name:
             self.hbook[name_].axis_name = axis_name
@@ -50,7 +70,12 @@ class Physt_Wrapper(metaclass=Singleton):
         for key in self.hbook.keys():
             if key in excludes:
                 continue
-            bins = self.hbook[key].binning
+            try:
+                bins = self.hbook[key].binning
+            except KeyError:
+                self.__logger.error("%s not found", key)
+            except Exception:
+                self.__logger.error("%s failed to retrieve bins", key)
             self.hbook[key] = Histogram1D(bins,
                                           stats={"sum": 0.0, "sum2": 0.0})
             self.logger.debug('Rebook %s %s', key, self.hbook[key])
@@ -69,8 +94,12 @@ class Physt_Wrapper(metaclass=Singleton):
                 self.hbook[name_] = \
                         Histogram1D(bins,
                                     stats={"sum": 0.0, "sum2": 0.0})
+            except KeyError:
+                self.__logger.error("Histogram not found %s", name_)
+                raise
             except Exception:
-                self.__logger.error("Physt fails to book")
+                self.__logger.error("Unknown error")
+                raise
 
         if axis_name:
             self.hbook[name_].axis_name = axis_name
@@ -102,3 +131,15 @@ class Physt_Wrapper(metaclass=Singleton):
 
     def to_message(self):
         return write_many(self.hbook)
+
+    def finalize(self):
+        hcname = self._job_id + '.hist.dat'
+        hcname = os.path.join(self._path, hcname)
+        try:
+            with open(hcname, "wb") as f:
+                f.write(self.to_message().SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write hbook")
+            self.__logger.error(hcname)
+        except Exception:
+            raise

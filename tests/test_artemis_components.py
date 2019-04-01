@@ -21,6 +21,7 @@ from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.properties import JobProperties
 from artemis.logger import Logger
 from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.core.timerstore import TimerSvc
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 
 from artemis.core.tree import Tree
@@ -40,6 +41,7 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(ArrowSets)
         Singleton.reset(Tree)
         Singleton.reset(Physt_Wrapper)
+        Singleton.reset(TimerSvc)
 
     def setUp(self):
         print("================================================")

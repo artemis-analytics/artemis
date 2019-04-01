@@ -20,7 +20,6 @@ from artemis.core.algo import AlgoBase
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from artemis.core.tool import ToolStore
-from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.core.properties import JobProperties
 from google.protobuf import text_format
 
@@ -65,7 +64,6 @@ class Collector(AlgoBase):
         self.__logger.info("initialize")
         self._jp = JobProperties()
         self.tools = ToolStore()
-        self.hbook = Physt_Wrapper()
         self.tree = Tree()
 
         # Configure the output data streams
@@ -205,7 +203,6 @@ class Collector(AlgoBase):
                 self.__logger.error("Problem collecting")
                 raise
             self.__logger.info("Allocated %i", pa.total_allocated_bytes())
-            self.hbook.fill('artemis', 'time.collect', time_)
         # Spill any remaining buffers to disk
         # Set the output file metadata
         summary = self._jp.meta.summary

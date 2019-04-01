@@ -13,10 +13,14 @@ Property classes
 
 from collections import OrderedDict
 from pprint import pformat
+import os
 
+from artemis.logger import Logger
 from artemis.core.singleton import Singleton
 from artemis.io.protobuf.artemis_pb2 import Properties as Properties_pb
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis.utils.utils import bytes_to_mb
+from artemis.core.book import ArtemisBook
 
 
 class Properties():
@@ -95,6 +99,7 @@ class Properties():
         return getattr(self, '_' + name)
 
 
+@Logger.logged
 class JobProperties(metaclass=Singleton):
     '''
     Wrapper class as Singleton type
@@ -102,3 +107,70 @@ class JobProperties(metaclass=Singleton):
     '''
     def __init__(self):
         self.meta = JobInfo_pb()
+        self.hbook = ArtemisBook()
+        self._job_id = None
+        self._path = None
+
+    @property
+    def job_id(self):
+        return self._job_id
+
+    @job_id.setter
+    def job_id(self, value):
+        self._job_id = value
+
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, value):
+        self._path = value
+
+    def finalize(self):
+
+        self.__logger.info("Job Summary")
+        self.__logger.info("=================================")
+        self.__logger.info("Job %s", self.meta.name)
+        self.__logger.info("Job id %s", self.meta.job_id)
+        self.__logger.info("Total job time %i seconds",
+                           self.meta.summary.job_time.seconds)
+        self.__logger.info("Processed file summary")
+        for f in self.meta.data:
+            self.__logger.info("File: %s size: %2.2f MB",
+                               f.name, bytes_to_mb(f.raw.size_bytes))
+        self.__logger.info("Arrow Table summary")
+        for table in self.meta.summary.tables:
+            self.__logger.info("Table %s, rows %i columns %i batches %i",
+                               table.name, table.num_rows,
+                               table.num_columns, table.num_batches)
+
+        self.__logger.info("Total datums requested %i",
+                           self.meta.summary.processed_ndatums)
+        self.__logger.info("Total bytes processed %i",
+                           self.meta.summary.processed_bytes)
+
+        self.__logger.debug("Timer Summary")
+        for t in self.meta.summary.timers:
+            self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
+        self.__logger.info("This is a test of your greater survival")
+        self.__logger.info("=================================")
+
+        hcname = self._job_id + '_meta.dat'
+        hcname = os.path.join(self._path, hcname)
+        try:
+            with open(hcname, "wb") as f:
+                f.write(self.meta.SerializeToString())
+        except IOError:
+            self.__logger.error("Cannot write proto")
+        except Exception:
+            raise
+
+        hcname = self._job_id + '.hist.dat'
+        hcname = os.path.join(self._path, hcname)
+        try:
+            self.hbook.finalize(hcname)
+        except IOError:
+            self.__logger.error("Cannot write hbook")
+        except Exception:
+            raise

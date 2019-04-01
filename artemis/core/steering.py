@@ -14,10 +14,8 @@ from collections import OrderedDict
 
 from artemis.utils.utils import range_positive
 from artemis.decorators import timethis
-from artemis.core.physt_wrapper import Physt_Wrapper
 from .algo import AlgoBase
 from .tree import Tree, Node, Element
-from artemis.core.timerstore import TimerSvc
 
 
 class Steering(AlgoBase):
@@ -28,7 +26,6 @@ class Steering(AlgoBase):
         self._chunk_cntr = 0
         # Execution graph
         self._menu = OrderedDict()
-        self.__timers = TimerSvc()
         self._algo_instances = {}
 
     def initialize(self):
@@ -107,20 +104,14 @@ class Steering(AlgoBase):
 
     def book(self):
         self.__logger.info("Book")
-        self.hbook = Physt_Wrapper()
-        # self.hbook.book(self.name, 'counts', range(100))
-        # self.hbook.book(self.name, 'payload', range(100))
-        # self.hbook.book(self.name, 'nblocks', range(100))
-        # self.hbook.book(self.name, 'block_size', range(100))
 
         for key in self._algo_instances:
             algo = self._algo_instances[key]
             self.__logger.info("Book %s", algo.name)
-            self.__timers.book(self.name, algo.name)
             bins = [x for x in range_positive(0., 100., 2.)]
             try:
-                self.hbook.book(self.name, 'time.'+algo.name,
-                                bins, 'ms')
+                self._jp.hbook.book(self.name, 'time.'+algo.name,
+                                    bins, 'ms', timer=True)
             except Exception:
                 self.__logger.error('Cannot book steering')
                 raise
@@ -128,19 +119,12 @@ class Steering(AlgoBase):
                 algo.book()
             except Exception:
                 self.__logger.error('Cannot book %s' % algo.name)
+        self.__logger.info("HBook keys %s", self._jp.hbook.keys())
 
     def rebook(self):
         '''
         retrieve the sampling times and rebook
         '''
-
-        for key in self.__timers.keys:
-            if 'steer' not in key:
-                continue
-            name = key.split('.')[-1]
-            avg_, std_ = self.__timers.stats(self.name, name)
-            bins = [x for x in range_positive(0., avg_ + 5*std_, 2.)]
-            self.hbook.rebook('steer.time', name, bins, 'ms')
 
         for key in self._menu:
             for algo in self._menu[key]:
@@ -193,8 +177,8 @@ class Steering(AlgoBase):
                     try:
                         time_ = _algexe(self._seq_tree.nodes[key].
                                         payload[-1])[-1]
-                        self.__timers.fill(self.name, algo.name, time_)
-                        self.hbook.fill(self.name, 'time.'+algo.name, time_)
+                        self._jp.hbook.fill(self.name,
+                                            'time.' + algo.name, time_)
                     except Exception:
                         raise
 
@@ -202,25 +186,9 @@ class Steering(AlgoBase):
 
     def finalize(self):
         self.__logger.info("Completed steering")
-        summary = self._jp.meta.summary
         for key in self._menu:
             for algo in self._menu[key]:
                 if isinstance(algo, str):
                     self.__logger.debug('Not an algo: %s' % algo)
                 else:
                     algo.finalize()
-        self.__logger.info("Timers %s", self.__timers.keys)
-        for key in self.__timers.keys:
-            if 'steer' in key:
-                key = key.split('.')[-1]
-            else:
-                continue
-            _name = '.'
-            _name = _name.join([self.name, 'time', key])
-            mu = self.hbook.get_histogram(self.name, 'time.'+key).mean()
-            std = self.hbook.get_histogram(self.name, 'time.'+key).std()
-            self.__logger.debug("%s timing: %2.4f" % (key, mu))
-            msgtime = summary.timers.add()
-            msgtime.name = _name
-            msgtime.time = mu
-            msgtime.std = std

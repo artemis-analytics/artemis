@@ -17,6 +17,8 @@ import uuid
 from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
+from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.core.timerstore import TimerSvc
 from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.properties import JobProperties
 from artemis.tools.mftool import MfTool
@@ -25,6 +27,7 @@ from artemis.generators.legacygen import GenMF
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 logging.getLogger().setLevel(logging.INFO)
+
 
 def get_legacy_record_layout():
     fields = {'column_a': {'utype': 'str', 'length': 1},
@@ -127,12 +130,16 @@ class Test_MF_Reader(unittest.TestCase):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-
+        Singleton.reset(Physt_Wrapper)
+        Singleton.reset(TimerSvc)
+    
     def tearDown(self):
         Singleton.reset(JobProperties)
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-
+        Singleton.reset(Physt_Wrapper)
+        Singleton.reset(TimerSvc)
+    
     def test_mf_reader(self):
         '''
         This test simply tests the reader function of the code.
@@ -193,9 +200,6 @@ class Test_MF_Reader(unittest.TestCase):
         print(batch.schema)
 
     def test_mfartemis(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
-        Singleton.reset(ArrowSets)
 
         with tempfile.TemporaryDirectory() as dirpath:
             mb = MenuFactory('legacygen')
@@ -213,6 +217,10 @@ class Test_MF_Reader(unittest.TestCase):
                                       generator_type='legacy',
                                       nbatches=1,
                                       num_rows=10000,
+                                      header='header',
+                                      header_offset=20,
+                                      footer='footer',
+                                      footer_size=20,
                                       delimiter='\r\n',
                                       nrecords_per_block=4095,
                                       max_file_size=1073741824,
@@ -247,11 +255,13 @@ class Test_MF_Reader(unittest.TestCase):
             print(job)
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
+            nrecords = 0
+            for table in bow._jp.meta.summary.tables:
+                nrecords += table.num_rows
+
+            assert(nrecords == 10000)
 
     def test_mfartemisio(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
-        Singleton.reset(ArrowSets)
         mb = MenuFactory('legacygen')
         with tempfile.TemporaryDirectory() as dirpath:
             try:
@@ -320,9 +330,6 @@ class Test_MF_Reader(unittest.TestCase):
 
     def test_legacyds(self):
 
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
-        Singleton.reset(ArrowSets)
         mb = MenuFactory('legacygen')
 
         try:
@@ -336,6 +343,10 @@ class Test_MF_Reader(unittest.TestCase):
             generator = GenMF('generator',
                               num_rows=10000, 
                               nbatches=1,
+                              header='header',
+                              header_offset=475,
+                              footer='footer',
+                              footer_size=475,
                               suffix='.txt',
                               prefix='legacyio',
                               path=dirpath,
@@ -372,6 +383,11 @@ class Test_MF_Reader(unittest.TestCase):
             job.config.CopyFrom(msg)
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
+            nrecords = 0
+            for table in bow._jp.meta.summary.tables:
+                nrecords += table.num_rows
+
+            assert(nrecords == 10000)
 
 
 if __name__ == "__main__":

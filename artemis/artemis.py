@@ -15,7 +15,6 @@ owns the stores needed by the user algorithms
     objects
 """
 # Python libraries
-import sys
 import os
 import traceback
 
@@ -37,14 +36,12 @@ from artemis.core.tool import ToolStore
 
 # IO
 from artemis.io.collector import Collector
-from artemis.core.physt_wrapper import Physt_Wrapper
 
 # Protobuf
 import artemis.io.protobuf.artemis_pb2 as artemis_pb2
 
 # Utils
-from artemis.utils.utils import bytes_to_mb, range_positive
-from google.protobuf import text_format
+from artemis.utils.utils import bytes_to_mb, range_positive, autobinning
 from artemis.decorators import timethis
 
 
@@ -112,21 +109,19 @@ class Artemis():
         # Define internal properties from job configuration
         self._path = self._jp.meta.output.repo
         self.MALLOC_MAX_SIZE = self._jp.meta.config.max_malloc_size_bytes
-        self._ndatum_samples = self._jp.meta.config.sampler.ndatums
-        self._nchunk_samples = self._jp.meta.config.sampler.nchunks
 
         # Define the internal objects for Artemis
-        self.steer = None
-        self.generator = None
-        self.datahandler = None
-        self.filehandler = None
-        self.collector = None
-        self._raw = None
-        self._schema = {}
+        self.steer = None  # Manages traversing compute graph
+        self.datahandler = None  # Manages input data
+        self.filehandler = None  # Manages datum processing
+        self.collector = None  # Manages Arrow malloc and serialization
 
         # List of timer histos for easy access
         self.__timers = TimerSvc()
         self.__tools = ToolStore()
+
+        self._jp.job_id = self._job_id
+        self._jp.path = self._path
 
     @property
     def job_id(self):
@@ -271,11 +266,6 @@ class Artemis():
             self.__logger.error("Configuration not provided")
             raise AttributeError
 
-        # Set up histogram store
-        self.hbook = Physt_Wrapper()
-        self.__logger.info("Hbook reference count: %i",
-                           sys.getrefcount(self.hbook))
-
         # Create Steering instance
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         self.collector = Collector('collector',
@@ -339,27 +329,24 @@ class Artemis():
 
     def book(self):
         self.__logger.info("{}: Book".format('artemis'))
-        self.hbook.book('artemis', 'counts', range(10))
+        self._jp.hbook.book('artemis', 'counts', range(10))
         bins = [x for x in range_positive(0., 10., 0.1)]
 
         # Payload and block distributions
-        self.hbook.book('artemis', 'payload', bins, 'MB')
-        self.hbook.book('artemis', 'nblocks', range(100), 'n')
-        self.hbook.book('artemis', 'blocksize', bins, 'MB')
+        self._jp.hbook.book('artemis', 'payload', bins, 'MB')
+        self._jp.hbook.book('artemis', 'nblocks', range(100), 'n')
+        self._jp.hbook.book('artemis', 'blocksize', bins, 'MB')
 
         # Timing plots
         bins = [x for x in range_positive(0., 1000., 2.)]
-        self.hbook.book('artemis', 'time.prepblks', bins, 'ms')
-        self.hbook.book('artemis', 'time.prepschema', bins, 'ms')
-        self.hbook.book('artemis', 'time.execute', bins, 'ms')
-        self.hbook.book('artemis', 'time.collect', bins, 'ms')
-
-        # TODO
-        # Think of better way to loop over list of timers
-        self.__timers.book('artemis', 'prepblks')
-        self.__timers.book('artemis', 'prepschema')
-        self.__timers.book('artemis', 'execute')
-        self.__timers.book('artemis', 'collect')
+        self._jp.hbook.book('artemis', 'time.prepblks',
+                            bins, 'ms', timer=True)
+        self._jp.hbook.book('artemis', 'time.prepschema',
+                            bins, 'ms', timer=True)
+        self._jp.hbook.book('artemis', 'time.execute',
+                            bins, 'ms', timer=True)
+        self._jp.hbook.book('artemis', 'time.collect',
+                            bins, 'ms', timer=True)
 
         try:
             self.steer.book()
@@ -373,19 +360,23 @@ class Artemis():
         after random sampling of data chunk
         '''
         self.__logger.info("Rebook")
-        self.hbook.rebook_all(excludes=['artemis.time.prepblks',
-                                        'artemis.time.prepschema'])
-        try:
-            self.steer.rebook()
-        except Exception:
-            raise
 
-        _finfo = self._jp.meta.data[-1]
-        avg_, std_ = self.__timers.stats('artemis', 'execute')
-        factor = 2 * len(_finfo.blocks)
+        self._jp.hbook.rebook()  # Resets all histograms!
 
-        bins = [x for x in range_positive(0., avg_*factor, 2.)]
-        self.hbook.rebook('artemis', 'time.execute', bins, 'ms')
+        # Get averages
+        nblks = []
+        blksize = []
+        payloads = []
+        for finfo in self._jp.meta.data:
+            nblks.append(len(finfo.blocks))
+            payloads.append(bytes_to_mb(finfo.raw.size_bytes))
+            for blk in finfo.blocks:
+                blksize.append(bytes_to_mb(blk.range.size_bytes))
+
+        # Payload and block distributions
+        self._jp.hbook.book('artemis', 'payload', autobinning(payloads), 'MB')
+        self._jp.hbook.book('artemis', 'nblocks', autobinning(nblks), 'n')
+        self._jp.hbook.book('artemis', 'blocksize', autobinning(blksize), 'MB')
 
         self.__logger.info("artemis: allocated before reset %i",
                            pa.total_allocated_bytes())
@@ -405,8 +396,7 @@ class Artemis():
         process a few to extract schema, check for errors, get
         timing profile
         '''
-        self.__logger.info("Sample nchunks for preprocess profiling %i",
-                           self._nchunk_samples)
+        self.__logger.info("Sampler")
 
         for datum in self.datahandler.sampler():
             if isinstance(datum, bytes):
@@ -426,7 +416,8 @@ class Artemis():
                 except Exception:
                     self.__logger.error("Problem executing sample")
                     raise
-                self.__timers.fill('artemis', 'execute', time_)
+                self._jp.hbook.fill('artemis', 'time.execute', time_)
+
                 self.__logger.debug("Sampler execute time %2.2f", time_)
 
     def execute(self):
@@ -448,20 +439,25 @@ class Artemis():
             if isinstance(datum, bytes):
                 datum = pa.py_buffer(datum)
 
-            self.hbook.fill('artemis', 'counts',
-                            self._jp.meta.summary.processed_ndatums)
+            self._jp.hbook.fill('artemis', 'counts',
+                                self._jp.meta.summary.processed_ndatums)
             try:
                 reader = self.filehandler.execute(datum)
             except Exception:
                 self.__logger.error("Failed to prepare file")
                 raise
 
+            self._jp.hbook.fill('artemis', 'payload',
+                                bytes_to_mb(self.filehandler.size_bytes))
+            self._jp.hbook.fill('artemis', 'nblocks',
+                                len(self.filehandler.blocks))
+
             self.__logger.info("artemis: flush before execute %i",
                                pa.total_allocated_bytes())
 
             for batch in reader:
-                self.hbook.fill('artemis', 'blocksize',
-                                bytes_to_mb(batch.size))
+                self._jp.hbook.fill('artemis', 'blocksize',
+                                    bytes_to_mb(batch.size))
                 steer_exec = timethis(self.steer.execute)
                 try:
                     r, time_ = steer_exec(batch)
@@ -470,8 +466,7 @@ class Artemis():
                     raise
                 self.__logger.debug("artemis: execute complete malloc %i",
                                     pa.total_allocated_bytes())
-                self.hbook.fill('artemis', 'time.execute', time_)
-
+                self._jp.hbook.fill('artemis', 'time.execute', time_)
                 self._jp.meta.summary.processed_bytes += batch.size
 
                 try:
@@ -509,15 +504,15 @@ class Artemis():
             self.__logger.error("Steer finalize fails")
             raise
 
-        mu_payload = self.hbook.get_histogram('artemis', 'payload').mean()
-        mu_blocksize = self.hbook.get_histogram('artemis', 'blocksize').mean()
+        mu_payload = self._jp.hbook['artemis.payload'].mean()
+        mu_blocksize = self._jp.hbook['artemis.blocksize'].mean()
+        mu_nblocks = self._jp.hbook['artemis.nblocks'].mean()
 
-        for key in self.__timers.keys:
-            if 'artemis' not in key:
+        for key in self._jp.hbook.keys():
+            if 'time' not in key:
                 continue
-            name = key.split('.')[-1]
-            mu = self.hbook.get_histogram('artemis', 'time.'+name).mean()
-            std = self.hbook.get_histogram('artemis', 'time.'+name).std()
+            mu = self._jp.hbook[key].mean()
+            std = self._jp.hbook[key].std()
 
             # Add to the msg
             msgtime = summary.timers.add()
@@ -525,48 +520,25 @@ class Artemis():
             msgtime.time = mu
             msgtime.std = std
 
-        summary.collection.CopyFrom(self.hbook.to_message())
-        jobinfoname = self._job_id + '_meta.dat'
-        jobinfoname = os.path.join(self._path, jobinfoname)
-        self._finalize_jobstate(artemis_pb2.JOB_SUCCESS)
-
-        try:
-            with open(jobinfoname, "wb") as f:
-                f.write(self._jp.meta.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write hbook")
-        except Exception:
-            raise
-
-        self.__logger.info("Job Summary")
-        self.__logger.info("=================================")
-        self.__logger.info("Job %s", self._jp.meta.name)
-        self.__logger.info("Job id %s", self._jp.meta.job_id)
-        self.__logger.info("Total job time %i seconds",
-                           self._jp.meta.summary.job_time.seconds)
-        self.__logger.info("Processed file summary")
-        for f in self._jp.meta.data:
-            self.__logger.info(text_format.MessageToString(f))
-
-        self.__logger.info("Processed data summary")
-        self.__logger.info("Mean payload %2.2f MB", mu_payload)
-        self.__logger.info("Mean blocksize %2.2f MB", mu_blocksize)
-        self.__logger.info("Total datums requested %i",
-                           summary.processed_ndatums)
-        self.__logger.info("Total bytes processed %i",
-                           summary.processed_bytes)
-
-        self.__logger.debug("Timer Summary")
-        for t in self._jp.meta.summary.timers:
-            self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
-        self.__logger.info("This is a test of your greater survival")
-        self.__logger.info("=================================")
-
         try:
             self.collector.finalize()
         except Exception:
             self.__logger.error("Collector fails to finalize buffer")
             raise
+
+        self._finalize_jobstate(artemis_pb2.JOB_SUCCESS)
+
+        try:
+            self._jp.finalize()
+        except IOError:
+            self.__logger.error("Cannot write proto")
+        except Exception:
+            raise
+
+        self.__logger.info("Processed data summary")
+        self.__logger.info("Mean payload %2.2f MB", mu_payload)
+        self.__logger.info("Mean blocksize %2.2f MB", mu_blocksize)
+        self.__logger.info("Mean n block %2.2f ", mu_nblocks)
 
     def abort(self, *args, **kwargs):
         self._jp.meta.state = artemis_pb2.JOB_ABORT
