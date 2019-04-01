@@ -32,7 +32,7 @@ class WriterTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test(self):
+    def test_writer(self):
         nrows = 5
         df = pd.DataFrame({
             'one': np.random.randn(nrows),

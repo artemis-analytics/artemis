@@ -89,6 +89,8 @@ test:
     - echo "Coverage report:"
     - grep "pc_cov" htmlcov/index.html | grep -e "[0123456879]*%" -o
     - python tests/test_artemis.py
+    - ls
+      # - python artemis/utils/hcollections.py arrowproto-example_meta.dat arrowproto-example.hist.dat
   artifacts:
       paths:
           - htmlcov/

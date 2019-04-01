@@ -10,6 +10,7 @@
 """
 Collection of utility functions
 """
+import statistics
 
 
 def bytes_to_mb(B):
@@ -32,3 +33,29 @@ def range_positive(start, stop=None, step=None):
     while start < stop:
         yield start
         start += step
+
+
+def autobinning(lst, nbins=10):
+    try:
+        mu = statistics.mean(lst)
+        std = statistics.stdev(lst)
+    except statistics.StatisticsError:
+        mu = lst[-1]
+        std = mu
+    except Exception:
+        raise
+
+    lower_edge = mu - 5 * std
+    if lower_edge < 0.:
+        lower_edge = 0.
+
+    upper_edge = mu + 5 * std
+    range_ = (upper_edge - lower_edge)
+    digs, order = ('%0.20e' % range_).split('e')
+    order = abs(int(order))
+
+    lower_edge = round(lower_edge, order)
+    upper_edge = round(upper_edge, order)
+    bin_width = round(range_/nbins, order+1)
+    bins = [x for x in range_positive(lower_edge, upper_edge, bin_width)]
+    return bins

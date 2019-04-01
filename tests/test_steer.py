@@ -7,6 +7,8 @@ from artemis.core.steering import Steering
 from artemis.core.singleton import Singleton
 from artemis.core.dag import Sequence, Chain, Menu
 from artemis.algorithms.dummyalgo import DummyAlgo1
+from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.core.timerstore import TimerSvc
 
 
 class SteeringTestCase(unittest.TestCase):
@@ -37,7 +39,8 @@ class SteeringTestCase(unittest.TestCase):
     def tearDown(self):
         # self.steer.finalize()
         Singleton.reset(JobProperties)
-    
+        Singleton.reset(Physt_Wrapper)
+        Singleton.reset(TimerSvc)
     def test_from_msg(self):
         jobops = JobProperties()
         jobops.meta.config.menu.CopyFrom(self.DATA['protomsg'])

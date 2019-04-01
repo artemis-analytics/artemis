@@ -19,6 +19,8 @@ from artemis.core.singleton import Singleton
 from artemis.core.properties import JobProperties
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
+from artemis.core.physt_wrapper import Physt_Wrapper
+from artemis.core.timerstore import TimerSvc
 from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
@@ -26,6 +28,8 @@ logging.getLogger().setLevel(logging.INFO)
 
 # Improve temporary outputs and context handling
 # stackoverflow 3223604
+
+
 class ArtemisTestCase(unittest.TestCase):
         
     def setUp(self):
@@ -35,15 +39,16 @@ class ArtemisTestCase(unittest.TestCase):
 
     def tearDown(self):
         Singleton.reset(JobProperties)
+        Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
+        Singleton.reset(Physt_Wrapper)
+        Singleton.reset(TimerSvc)
     
     def test_fileio(self):
         '''
         Write csv to disk
         Read back in artemis
         '''
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
-        Singleton.reset(ArrowSets)
         with tempfile.TemporaryDirectory() as dirpath:
             mb = MenuFactory('csvgen')
             msgmenu = mb.build()
