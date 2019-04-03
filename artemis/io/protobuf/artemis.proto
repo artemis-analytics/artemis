@@ -149,6 +149,13 @@ enum JobState {
     JOB_FAILURE = 2;
     JOB_SUCCESS = 3;
     JOB_ABORT = 4;
+    JOB_CONFIGURE = 5;
+    JOB_INITIALIZE = 6;
+    JOB_BOOK = 7;
+    JOB_SAMPLE = 8;
+    JOB_REBOOK = 9;
+    JOB_EXECUTE = 10;
+    JOB_FINALIZE = 11;
 }
 
 message Timer {
