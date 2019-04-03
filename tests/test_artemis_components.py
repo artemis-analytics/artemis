@@ -109,7 +109,7 @@ class ArtemisTestCase(unittest.TestCase):
             self.job.output.repo = dirpath
             bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
-            bow._jp.meta.state = artemis_pb2.JOB_RUNNING
+            bow._jp.meta.state = artemis_pb2.JOB_INITIALIZE
             print('Initializing')
             bow.configure()
             bow.initialize()
@@ -121,10 +121,9 @@ class ArtemisTestCase(unittest.TestCase):
             self.job.output.repo = dirpath
             bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
-            bow._jp.meta.state = artemis_pb2.JOB_RUNNING
+            bow._jp.meta.state = artemis_pb2.JOB_BOOK
             bow.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
             print('Booking')
-            bow.hbook = Physt_Wrapper()
             bow.book()
 
     def test_run(self):
@@ -202,10 +201,14 @@ class ArtemisTestCase(unittest.TestCase):
             bow = ArtemisFactory(self.job, 'INFO')
             print('State change -> RUNNING')
             bow._jp.meta.state = artemis_pb2.JOB_RUNNING
-            bow.configure() 
+            bow._jp.meta.state = artemis_pb2.JOB_CONFIGURE
+            bow.configure()
+            bow._jp.meta.state = artemis_pb2.JOB_INITIALIZE
             bow.initialize()
+            bow._jp.meta.state = artemis_pb2.JOB_BOOK
             bow.book()
-            bow.sampler()
+            bow._jp.meta.state = artemis_pb2.JOB_SAMPLE
+            bow.execute()
             bow.collector.initialize()
             print('Finalizing')
             bow.abort("abort")

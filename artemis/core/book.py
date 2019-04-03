@@ -286,7 +286,6 @@ class ArtemisBook(BaseBook):
             else:
                 try:
                     bins = autobinning(timer)
-                    self.__logger.info(bins)
                 except IndexError:
                     self.__logger.warning("%s fails rebook, use original bins",
                                           n)
