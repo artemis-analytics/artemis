@@ -13,11 +13,10 @@
 import unittest
 import logging
 import io
-from ast import literal_eval
 import pyarrow as pa
-from pyarrow.csv import read_csv, ReadOptions
+from pandas.util.testing import assert_frame_equal
 
-from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow
+from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.generators.legacygen import GenMF
 from artemis.io.filehandler import FileHandlerTool
 logging.getLogger().setLevel(logging.INFO)
@@ -26,113 +25,112 @@ logging.getLogger().setLevel(logging.INFO)
 class ReaderTestCase(unittest.TestCase):
 
     def setUp(self):
-        print("================================================")
-        print("Beginning new TestCase %s" % self._testMethodName)
-        print("================================================")
-        self._handler = FileHandlerTool('tool', delimiter='\r\n')
-        self._handler.initialize()
+        pass
 
     def tearDown(self):
         pass
-     
+
     def test_read_block(self):
+        handler = FileHandlerTool('tool', delimiter='\r\n')
+        handler.initialize()
         delimiter = b'\n'
         data = delimiter.join([b'123', b'456', b'789'])
         f = io.BytesIO(data)
 
-        assert self._handler._read_block(f, 1, 2) == b'23'
-        assert self._handler._read_block(f, 0, 1, delimiter=b'\n') == b'123\n'
-        assert self._handler._read_block(f, 0, 2, delimiter=b'\n') == b'123\n'
-        assert self._handler._read_block(f, 0, 3, delimiter=b'\n') == b'123\n'
-        assert self._handler._read_block(f, 0, 5, delimiter=b'\n') == b'123\n456\n'
-        assert self._handler._read_block(f, 0, 8, delimiter=b'\n') == b'123\n456\n789'
-        assert self._handler._read_block(f, 0, 100, delimiter=b'\n') == b'123\n456\n789'
-        assert self._handler._read_block(f, 1, 1, delimiter=b'\n') == b''
-        assert self._handler._read_block(f, 1, 5, delimiter=b'\n') == b'456\n'
-        assert self._handler._read_block(f, 1, 8, delimiter=b'\n') == b'456\n789'
+        self.assertEqual(handler._read_block(f, 1, 2), b'23')
+        self.assertEqual(handler._read_block(f, 0, 1, delimiter=b'\n'),
+                         b'123\n')
+        self.assertEqual(handler._read_block(f, 0, 2, delimiter=b'\n'),
+                         b'123\n')
+        self.assertEqual(handler._read_block(f, 0, 3, delimiter=b'\n'),
+                         b'123\n')
+        self.assertEqual(handler._read_block(f, 0, 5, delimiter=b'\n'),
+                         b'123\n456\n')
+        self.assertEqual(handler._read_block(f, 0, 8, delimiter=b'\n'),
+                         b'123\n456\n789')
+        self.assertEqual(handler._read_block(f, 0, 100, delimiter=b'\n'),
+                         b'123\n456\n789')
+        self.assertEqual(handler._read_block(f, 1, 1, delimiter=b'\n'),
+                         b'')
+        self.assertEqual(handler._read_block(f, 1, 5, delimiter=b'\n'),
+                         b'456\n')
+        self.assertEqual(handler._read_block(f, 1, 8, delimiter=b'\n'),
+                         b'456\n789')
 
         for ols in [[(0, 3), (3, 3), (6, 3), (9, 2)],
                     [(0, 4), (4, 4), (8, 4)]]:
-            out = [self._handler._read_block(f, o, l, b'\n') for o, l in ols]
-            assert b"".join(filter(None, out)) == data
+            out = [handler._read_block(f, o, l, b'\n') for o, l in ols]
+            self.assertEqual(b"".join(filter(None, out)), data)
 
     def test_seek_delimiter_endline(self):
+        handler = FileHandlerTool('tool', delimiter='\r\n')
+        handler.initialize()
         f = io.BytesIO(b'123\n456\n789')
 
         # if at zero, stay at zero
-        self._handler._seek_delimiter(f, b'\n', 5)
-        assert f.tell() == 0
+        handler._seek_delimiter(f, b'\n', 5)
+        self.assertEqual(f.tell(), 0)
 
         # choose the first block
         for bs in [1, 5, 100]:
             f.seek(1)
-            self._handler._seek_delimiter(f, b'\n', blocksize=bs)
-            assert f.tell() == 4
+            handler._seek_delimiter(f, b'\n', blocksize=bs)
+            self.assertEqual(f.tell(), 4)
 
         # handle long delimiters well, even with short blocksizes
         f = io.BytesIO(b'123abc456abc789')
         for bs in [1, 2, 3, 4, 5, 6, 10]:
             f.seek(1)
-            self._handler._seek_delimiter(f, b'abc', blocksize=bs)
-            assert f.tell() == 6
+            handler._seek_delimiter(f, b'abc', blocksize=bs)
+            self.assertEqual(f.tell(), 6)
 
         # End at the end
         f = io.BytesIO(b'123\n456')
         f.seek(5)
-        self._handler._seek_delimiter(f, b'\n', 5)
-        assert f.tell() == 7  
-    
+        handler._seek_delimiter(f, b'\n', 5)
+        self.assertEqual(f.tell(), 7)
+
     def test_get_blocks(self):
         generator = GenCsvLikeArrow('test')
         data, names, batch = generator.make_random_csv()
-        
-        length = len(data)
-        
-        # IO Buffer bytestream
-        #buf = io.BytesIO(data)
-        buf = pa.py_buffer(data)
-        #file_ = pa.PythonFile(buf, mode='r')
-        
-        self._handler.execute(buf)
-        
-        print("Generated buffer is %s bytes" % length)
-        # IO Buffer bytestream
-        buf = io.BytesIO(data)
-        file_ = pa.PythonFile(buf, mode='r')
-        
-        blocksum = 0
-
-        blocks = self._handler.blocks
-        for blk in blocks:
-            blocksum += blk[1]
-        try:
-            assert blocksum == length
-        except AssertionError:
-            print(length, blocksum)
-        
-        # print(offsets)
-        # print(lengths)
-    
-    def test_execute_csv(self):
-        generator = GenCsvLikeArrow('test',
-                                    nbatches=1, 
-                                    num_cols=10, 
-                                    num_rows=100)
-        data, names, batch = generator.make_random_csv()
-        handler = FileHandlerTool('tool', linesep='\r\n', blocksize=100 )
+        handler = FileHandlerTool('tool', delimiter='\r\n',
+                                  header_rows=0, schema=names)
         handler.initialize()
         length = len(data)
-        buf = pa.py_buffer(data)
-        print(buf.size, pa.total_allocated_bytes())
-        reader = handler.execute(buf)
-        print(type(reader))
-        print(pa.total_allocated_bytes())
-        for batch in reader.sampler():
-            print(batch.to_pybytes())
-        for batch in reader:
-            print(batch.to_pybytes())
 
-    
+        # IO Buffer bytestream
+        # buf = io.BytesIO(data)
+        # file_ = pa.PythonFile(buf, mode='r')
+
+        buf = pa.py_buffer(data)
+        handler.execute(buf)
+
+        blocksum = 0
+        blocks = handler.blocks
+        for blk in blocks:
+            blocksum += blk[1]
+        self.assertEqual(blocksum, length)
+
+    def test_execute_csv(self):
+        generator = GenCsvLikeArrow('test',
+                                    nbatches=1,
+                                    num_cols=10,
+                                    num_rows=100)
+        data, names, batch = generator.make_random_csv()
+        handler = FileHandlerTool('tool', linesep='\r\n', blocksize=10000)
+        handler.initialize()
+
+        buf = pa.py_buffer(data)
+        reader = handler.execute(buf)
+
+        self.assertEqual(len(data), handler.size_bytes)
+
+        rdata = b''
+        for batch in reader:
+            rdata += batch.to_pybytes()
+
+        self.assertEqual(data, rdata)
+
     def test_execute_legacy(self):
 
         intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
@@ -145,33 +143,36 @@ class ReaderTestCase(unittest.TestCase):
                           column_a=intconf0,
                           column_b=intuconf0,
                           column_c=strconf0,
-                          num_rows=1000, 
+                          num_rows=1000,
                           nbatches=1,
                           loglevel='INFO')
         data = next(generator.generate())
-        handler = FileHandlerTool('tool', 
-                                  filetype='legacy', 
+        handler = FileHandlerTool('tool',
+                                  filetype='legacy',
                                   blocksize=20*100,
                                   encoding='cp500',
                                   schema=['column_a', 'column_b', 'column_c'])
         handler.initialize()
-        length = len(data)
         buf = pa.py_buffer(data)
-        print(buf.size, pa.total_allocated_bytes())
         reader = handler.execute(buf)
+        num_batches = 0
+        for batch in reader:
+            num_batches += 1
+
+        self.assertEqual(num_batches, 10)
 
     def test_prepare_csv(self):
         generator = GenCsvLikeArrow('test',
-                                    nbatches=1, 
-                                    num_cols=10, 
+                                    nbatches=1,
+                                    num_cols=10,
                                     num_rows=100)
         data, names, batch = generator.make_random_csv()
         buf = pa.py_buffer(data)
         handler = FileHandlerTool('tool', linesep='\r\n', blocksize=100)
         stream = pa.input_stream(buf)
         handler.prepare_csv(stream)
-        assert len(handler.schema) == 10
-    
+        self.assertEqual(len(handler.schema), 10)
+
     def test_prepare_legacy(self):
 
         intconf0 = {'utype': 'int', 'length': 10, 'min_val': 0, 'max_val': 10}
@@ -184,18 +185,39 @@ class ReaderTestCase(unittest.TestCase):
                           column_a=intconf0,
                           column_b=intuconf0,
                           column_c=strconf0,
-                          num_rows=1000, 
+                          num_rows=1000,
                           nbatches=1,
                           loglevel='INFO')
         data = next(generator.generate())
         buf = pa.py_buffer(data)
-        handler = FileHandlerTool('tool', 
-                                  filetype='legacy', 
+        handler = FileHandlerTool('tool',
+                                  filetype='legacy',
                                   blocksize=20*100,
                                   encoding='cp500',
                                   schema=['column_a', 'column_b', 'column_c'])
-        stream = pa.input_stream(buf) 
+        stream = pa.input_stream(buf)
         handler.prepare_legacy(stream)
+
+    def test_ipc(self):
+        generator = GenCsvLikeArrow('test',
+                                    nbatches=1,
+                                    num_cols=10,
+                                    num_rows=100)
+        data, names, batch = generator.make_random_csv()
+        sink = pa.BufferOutputStream()
+        writer = pa.RecordBatchFileWriter(sink, batch.schema)
+        writer.write(batch)
+        writer.close()
+        buf = sink.getvalue()
+        handler = FileHandlerTool('tool', filetype='ipc')
+        handler.initialize()
+        handler.prepare_ipc(buf)
+        self.assertEqual(len(handler.schema), 10)
+
+        reader = handler.execute(buf)
+        rbatch = next(reader)
+        self.assertEqual(batch.num_rows, rbatch.num_rows)
+        assert_frame_equal(batch.to_pandas(), rbatch.to_pandas())
 
 
 if __name__ == '__main__':

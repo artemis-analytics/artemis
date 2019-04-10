@@ -54,8 +54,51 @@ class ReaderFactory():
                                 blocks,
                                 rnd,
                                 nsamples)
+        elif reader == 'ipc':
+            return ArrowReader(filepath_or_buffer,
+                               header,
+                               header_offset,
+                               blocks,
+                               rnd,
+                               nsamples)
         else:
             raise TypeError
+
+
+@Logger.logged
+class ArrowReader(BaseReader):
+    def __init__(self,
+                 filepath_or_buffer,
+                 header,
+                 header_offset,
+                 blocks,
+                 rnd,
+                 nsamples=4
+                 ):
+        self.reader = pa.ipc.open_file(filepath_or_buffer)
+        self.header = header
+        self.header_offset = header_offset
+        self.blocks = blocks
+        self.iter_blocks = iter(range(self.reader.num_record_batches))
+        self.nsamples = nsamples
+        self.rnd = rnd
+
+    def sampler(self):
+        rndblocks = iter(self.rnd.choice(self.reader.num_record_batches,
+                         self.nsamples))
+        for iblock in rndblocks:
+            yield self.reader.get_batch(iblock)
+        self.__logger.info("Completed sampling")
+
+    def __next__(self):
+        try:
+            block = next(self.iter_blocks)
+        except StopIteration:
+            raise
+        return self.reader.get_batch(block)
+
+    def close(self):
+        self.reader.close()
 
 
 @Logger.logged
@@ -79,9 +122,11 @@ class CsvReader(BaseReader):
         self._prepare()
 
     def _prepare(self):
-        header = self.stream.read(self.header_offset)
-        if header != self.header:
-            raise ValueError
+        if self.header_offset != 0:
+            header = self.stream.read(self.header_offset)
+            if header != self.header:
+                self.__logger.error("Configured header != file header")
+                raise ValueError
 
     def sampler(self):
         rndblocks = iter(self.rnd.choice(len(self.blocks),
