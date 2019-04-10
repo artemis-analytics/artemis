@@ -159,6 +159,8 @@ class FileHandlerTool(ToolBase):
                 self.__logger.error("No header, schema required")
                 raise ValueError
             header = self._create_header(self.schema)
+            header_offset = 0
+            schema = self.schema
         elif self.header_rows == 1:
             header = self._readline(stream)
             header_offset = stream.tell()
@@ -231,8 +233,21 @@ class FileHandlerTool(ToolBase):
     def prepare_sas(self, stream):
         pass
 
-    def prepare_ipc(self, stream):
-        pass
+    def prepare_ipc(self, filepath_or_buffer):
+        try:
+            reader = pa.ipc.open_file(filepath_or_buffer)
+        except Exception:
+            raise
+
+        size_of_batches = 0
+        self.schema = reader.schema
+        self.header = b''
+        self.header_offset = 0
+        for i in range(reader.num_record_batches):
+            batch = reader.get_batch(i)
+            size_of_batches += pa.get_record_batch_size(batch)
+
+        self._size = size_of_batches
 
     def exec_csv(self, stream):
         try:
@@ -255,13 +270,16 @@ class FileHandlerTool(ToolBase):
     def exec_sas(self, stream):
         pass
 
-    def exec_ipc(self, stream):
+    def exec_ipc(self, filepath_or_buffer):
         pass
 
     def exec_blocks(self, stream):
         pos = stream.tell()
         self.blocks = []
-        linesep = bytes(self.linesep, self.encoding)
+        if self.filetype == 'legacy':
+            linesep = None
+        else:
+            linesep = bytes(self.linesep, self.encoding)
         while stream.tell() < self._size:
 
             self.__logger.debug("Current position %i size %i filesize %i",
@@ -276,10 +294,14 @@ class FileHandlerTool(ToolBase):
     def execute(self, filepath_or_buffer):
 
         self.__logger.info("Prepare input stream")
-        stream = pa.input_stream(filepath_or_buffer)
 
-        if stream.tell() != 0:
-            stream.seek(0)
+        if self.filetype == 'ipc':
+            stream = filepath_or_buffer
+        else:
+            stream = pa.input_stream(filepath_or_buffer)
+
+            if stream.tell() != 0:
+                stream.seek(0)
 
         try:
             self.prepare_dict[self.filetype](stream)
@@ -292,7 +314,8 @@ class FileHandlerTool(ToolBase):
             self.__logger.error("Failed execute")
             raise
 
-        stream.close()
+        if self.filetype != 'ipc':
+            stream.close()
 
         self.__logger.info("Create Reader n samples %i", self.nsamples)
         self.__logger.info("Header %s", self.header)
@@ -328,7 +351,10 @@ class FileHandlerTool(ToolBase):
         if self.schema is not None:
             for col in self.schema:
                 a_col = finfo.schema.columns.add()
-                a_col.name = col
+                if self.filetype == 'ipc':
+                    a_col.name = col.name
+                else:
+                    a_col.name = col
 
         for i, block in enumerate(self.blocks):
             msg = finfo.blocks.add()
