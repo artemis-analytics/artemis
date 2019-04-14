@@ -9,7 +9,9 @@
 """
 
 """
+import six
 import pyarrow as pa
+from sas7bdat import SAS7BDAT
 
 from artemis.logger import Logger
 from artemis.errors import AbstractMethodError
@@ -26,6 +28,9 @@ class BaseReader():
     def __next__(self):
         raise AbstractMethodError(self)
 
+    def reset(self):
+        pass
+
     def close(self):
         pass
 
@@ -38,7 +43,8 @@ class ReaderFactory():
                 header_offset,
                 blocks,
                 rnd,
-                nsamples):
+                nsamples,
+                num_rows):
 
         if reader == 'csv':
             return CsvReader(filepath_or_buffer,
@@ -61,6 +67,13 @@ class ReaderFactory():
                                blocks,
                                rnd,
                                nsamples)
+        elif reader == 'sas7bdat':
+            return Sas7bdatReader(filepath_or_buffer,
+                                  header,
+                                  header_offset,
+                                  rnd,
+                                  nsamples,
+                                  num_rows)
         else:
             raise TypeError
 
@@ -206,6 +219,92 @@ class LegacyReader(BaseReader):
                                 self.stream.tell())
             raise IOError
         return self.stream.read_buffer(block[1])
+
+    def close(self):
+        self.stream.close()
+
+
+@Logger.logged
+class Sas7bdatReader(BaseReader):
+
+    def __init__(self,
+                 filepath_or_buffer,
+                 header,
+                 header_offset,
+                 rnd,
+                 nsamples=4,
+                 num_rows=4095
+                 ):
+        self.stream = pa.input_stream(filepath_or_buffer)
+        self.header = header
+        self.header_offset = header_offset
+        self.num_rows = num_rows
+        self.nsamples = nsamples
+        self.rnd = rnd
+        self.schema = None
+        self.reader = SAS7BDAT(self.__module__,
+                               log_level=self.__logger.getEffectiveLevel(),
+                               extra_time_format_strings=None,
+                               extra_date_format_strings=None,
+                               skip_header=False,
+                               encoding='utf8',
+                               encoding_errors='ignore',
+                               align_correction=True,
+                               fh=self.stream)  # Use pa.open_stream()
+        self.iter_ = self.reader.readlines()
+        self._prepare()
+
+    def _prepare(self):
+        _props = self.reader.header.properties
+        self.schema = self.reader.column_names_strings
+        self.header_offset = self.reader.properties.header_length
+        #  SASHeader __repr__
+        self.header = 'Header:\n%s' % '\n'.join(
+            ['\t%s: %s' % (k, v.decode(self.reader.encoding,
+                                       self.reader.encoding_errors)
+             if isinstance(v, bytes) else v)
+             for k, v in sorted(six.iteritems(_props.__dict__))]
+            )
+        self.header = bytes(self.header, 'utf8')
+        self.schema = next(self.iter_)
+
+    def reset(self):
+        self.iter_ = self.reader.readlines()
+        next(self.iter_)  # Skip header row
+
+    def sampler(self):
+        '''
+        Requires reading entire SAS
+        Otherwise, we'll need to rewrite the underlying reader
+        to sample raw bytes correctly
+
+        TODO -- Implement random bytes chunk from SASbdat files
+        '''
+        self.reset()
+        batches = [batch for batch in self]
+        rndblocks = iter(self.rnd.choice(len(batches),
+                         self.nsamples))
+        for iblock in rndblocks:
+            yield batches[iblock]
+        self.__logger.debug("Completed sampling")
+        self.reset()
+
+    def __next__(self):
+        data = []
+        nrecords = 0
+        while nrecords < self.num_rows:
+            try:
+                row = next(self.iter_)
+            except StopIteration:
+                break
+            data.append(row)
+            nrecords += 1
+        if nrecords == 0:
+            raise StopIteration
+        data = zip(*data)  # Transpose python rows to columns
+        arrays = [pa.array(arr) for arr in data]
+        batch = pa.RecordBatch.from_arrays(arrays, self.schema)
+        return batch
 
     def close(self):
         self.stream.close()

@@ -13,6 +13,7 @@
 import unittest
 import logging
 import io
+from sas7bdat import SAS7BDAT
 import pyarrow as pa
 from pandas.util.testing import assert_frame_equal
 
@@ -219,6 +220,23 @@ class ReaderTestCase(unittest.TestCase):
         self.assertEqual(batch.num_rows, rbatch.num_rows)
         assert_frame_equal(batch.to_pandas(), rbatch.to_pandas())
 
+    def test_sas(self):
+        #
+        # Test file obtained from
+        # http://www.principlesofeconometrics.com/poe5/poe5sas.html
+        #
+        handler = FileHandlerTool('tool', filetype='sas7bdat')
+        path = 'tests/data/accidents.sas7bdat'
+        handler.initialize()
+        stream = pa.input_stream(path)
+        handler.prepare_sas(stream)
+        reader = handler.execute(path)
+        bdat = SAS7BDAT(path)
+        df1 = bdat.to_data_frame()
+        batch = next(reader)
+        assert_frame_equal(df1, batch.to_pandas())
+        batch = next(reader.sampler())
+        assert_frame_equal(df1, batch.to_pandas())
 
 if __name__ == '__main__':
     unittest.main()

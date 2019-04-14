@@ -18,7 +18,9 @@ Extracting meta data from a header
 """
 import io
 import pathlib
+import six
 import pyarrow as pa
+from sas7bdat import SAS7BDAT
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
@@ -29,7 +31,8 @@ from artemis.core.properties import JobProperties
 
 @iterable
 class FileHandlerOptions:
-    blocksize = 2**27
+    blocksize = 2**27  # Chunk size for raw bytes
+    num_rows = 4095  # Numer of rows to read for sas7bdat
     delimiter = ','
     linesep = '\r\n'
     header_offset = 0
@@ -66,6 +69,7 @@ class FileHandlerTool(ToolBase):
         self.nsamples = self.properties.nsamples
         self.filetype = self.properties.filetype
         self.blocksize = self.properties.blocksize
+        self.num_rows = self.properties.num_rows
 
         self.__logger.info('%s: __init__ FileHandlerTool' % self.name)
 
@@ -84,13 +88,13 @@ class FileHandlerTool(ToolBase):
         self.prepare_dict = {}
         self.prepare_dict['csv'] = self.prepare_csv
         self.prepare_dict['legacy'] = self.prepare_legacy
-        self.prepare_dict['sas'] = self.prepare_sas
+        self.prepare_dict['sas7bdat'] = self.prepare_sas
         self.prepare_dict['ipc'] = self.prepare_ipc
 
         self.exec_dict = {}
         self.exec_dict['csv'] = self.exec_csv
         self.exec_dict['legacy'] = self.exec_legacy
-        self.exec_dict['sas'] = self.exec_sas
+        self.exec_dict['sas7bdat'] = self.exec_sas
         self.exec_dict['ipc'] = self.exec_ipc
 
         # JobProperties
@@ -231,7 +235,28 @@ class FileHandlerTool(ToolBase):
         stream.seek(self.header_offset)
 
     def prepare_sas(self, stream):
-        pass
+        reader = SAS7BDAT(self.__module__,
+                          log_level=self.__logger.getEffectiveLevel(),
+                          extra_time_format_strings=None,
+                          extra_date_format_strings=None,
+                          skip_header=False,
+                          encoding=self.encoding,
+                          encoding_errors='ignore',
+                          align_correction=True,
+                          fh=stream)  # Use pa.open_stream()
+        self.schema = reader.column_names
+        self.header_offset = reader.properties.header_length
+        #  SASHeader __repr__
+        self.header = 'Header:\n%s' % '\n'.join(
+            ['\t%s: %s' % (k, v.decode(reader.encoding,
+                                       reader.encoding_errors)
+             if isinstance(v, bytes) else v)
+             for k, v in
+             sorted(six.iteritems(reader.header.properties.__dict__))]
+            )
+        self.header = bytes(self.header, self.encoding)
+        stream.seek(0, 2)
+        self._size = stream.tell()
 
     def prepare_ipc(self, filepath_or_buffer):
         try:
@@ -295,7 +320,7 @@ class FileHandlerTool(ToolBase):
 
         self.__logger.info("Prepare input stream")
 
-        if self.filetype == 'ipc':
+        if self.filetype == 'ipc':  # or self.filetype == 'sas':
             stream = filepath_or_buffer
         else:
             stream = pa.input_stream(filepath_or_buffer)
@@ -330,7 +355,8 @@ class FileHandlerTool(ToolBase):
                              self.header_offset,
                              self.blocks,
                              self._builtin_generator.rnd,
-                             self.nsamples)
+                             self.nsamples,
+                             self.num_rows)
 
     def _update(self):
         # Add fileinfo to message
