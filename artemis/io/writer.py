@@ -284,13 +284,13 @@ class BufferOutputWriter(ToolBase):
                 self.__logger.warning("Batch is of type %s", type(batch))
                 continue
             if batch.schema != self._schema:
-                self.__logger.warning("Batch ignored, incorrect scema")
-                continue
+                self.__logger.error("Batch error, incorrect scema")
+                raise ValueError
             try:
                 self._can_write(batch)
-            except Exception:
+            except Exception as e:
                 self.__logger.error("Failed sizeof check")
-                raise
+                raise e
             try:
                 self.__logger.debug("Write to sink")
                 self._ncolumns = batch.num_columns

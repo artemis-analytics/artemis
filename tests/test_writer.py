@@ -60,11 +60,55 @@ class WriterTestCase(unittest.TestCase):
             writer._schema = batch.schema
             writer.initialize()
 
-            try:
+            writer.write(elements)
+            writer._finalize()
+
+    def test_schema(self):
+        '''
+        Test writer raises ValueError for batch schema mismatch
+        Also possible to just let Arrow throw an error
+        '''
+        nrows = 5
+        df = pd.DataFrame({
+            'one': np.random.randn(nrows),
+            'two': ['foo', np.nan, 'bar', 'bazbaz', 'qux']})
+        batch = pa.RecordBatch.from_pandas(df)
+
+        frames = []
+        batches = []
+        elements = []
+        for i in range(5):
+            unique_df = df.copy()
+            unique_df['one'] = np.random.randn(len(df))
+            batch = pa.RecordBatch.from_pandas(unique_df)
+            frames.append(unique_df)
+            batches.append(batch)
+            el = Element(str(i))
+            el.add_data(batch)
+            elements.append(el)
+        
+        df = pd.DataFrame({
+            'one': np.random.randn(nrows),
+            'two': ['foo', np.nan, 'bar', 'bazbaz', 'qux'],
+            'three': np.random.randn(nrows)})
+
+        batch = pa.RecordBatch.from_pandas(df)
+        el = Element(str(i))
+        el.add_data(batch)
+        elements.append(el)
+    
+        with tempfile.TemporaryDirectory() as dirpath:
+            writer = BufferOutputWriter('test')
+            writer.BUFFER_MAX_SIZE = 1024
+            writer._fbasename = 'test'
+            writer._path = dirpath
+            writer._schema = batch.schema
+            writer.initialize()
+            with self.assertRaises(ValueError):
                 writer.write(elements)
                 writer._finalize()
-            except Exception:
-                raise IOError
+
+
         
 
 if __name__ == "__main__":

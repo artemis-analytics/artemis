@@ -161,6 +161,12 @@ class ReaderTestCase(unittest.TestCase):
             num_batches += 1
 
         self.assertEqual(num_batches, 10)
+    
+    def test_schema(self):
+        '''
+        Test for schema mismatch in file header
+        '''
+        pass
 
     def test_prepare_csv(self):
         generator = GenCsvLikeArrow('test',
