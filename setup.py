@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(name='artemis',
-      version='0.3.0',
+      version='0.4.0',
       author='Ryan White',
       author_email='ryan.white4@canada.ca',
       packages=find_packages(),
