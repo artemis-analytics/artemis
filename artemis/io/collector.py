@@ -135,7 +135,6 @@ class Collector(AlgoBase):
                 self.__logger.error("Unknown error")
                 raise
             self.__logger.info("Allocated %i", pa.total_allocated_bytes())
-            self.hbook.fill('artemis', 'time.collect', time_)
 
     @timethis
     def _collect(self):

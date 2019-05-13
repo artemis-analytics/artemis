@@ -11,6 +11,9 @@ Tool that reads mainframe files encoded in the EBCDIC format.
 """
 
 import pyarrow as pa
+import numpy as np
+import ebcdic
+
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 
@@ -72,6 +75,8 @@ class MfTool(ToolBase):
 
         self.codec = self.properties.codec
 
+        self._nbatches = 0
+
     @property
     def record_size(self):
         return self.rsize
@@ -84,7 +89,7 @@ class MfTool(ToolBase):
         '''
         Reads a block of data with the initialized MfTool object.
         '''
-
+        self.__logger.debug("Processing batch %i", self._nbatches)
         # The block is decoded from the cp500 code page.
         block = block.decode(self.codec)
 
@@ -144,6 +149,7 @@ class MfTool(ToolBase):
                             self.__logger.error("Record %i: %s",
                                                 ccounter, rdata)
                             raise
+                    cnvfield = float(cnvfield)
                     odata[ncounter].append(cnvfield)
                 elif self.ds_schema[ncounter]['utype'] == 'str':
                     # Removes padding spaces from the data.
@@ -160,6 +166,7 @@ class MfTool(ToolBase):
                 elif self.ds_schema[ncounter]['utype'] == 'uint':
                     try:
                         cnvfield = int(field)
+                        cnvfield = float(field)
                     except ValueError:
                         self.__logger.debug("Cannot parse uint field")
                         self.__logger.debug("Record %i Field %i Value %s ",
@@ -176,7 +183,7 @@ class MfTool(ToolBase):
                         if cnvfield.isspace():
                             self.__logger.debug("null, convert to zero")
                             #  TODO determine correct value for empty fields???
-                            cnvfield = 0
+                            cnvfield = np.nan
                     except Exception:
                         self.__logger.error("Cannot parse uint field")
                         self.__logger.error("Record %i Field %i Value %s ",
@@ -207,7 +214,11 @@ class MfTool(ToolBase):
         # Creates apache arrow dataset.
 
         for my_list in odata:
-            arrowodata.append(pa.array(my_list))
+            arr = pa.array(my_list)
+            if arr.type == pa.null():
+                self.__logger.warning("Null array recast as float")
+                arr = pa.array(my_list, type=pa.float64())
+            arrowodata.append(arr)
 
         self.__logger.debug('Output data lists.')
         self.__logger.debug(odata)
@@ -220,4 +231,5 @@ class MfTool(ToolBase):
         except Exception:
             self.__logger.error("Cannot convert arrays to batch")
             raise
+        self._nbatches += 1
         return rbatch
