@@ -284,7 +284,15 @@ class BufferOutputWriter(ToolBase):
                 self.__logger.warning("Batch is of type %s", type(batch))
                 continue
             if batch.schema != self._schema:
-                self.__logger.error("Batch error, incorrect scema")
+                self.__logger.error("Batch error, incorrect schema")
+                if len(batch.schema) != len(self._schema):
+                    self.__logger.error("mismatch in number of fields")
+                else:
+                    for icol, col in enumerate(self._schema):
+                        if col != batch.schema[icol]:
+                            self.__logger.error("Current field %s",
+                                                batch.schema[icol])
+                            self.__logger.error("Expected field %s", col)
                 raise ValueError
             try:
                 self._can_write(batch)
