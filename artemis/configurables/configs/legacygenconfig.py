@@ -111,7 +111,7 @@ class LegacyIOConfig(Configurable):
                                nbatches=self.nbatches,
                                seed=self.seed)
 
-        mftool = MfTool('legacytool', **columns)
+        mftool = MfTool('legacytool', codec=self.encoding, **columns)
         blocksize = mftool.record_size * self.nrecords_per_block
         rsize = 0
         schema = []
@@ -120,7 +120,6 @@ class LegacyIOConfig(Configurable):
             schema.append(key)
 
         self._config_filehandler(blocksize=blocksize,
-                                 delimiter=self.delimiter,
                                  header=self.header,
                                  footer=self.footer,
                                  header_offset=rsize,
