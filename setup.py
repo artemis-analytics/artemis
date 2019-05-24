@@ -18,6 +18,7 @@ setup(name='artemis',
             "protobuf",
             "matplotlib",
             "sas7bdat>=2.2.2",
-            "ebcdic"
+            "ebcdic",
+            "faker"
             ],
       description="Stateful processing framework for administrative data powered by Apache Arrow")
