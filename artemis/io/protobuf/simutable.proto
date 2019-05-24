@@ -1,0 +1,70 @@
+/*
+   SimuTable protobuf 
+   Describes a table schema
+   Functions to generate the table
+*/
+
+syntax = "proto3";
+
+message SimuTable {
+    string name = 1;
+    string description = 2;
+    repeated Field fields = 3;
+    Duplicate duplicate = 4;
+    RecordModifier record_modifier = 5;
+    map<string, string> custom_meta = 6;
+}
+
+message Field {
+    string name = 1;
+    string type = 2;
+    int32 length = 3;
+    Generator generator = 4;
+    repeated Generator children = 5;
+    string dependent = 6;
+}
+
+message Generator {
+    string name = 1;
+    repeated Parameter parameters = 2;
+}
+
+message Parameter {
+    string name = 1;
+    float value = 2;
+    string type = 3;
+    Field variable = 4;
+}
+
+message Duplicate {
+    float probability = 1;
+    string distribution = 2;
+    int32 maximum = 3;
+}
+
+message RecordModifier {
+    int32 max_modifications_in_record = 1;
+    int32 max_field_modifiers = 2;
+    int32 max_record_modifiers = 3;
+    repeated Modifier fields = 4;
+}
+
+message Modifier {
+    string name = 1;
+    float selection = 2;
+    ModifierProbabilities probabilities = 3;
+}
+
+message ModifierProbabilities {
+    float insert = 1;
+    float delete = 2;
+    float substitute = 3;
+    float misspell = 4;
+    float transpose = 5;
+    float replace = 6;
+    float swap = 7;
+    float split = 8;
+    float merge = 9;
+    float nullify = 10;
+    float fill = 11;
+}
