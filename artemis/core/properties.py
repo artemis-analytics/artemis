@@ -21,7 +21,7 @@ from artemis.io.protobuf.artemis_pb2 import Properties as Properties_pb
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.utils.utils import bytes_to_mb
 from artemis.core.book import ArtemisBook
-
+from cronus.core.cronus import BaseObjectStore
 
 class Properties():
     '''

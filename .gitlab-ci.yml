@@ -78,10 +78,14 @@ review:
 
 test:
   stage: test
-  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:latest
+  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
   variables:
     DOCKER_DRIVER: overlay2
+  before_script:
+      - source activate env
   script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
+    - cd cronus; python setup.py install; cd ..
     - pip install coverage
     - python setup.py install
     - coverage3 run --source=artemis/ -m unittest
