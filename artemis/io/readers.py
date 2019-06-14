@@ -15,9 +15,13 @@ from sas7bdat import SAS7BDAT
 
 from artemis.logger import Logger
 from artemis.errors import AbstractMethodError
+from artemis.core.properties import JobProperties
 
 
 class BaseReader():
+
+    def __init__(self):
+        self._jp = JobProperties()
 
     def sampler(self):
         pass
@@ -88,7 +92,9 @@ class ArrowReader(BaseReader):
                  rnd,
                  nsamples=4
                  ):
-        self.reader = pa.ipc.open_file(filepath_or_buffer)
+        super().__init__()
+        # self.reader = pa.ipc.open_file(filepath_or_buffer)
+        self.reader = self._jp.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.blocks = blocks
@@ -125,7 +131,8 @@ class CsvReader(BaseReader):
                  rnd,
                  nsamples=4
                  ):
-        self.stream = pa.input_stream(filepath_or_buffer)
+        super().__init__()
+        self.stream = self._jp.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.blocks = blocks
@@ -183,7 +190,11 @@ class LegacyReader(BaseReader):
                  rnd,
                  nsamples=4
                  ):
-        self.stream = pa.input_stream(filepath_or_buffer)
+        super().__init__()
+        # TODO
+        # Switch between metastore and buffer ?
+        # self.stream = pa.input_stream(filepath_or_buffer)
+        self.stream = self._jp.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.blocks = blocks
@@ -235,7 +246,10 @@ class Sas7bdatReader(BaseReader):
                  nsamples=4,
                  num_rows=4095
                  ):
-        self.stream = pa.input_stream(filepath_or_buffer)
+        # Switch between metastore and buffer ?
+        # self.stream = pa.input_stream(filepath_or_buffer)
+        super().__init__()
+        self.stream = self._jp.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.num_rows = num_rows

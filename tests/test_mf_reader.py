@@ -26,6 +26,13 @@ from artemis.generators.legacygen import GenMF
 
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+
+from cronus.core.cronus import BaseObjectStore
+from cronus.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
+from cronus.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
+
+from cronus.io.protobuf.table_pb2 import Table
+
 logging.getLogger().setLevel(logging.INFO)
 
 
@@ -198,12 +205,28 @@ class Test_MF_Reader(unittest.TestCase):
         print("Batch columns %i, rows %i" %
               (batch.num_columns, batch.num_rows))
         print(batch.schema)
-
+    
+    
     def test_mfartemis(self):
-
+        # IO tests are no longer required
+        # generated data is written out in batches
         with tempfile.TemporaryDirectory() as dirpath:
             mb = MenuFactory('legacygen')
             msgmenu = mb.build()
+            store = BaseObjectStore(dirpath, 'artemis')
+            menuinfo = MenuObjectInfo()
+            menuinfo.created.GetCurrentTime()
+            
+            g_dataset = store.register_dataset()
+            job_id = store.new_job(g_dataset.uuid)
+            store.new_partition(g_dataset.uuid, 'generator')
+            # define the schema for the data
+            # g_table = Table()
+            # g_table.name = 'generator'
+            # g_table.uuid = str(uuid.uuid4())
+            # g_table.info.schema.name = 'csv'
+            # g_table.info.schema.uuid = str(uuid.uuid4())
+            
             intconf0 = {'utype': 'int',
                         'length': 10, 'min_val': 0, 'max_val': 10}
             intuconf0 = {'utype': 'uint',
@@ -232,7 +255,18 @@ class Test_MF_Reader(unittest.TestCase):
                              column_b=intuconf0,
                              column_c=strconf0)
 
-            msg = config.job_config  # Or retrieve from a DB
+            config.add_algos(mb.algos)
+            configinfo = ConfigObjectInfo()
+            configinfo.created.GetCurrentTime()
+            
+            menu_uuid = store.register_content(msgmenu, menuinfo).uuid
+            config_uuid = store.register_content(config._msg, configinfo).uuid
+            
+
+            dataset = store.register_dataset(menu_id=menu_uuid, config_id=config_uuid)
+            job_id = store.new_job(dataset.uuid)
+            store.save_store()
+            # msg = config.job_config  # Or retrieve from a DB
 
             #  For each subjob, requires a new JobInfo
             #  Driver application generates new JobInfo object per input datum
@@ -246,21 +280,39 @@ class Test_MF_Reader(unittest.TestCase):
             #  Distribute processes
             #  Collect output messages
             #  Serialize and store
+            
+            msg = config.job_config
             job = JobInfo_pb()
             job.name = 'mftest'
             job.job_id = 'example'
             job.output.repo = dirpath
-            job.config.CopyFrom(msg)
-
+            job.store_id = store.store_uuid
+            job.store_name = store.store_name
+            job.menu_id = menu_uuid
+            job.config_id = config_uuid
+            job.dataset_id = dataset.uuid
+            job.parentset_id = g_dataset.uuid
+            #job.config.CopyFrom(msg)
+            job.job_id = str(job_id) 
             print(job)
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
-            nrecords = 0
-            for table in bow._jp.meta.summary.tables:
-                nrecords += table.num_rows
+            
+            #job = JobInfo_pb()
+            #job.name = 'mftest'
+            #job.job_id = 'example'
+            #job.output.repo = dirpath
+            #job.config.CopyFrom(msg)
 
-            assert(nrecords == 10000)
+            #print(job)
+            #bow = ArtemisFactory(job, 'INFO')
+            #bow.control()
+            #nrecords = 0
+            #for table in bow._jp.meta.summary.tables:
+            #    nrecords += table.num_rows
 
+            #assert(nrecords == 10000)
+    '''
     def test_mfartemisio(self):
         mb = MenuFactory('legacygen')
         with tempfile.TemporaryDirectory() as dirpath:
@@ -388,7 +440,7 @@ class Test_MF_Reader(unittest.TestCase):
                 nrecords += table.num_rows
 
             assert(nrecords == 10000)
-
+    '''
 
 if __name__ == "__main__":
     unittest.main()

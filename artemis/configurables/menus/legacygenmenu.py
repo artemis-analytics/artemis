@@ -9,10 +9,9 @@
 """
 Menu for generating and processing Legacy data
 """
-
 from artemis.configurables.configurable import MenuBuilder
-from artemis.core.dag import Sequence, Chain
 from artemis.algorithms.legacyalgo import LegacyDataAlgo
+from cronus.core.Directed_Graph import Directed_Graph, Node
 
 
 class LegacyGenMenu(MenuBuilder):
@@ -28,10 +27,10 @@ class LegacyGenMenu(MenuBuilder):
                                                    loglevel='INFO')
 
     def _seq_builder(self):
-        self._seqs['seqX'] = Sequence(["initial"],
-                                      (self._algos['legacyalgo'],),
-                                      "seqX")
+        self._seqs['seqX'] = Node(["initial"],
+                                  ('legacyparser',),
+                                  "seqX")
 
     def _chain_builder(self):
-        self._chains['legacyChain'] = Chain("legacychain")
+        self._chains['legacyChain'] = Directed_Graph("legacychain")
         self._chains['legacyChain'].add(self._seqs['seqX'])

@@ -5,14 +5,14 @@
 #
 
 """
-General linear model to add linear dependence between a predictor and set of 
-independent random variables
+General linear model
+Simulate linear dependence between a predictor
+and set of independent random variables
 """
-import functools
 
 from faker.providers import BaseProvider
 import numpy as np
-from artemis.io.protobuf import simutable_pb2
+
 
 class Provider(BaseProvider):
     '''
@@ -22,13 +22,13 @@ class Provider(BaseProvider):
         '''
         Sample from a normal distribution with
         width defined as sigma
-        mean defined as a GLM 
+        mean defined as a GLM
         y(X) = beta.X
         otherwise, one can simply use the transformation
         y(X) = beta.X + sigma
         i.e. the mean of the predictor is a linear combination
         of independent variables, where the predictor follows a normal
-        distribution, i.e. link function is normal. 
+        distribution, i.e. link function is normal.
         This can be extended to logistic function, for example,
         where the predictor is either 0 or 1 with a logit link function.
 
@@ -48,10 +48,11 @@ class Provider(BaseProvider):
         throw = np.random.uniform(0,pdfmax)
         if(throw < y):
             accept!!!
-        
+
         Should the scale go as 1/sqrt(sample size)?
         '''
-        y = np.dot(np.asarray(X), beta) + self.generator.random.gauss(0., sigma)
+        y = np.dot(np.asarray(X), beta) \
+            + self.generator.random.gauss(0., sigma)
         return y
 
     def glm(self, params_or_msg):
@@ -67,36 +68,35 @@ class Provider(BaseProvider):
         beta = []
         if isinstance(params_or_msg, dict):
             generators = params_or_msg['Variables']
-            # fields = [] 
+            # fields = []
             for item in generators:
                 fields.append(item['Generator'])
 
             beta = params_or_msg['Parameters'][:-1]
             sigma = params_or_msg['Parameters'][-1]
-            ndof = len(params_or_msg['Parameters']) 
+            ndof = len(params_or_msg['Parameters'])
             X = np.ones(ndof)
             # fakers = []
         else:
             for parameter in params_or_msg:
                 if parameter.HasField('variable'):
-                    fields.append(parameter.variable.generator.name)
+                    fields.append(parameter.variable.info.aux.generator.name)
                 if 'beta' in parameter.name:
                     beta.append(round(parameter.value, 4))
                 if parameter.name == 'sigma':
                     sigma = round(parameter.value, 4)
             ndof = len(beta) + 1
             X = np.ones(ndof)
-        
+
         for counter, f in enumerate(fields):
             fake = None
             try:
                 fake = self.generator.get_formatter(f)
-            except:
-                print('Cannot find fake in Faker')
+            except Exception:
+                raise
             X[counter] = fake()
             fakers.append(X[counter])
-        
+
         fakers.append(self.sample(X[:-1], beta, sigma))
 
         return fakers
-

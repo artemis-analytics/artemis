@@ -13,15 +13,18 @@ Property classes
 
 from collections import OrderedDict
 from pprint import pformat
-import os
 
 from artemis.logger import Logger
 from artemis.core.singleton import Singleton
-from artemis.io.protobuf.artemis_pb2 import Properties as Properties_pb
+from cronus.io.protobuf.configuration_pb2 import Properties as Properties_pb
+from cronus.io.protobuf.configuration_pb2 import Configuration
+from cronus.io.protobuf.menu_pb2 import Menu
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.utils.utils import bytes_to_mb
 from artemis.core.book import ArtemisBook
 from cronus.core.cronus import BaseObjectStore
+from cronus.io.protobuf.cronus_pb2 import HistsObjectInfo, JobObjectInfo
+
 
 class Properties():
     '''
@@ -110,6 +113,9 @@ class JobProperties(metaclass=Singleton):
         self.hbook = ArtemisBook()
         self._job_id = None
         self._path = None
+        self.store = None
+        self.menu = Menu()
+        self.config = Configuration()
 
     @property
     def job_id(self):
@@ -126,6 +132,30 @@ class JobProperties(metaclass=Singleton):
     @path.setter
     def path(self, value):
         self._path = value
+
+    def configure(self):
+        self._path = self.meta.output.repo
+        try:
+            self.store = BaseObjectStore(self._path,
+                                         self.meta.store_name,
+                                         self.meta.store_id)
+        except FileNotFoundError:
+            self.__logger.error("Store path does not exist")
+            raise
+        except Exception:
+            self.__logger.error("Unknown store error")
+            raise
+
+        try:
+            self.store.get(self.meta.menu_id, self.menu)
+        except Exception:
+            self.__logger.error("Cannot retrieve menu")
+            raise
+        try:
+            self.store.get(self.meta.config_id, self.config)
+        except Exception:
+            self.__logger.error("Cannot retrieve menu")
+            raise
 
     def finalize(self):
 
@@ -156,21 +186,29 @@ class JobProperties(metaclass=Singleton):
         self.__logger.info("This is a test of your greater survival")
         self.__logger.info("=================================")
 
-        hcname = self._job_id + '_meta.dat'
-        hcname = os.path.join(self._path, hcname)
+        jinfo = JobObjectInfo()
         try:
-            with open(hcname, "wb") as f:
-                f.write(self.meta.SerializeToString())
-        except IOError:
-            self.__logger.error("Cannot write proto")
+            self.store.register_content(self.meta,
+                                        jinfo,
+                                        dataset_id=self.meta.dataset_id,
+                                        job_id=self.meta.job_id).uuid
         except Exception:
+            self.__logger.error("Unable to register hist")
             raise
 
-        hcname = self._job_id + '.hist.dat'
-        hcname = os.path.join(self._path, hcname)
+        hinfo = HistsObjectInfo()
+        hinfo.keys.extend(self.hbook.keys())
+        hmsg = self.hbook._to_message()
         try:
-            self.hbook.finalize(hcname)
-        except IOError:
-            self.__logger.error("Cannot write hbook")
+            self.store.register_content(hmsg,
+                                        hinfo,
+                                        dataset_id=self.meta.dataset_id,
+                                        job_id=self.meta.job_id).uuid
         except Exception:
+            self.__logger.error("Unable to register hist")
             raise
+        # try:
+        #    self.store.save_store()
+        # except Exception:
+        #    self.__logger.error("Error persisting metastore")
+        #    raise

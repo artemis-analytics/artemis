@@ -42,7 +42,7 @@ class ArtemisTestCase(unittest.TestCase):
         Singleton.reset(Physt_Wrapper)
         Singleton.reset(TimerSvc)
     
-    
+    ''' 
     def test_proto(self):
         cov = coverage.Coverage()
         cov.start()
@@ -69,7 +69,7 @@ class ArtemisTestCase(unittest.TestCase):
             
             cov.stop()
             cov.save()
-
+        '''
 
 if __name__ == '__main__':
     unittest.main()

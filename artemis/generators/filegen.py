@@ -10,8 +10,6 @@
 """
 Class for generating lists of input files from OS
 """
-import pathlib
-
 from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
 
@@ -34,19 +32,31 @@ class FileGenerator(GeneratorBase):
 
         super().__init__(name, **options)
 
-        self._path = self.properties.path
+        # self._path = self.properties.path
         self._glob = self.properties.glob
         # self._seed = self.properties.seed
         self._nsamples = self.properties.nsamples
-
-        self._batch_iter = pathlib.Path(self._path).glob(self._glob)
-        self.__logger.info("Path %s", self._path)
+        self._batch_iter = None
+        # self._batch_iter = pathlib.Path(self._path).glob(self._glob)
+        # self.__logger.info("Path %s", self._path)
         self.__logger.info("Glob %s", self._glob)
         # self.__logger.info("Seed %s", self._seed)
         self.__logger.info("Samples %s", self._nsamples)
 
+    def initialize(self):
+        ids = []
+        for obj in self._jp.store.list(prefix=self._jp.meta.parentset_id,
+                                       suffix=self._glob):
+            ids.append(obj.uuid)
+        self._batch_iter = iter(ids)
+
     def reset(self):
-        self._batch_iter = pathlib.Path(self._path).glob(self._glob)
+        # self._batch_iter = pathlib.Path(self._path).glob(self._glob)
+        ids = []
+        for obj in self._jp.store.list(prefix=self._jp.meta.parentset_id,
+                                       suffix=self._glob):
+            ids.append(obj.uuid)
+        self._batch_iter = iter(ids)
 
     def sampler(self):
         lst = list(self._batch_iter)
@@ -66,7 +76,13 @@ class FileGenerator(GeneratorBase):
 
     def generate(self):
         self.__logger.debug("Generating the file paths")
-        _files = pathlib.Path(self._path).glob(self._glob)
+        # _files = pathlib.Path(self._path).glob(self._glob)
+        _files = []
+        glob_ = self._jp.store.list(prefix=self._jp.parentset_id,
+                                    suffix=self._glob)
+        for obj in glob_:
+            _files.append(obj.uuid)
         for f in _files:
             self.__logger.debug(f)
-        return pathlib.Path(self._path).glob(self._glob)
+        # return pathlib.Path(self._path).glob(self._glob)
+        return iter(_files)

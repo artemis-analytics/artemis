@@ -21,6 +21,7 @@ from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from artemis.core.tool import ToolStore
 from google.protobuf import text_format
+from artemis.core.properties import JobProperties
 
 
 @iterable
@@ -48,12 +49,13 @@ class Collector(AlgoBase):
 
         self.tools = None
         self.tree = None
+        self.jp = None
 
     def initialize(self):
         self.__logger.info("initialize")
         self.tools = ToolStore()
         self.tree = Tree()
-
+        self.jp = JobProperties()
         # Configure the output data streams
         # Each stream associated with leaf in Tree
         # Store consistent Arrow Table for each process chain
@@ -61,9 +63,8 @@ class Collector(AlgoBase):
         # record batches, so we could get spurious output buffers
 
         # Buffer stream requires a fixed pyArrow schema!
-        _msgcfg = self._jp.meta.config
         _wrtcfg = None
-        for toolcfg in _msgcfg.tools:
+        for toolcfg in self._jp.config.tools:
             if toolcfg.name == "bufferwriter":
                 _wrtcfg = toolcfg
 
@@ -96,6 +97,7 @@ class Collector(AlgoBase):
                 self.tools.get(_wrtcfg.name)._fbasename = self.job_id
                 self.tools.get(_wrtcfg.name)._path = self.path
                 self.tools.get(_wrtcfg.name).initialize()
+                self.jp.store.new_partition(self.jp.meta.dataset_id, key)
 
         # Batches serialized, clear the tree
         try:
@@ -119,7 +121,7 @@ class Collector(AlgoBase):
             # TODO: Insert collect for datastore/nodes/tree.
             # TODO: Test memory release.
             # TODO: Add histogram for number of forced collects
-            self.__logger.info("COLLECT: Total memory reached")
+            self.__logger.debug("COLLECT: Total memory reached")
             try:
                 result_, time_ = self._collect()
             except IndexError:
@@ -134,7 +136,7 @@ class Collector(AlgoBase):
             except Exception:
                 self.__logger.error("Unknown error")
                 raise
-            self.__logger.info("Allocated %i", pa.total_allocated_bytes())
+            self.__logger.debug("Allocated %i", pa.total_allocated_bytes())
 
     @timethis
     def _collect(self):
@@ -145,15 +147,15 @@ class Collector(AlgoBase):
         Batches on leaves collected
         Input file -> Output Arrow RecordBatches
         '''
-        self.__logger.info("artemis: collect: pyarrow malloc %i",
-                           pa.total_allocated_bytes())
+        self.__logger.debug("artemis: collect: pyarrow malloc %i",
+                            pa.total_allocated_bytes())
 
-        self.__logger.info("Leaves %s", self.tree.leaves)
+        self.__logger.debug("Leaves %s", self.tree.leaves)
         for leaf in self.tree.leaves:
-            self.__logger.info("Leaf node %s", leaf)
+            self.__logger.debug("Leaf node %s", leaf)
             node = self.tree.get_node_by_key(leaf)
             els = node.payload
-            self.__logger.info('Batches of leaf %s', len(els))
+            self.__logger.debug('Batches of leaf %s', len(els))
             _name = "writer_"+node.key
             _last = None
             try:
@@ -165,8 +167,8 @@ class Collector(AlgoBase):
                 self.__logger.error("%s unknown error", leaf)
                 raise
             if isinstance(_last, pa.lib.RecordBatch):
-                self.__logger.info("RecordBatch")
-                self.__logger.info("Allocated %i", pa.total_allocated_bytes())
+                self.__logger.debug("RecordBatch")
+                self.__logger.debug("Allocated %i", pa.total_allocated_bytes())
                 _schema_batch = els[-1].get_data().schema
 
                 if self.tools.get(_name)._schema != _schema_batch:
@@ -177,9 +179,9 @@ class Collector(AlgoBase):
                     raise ValueError
                 try:
                     self.tools.get("writer_"+node.key).write(els)
-                    self.__logger.info("Records %i Batches %i",
-                                       self.tools.get(_name)._nrecords,
-                                       self.tools.get(_name)._nbatches)
+                    self.__logger.debug("Records %i Batches %i",
+                                        self.tools.get(_name)._nrecords,
+                                        self.tools.get(_name)._nbatches)
                 except IOError:
                     self.__logger.error("IOError in buffer writer")
                     raise
@@ -196,9 +198,8 @@ class Collector(AlgoBase):
             self.__logger("Problem flushing")
             raise
 
-        self.__logger.info("Allocated after write %i",
-                           pa.total_allocated_bytes())
-        self.__logger.info
+        self.__logger.debug("Allocated after write %i",
+                            pa.total_allocated_bytes())
         return True
 
     def finalize(self):
@@ -221,7 +222,7 @@ class Collector(AlgoBase):
         summary = self._jp.meta.summary
         _wnames = []
         for leaf in Tree().leaves:
-            self.__logger.info("Leave node %s", leaf)
+            self.__logger.debug("Leave node %s", leaf)
             node = Tree().get_node_by_key(leaf)
             key = node.key
             _wnames.append("writer_" + node.key)
@@ -253,7 +254,7 @@ class Collector(AlgoBase):
     def _flush_buffer(self):
         _wnames = []
         for leaf in Tree().leaves:
-            self.__logger.info("Leave node %s", leaf)
+            self.__logger.debug("Leave node %s", leaf)
             node = Tree().get_node_by_key(leaf)
             key = node.key
             _wnames.append("writer_" + node.key)

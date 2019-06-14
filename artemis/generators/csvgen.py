@@ -12,10 +12,8 @@ Generator for csv-like data
 """
 import sys
 import csv
-import itertools
 import string
 import io
-import tempfile
 import random
 from array import array
 
@@ -24,6 +22,8 @@ import pyarrow as pa
 from artemis.logger import Logger
 from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
+from cronus.io.protobuf.cronus_pb2 import FileObjectInfo
+from cronus.io.protobuf.table_pb2 import Table
 
 
 @Logger.logged
@@ -168,7 +168,8 @@ class GenCsvLikeArrow(GeneratorBase):
 
         super().__init__(name, **options)
 
-        self.num_cols = self.properties.num_cols
+        self.table_id = self.properties.table_id
+        # self.num_cols = self.properties.num_cols
         self.num_rows = self.properties.num_rows
         self.linesep = self.properties.linesep
         # self.seed = self.properties.seed
@@ -176,14 +177,12 @@ class GenCsvLikeArrow(GeneratorBase):
         self.nsamples = self.properties.nsamples
 
         # Build the random columns names once
-        self.col_names = list(itertools.islice(self.generate_col_names(),
-                              self.num_cols))
-
+        # self.col_names = \
+        # list(itertools.islice(GenCsvLikeArrow.generate_col_names(),
+        #                       self.num_cols))
+        self.num_cols = None
+        self.col_names = []
         self.types = []
-        _tr = len(self.pa_types)-1
-        for _ in range(self.num_cols):
-            self.types.append(self.pa_types
-                              [self._builtin_generator.rnd.randint(0, _tr)])
 
         self.__logger.info("Initialized %s", self.__class__.__name__)
         self.__logger.info("%s properties: %s",
@@ -198,7 +197,8 @@ class GenCsvLikeArrow(GeneratorBase):
     def num_batches(self, n):
         self._nbatches = n
 
-    def generate_col_names(self):
+    @staticmethod
+    def generate_col_names():
         letters = string.ascii_lowercase
         # for letter in letters:
         #     yield letter
@@ -206,6 +206,20 @@ class GenCsvLikeArrow(GeneratorBase):
         for first in letters:
             for second in letters:
                 yield first + second
+
+    def initialize(self):
+        self.__logger.info("Initialize CsvGenerator")
+        table = Table()
+        self._jp.store.get(self.table_id, table)
+        self.num_cols = len(table.info.schema.info.fields)
+
+        for field in table.info.schema.info.fields:
+            self.col_names.append(field.name)
+        _tr = len(self.pa_types)-1
+
+        for _ in range(self.num_cols):
+            self.types.append(self.pa_types
+                              [self._builtin_generator.rnd.randint(0, _tr)])
 
     def make_random_csv(self):
         # Numpy generates column wise
@@ -283,7 +297,18 @@ class GenCsvLikeArrow(GeneratorBase):
             data, col_names, batch = self.make_mixed_random_csv()
             self.__logger.debug('%s: type data: %s' %
                                 (self.__class__.__name__, type(data)))
-            yield data
+            fileinfo = FileObjectInfo()
+            fileinfo.type = 1
+            job_id = f"{self._jp.meta.job_id}_sample_{self.nsamples}"
+            ds_id = self._jp.meta.parentset_id
+            id_ = self._jp.store.register_content(data,
+                                                  fileinfo,
+                                                  dataset_id=ds_id,
+                                                  partition_key=self.name,
+                                                  job_id=job_id).uuid
+            buf = pa.py_buffer(data)
+            self._jp.store.put(id_, buf)
+            yield id_
             self.nsamples -= 1
             self.__logger.debug("Batch %i", self.nsamples)
 
@@ -294,7 +319,24 @@ class GenCsvLikeArrow(GeneratorBase):
         data, col_names, batch = self.make_mixed_random_csv()
         self.__logger.debug('%s: type data: %s' %
                             (self.__class__.__name__, type(data)))
-        return data
+        if self._jp is not None:
+            self.__logger.info("Register in store")
+            fileinfo = FileObjectInfo()
+            fileinfo.type = 1
+            job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
+            ds_id = self._jp.meta.parentset_id
+            id_ = self._jp.store.register_content(data,
+                                                  fileinfo,
+                                                  dataset_id=ds_id,
+                                                  partition_key=self.name,
+                                                  job_id=job_id).uuid
+            buf = pa.py_buffer(data)
+            self._jp.store.put(id_, buf)
+            self._batchidx += 1
+            # return buf
+            return id_
+        else:
+            return data
 
     def write(self):
         self.__logger.info("Batch %i", self._nbatches)
@@ -308,10 +350,15 @@ class GenCsvLikeArrow(GeneratorBase):
             except Exception:
                 self.__logger.info("Iterator empty")
                 raise
-
-            filename = tempfile.mktemp(suffix=self.properties.suffix,
-                                       prefix=self.properties.prefix,
-                                       dir=self.properties.path)
-            self.__logger.info("Write file %s", filename)
-            with open(filename, 'wb') as f:
-                f.write(raw)
+            buf = pa.py_buffer(raw)
+            fileinfo = FileObjectInfo()
+            fileinfo.type = 1
+            job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
+            ds_id = self._jp.meta.parentset_id
+            id_ = self._jp.store.register_content(buf,
+                                                  fileinfo,
+                                                  dataset_id=ds_id,
+                                                  partition_key=self.name,
+                                                  job_id=job_id).uuid
+            self._jp.store.put(id_, buf)
+            self._batchidx += 1

@@ -61,7 +61,6 @@ message Tree {
 
 message Menu {
     Tree tree = 1;
-    repeated Algo algos = 2;
 }
 
 message GeneratorInput {
@@ -94,6 +93,7 @@ message JobConfig {
     Sampler sampler = 4;
     repeated Tool tools = 5;
     string config_id = 6;
+    repeated Algo algos = 7;
 }
 
 message RawInfo {
@@ -184,4 +184,10 @@ message JobInfo {
     string job_id = 9;
     Input input = 10;
     Output output = 11;
+    string store_name = 12;
+    string store_id = 13;
+    string menu_id = 14;
+    string config_id = 15;
+    string dataset_id = 16;
+    string parentset_id = 17;
 }

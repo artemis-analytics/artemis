@@ -13,15 +13,18 @@ from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.io.filehandler import FileHandlerTool
 from artemis.generators.filegen import FileGenerator
 from artemis.generators.legacygen import GenMF
+from artemis.generators.simutablegen import SimuTableGen
 
 
 class GeneratorFactory():
 
     def __new__(cls, ctype, **kwargs):
+        print(ctype, kwargs)
         if ctype == 'csv':
             return GenCsvLikeArrow('generator',
                                    nbatches=kwargs['nbatches'],
-                                   num_cols=kwargs['num_cols'],
+                                   # num_cols=kwargs['num_cols'],
+                                   table_id=kwargs['table_id'],
                                    num_rows=kwargs['num_rows'],
                                    seed=kwargs['seed'])
         elif ctype == 'legacy':
@@ -40,6 +43,15 @@ class GeneratorFactory():
                          header_offset=kwargs['header_offset'],
                          footer_size=kwargs['footer_size'],
                          **columns)
+        elif ctype == 'simutable':
+            print("Config simutable")
+            return SimuTableGen('generator',
+                                nbatches=kwargs['nbatches'],
+                                num_rows=kwargs['num_rows'],
+                                file_type=1,
+                                table_id=kwargs['table_id'],
+                                seed=kwargs['seed'])
+
         elif ctype == 'file':
             return FileGenerator('generator',
                                  path=kwargs['path'],

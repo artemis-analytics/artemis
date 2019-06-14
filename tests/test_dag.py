@@ -29,8 +29,9 @@ class DagTestCase(unittest.TestCase):
         logging.getLogger().setLevel(logging.DEBUG)
 
     def tearDown(self):
-        pass
+        logging.getLogger().setLevel(logging.INFO)
     
+    '''
     def test_sequence(self):
         # First run the dummy example, then run our use of Sequence, Chain, Menu
         sequence1 = (["initial"], ("alg1", "alg2"), "seq1")
@@ -118,7 +119,7 @@ class DagTestCase(unittest.TestCase):
 
             msg = testmenu.to_msg()
             print(text_format.MessageToString(msg))        
-
+    '''
 
 
 if __name__ == '__main__':
