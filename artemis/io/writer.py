@@ -1,15 +1,17 @@
 """
 Dedicated Writer classes to manage output data streams
 """
-import os
+import urllib
 
 import pyarrow as pa
 
 from artemis.core.tool import ToolBase
 from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
+from artemis.core.properties import JobProperties
 
 from artemis.io.protobuf.artemis_pb2 import RecordBatchFileInfo
+from cronus.io.protobuf.cronus_pb2 import FileObjectInfo
 
 
 @iterable
@@ -54,6 +56,7 @@ class BufferOutputWriter(ToolBase):
         self._fname = ''
         self._finfo = []  # Store list of metadata info objects
         self.__logger.info("Writer path %s", self._path)
+        self.jp = None
 
     @property
     def total_records(self):
@@ -71,6 +74,7 @@ class BufferOutputWriter(ToolBase):
         self.__logger.info("Initialize writer")
         self.__logger.info(self.properties)
         self.__logger.info(self._path)
+        self.jp = JobProperties()
         self._buffer = None
         self._sink = pa.BufferOutputStream()
         self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
@@ -205,6 +209,7 @@ class BufferOutputWriter(ToolBase):
         self._sink = pa.BufferOutputStream()
 
     def _new_filename(self):
+        '''
         self.__logger.info("Output path %s", self._path)
         _fname = self._fbasename + \
             '_' + self.name + \
@@ -216,6 +221,8 @@ class BufferOutputWriter(ToolBase):
             self.__logger.info("Absolute path %s", path)
             self._fname = os.path.join(path, _fname)
         self.__logger.info("Ouput file %s", self._fname)
+        '''
+        pass
 
     def _write_buffer(self):
         try:
@@ -226,14 +233,56 @@ class BufferOutputWriter(ToolBase):
             raise
 
     def _write_file(self):
-        with pa.OSFile(self._fname, 'wb') as f:
-            try:
-                f.write(self._buffer)
-            except IOError:
-                self.__logger_error("Error writing OSFile %s", self._fname)
-                raise
+        fileinfo = FileObjectInfo()
+        fileinfo.type = 5
+        fileinfo.aux.num_rows = self._nrecords
+        fileinfo.aux.num_columns = self._ncolumns
+        fileinfo.aux.num_batches = self._nbatches
+        p_key = self.name.split('_')[-1]
+        ds_id = self.jp.meta.dataset_id
+        job_id = self.jp.meta.job_id
+        self.logger.info("Partitions %s",
+                         self.jp.store.list_partitions(ds_id))
+        self.__logger.info("Writing arrow to DS %s partition %s job %s",
+                           ds_id,
+                           p_key,
+                           job_id)
+        try:
+            obj = self.jp.store.register_content(self._buffer,
+                                                 fileinfo,
+                                                 dataset_id=ds_id,
+                                                 job_id=job_id,
+                                                 partition_key=p_key)
+            id_ = obj.uuid
+        except Exception:
+            self.__logger.error("Fail to register buffer to store")
+            raise
+        self.__logger.info("Writing to store id: %s", id_)
+        self.jp.store.put(id_, self._buffer)
+
         if self._write_csv is True:
-            BufferOutputWriter.to_csv(self._buffer, self._fname + '.csv')
+            fileinfo = FileObjectInfo()
+            fileinfo.type = 1
+            fileinfo.aux.num_rows = self._nrecords
+            fileinfo.aux.num_columns = self._ncolumns
+            fileinfo.aux.num_batches = self._nbatches
+            partition_key = self.name.split('_')[-1]
+            self.__logger.info("Writing CSV DS: %s Partition: %s Job: %s",
+                               ds_id,
+                               partition_key,
+                               job_id)
+            try:
+                obj = self.jp.store.register_content(self._buffer,
+                                                     fileinfo,
+                                                     dataset_id=ds_id,
+                                                     job_id=job_id,
+                                                     partition_key=p_key)
+                address = obj.address
+            except Exception:
+                self.__logger.error("Cannot register csv file")
+            urldata = urllib.parse.urlparse(address)
+            path = urllib.parse.unquote(urldata.path)
+            BufferOutputWriter.to_csv(self._buffer, path)
 
     def _new_writer(self):
         '''

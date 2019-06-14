@@ -40,14 +40,13 @@ Merge words
 Null field
 Insert new value
 
-Random selection for number of duplicates for each record, following distributions:
-    Uniform
-    Poisson
-    Zipf
-    
-    For each duplicate apply the modifications up to:
-    Maximum number of modifications for a given record -- fixed
-    Maximum number of modifications for a given field -- randomly select number of modiication
+PDFs for number of duplicates for each record:
+    * Uniform
+    * Poisson
+    * Zipf
+Each duplicate apply the modifications up to:
+    * (Fixed) Max N modifications for a given record
+    * (Random) Max N modifications for a given field
 
 Straightforward to implement.
 Requires suitable dictionaries for generating proper Canadian addresses.
@@ -129,9 +128,12 @@ class Modifier(object):
         #                    ('given_name', 'surname'):0.05,
         #                    ('postcode', 'suburb'):0.01}
 
-        self.max_modifications_in_record = modifiers.max_modifications_in_record
-        self.max_field_modifiers = modifiers.max_field_modifiers
-        self.max_record_modifiers = modifiers.max_record_modifiers
+        self.max_modifications_in_record = \
+            modifiers.max_modifications_in_record
+        self.max_field_modifiers = \
+            modifiers.max_field_modifiers
+        self.max_record_modifiers = \
+            modifiers.max_record_modifiers
 
         self.modification_fcns = {
                                   'insert': self.insert,
@@ -272,16 +274,17 @@ class Modifier(object):
                 num_field_mods = 1
             else:
                 num_field_mods = self.fake.randint(1, self.max_field_modifiers)
-            
-            expected_rec_mods = self.max_record_modifiers - self.num_mods_in_record
+
+            expected_rec_mods = \
+                self.max_record_modifiers - self.num_mods_in_record
             if num_field_mods > expected_rec_mods:
                 num_field_mods = expected_rec_mods
             # print('Modify field with n mods:', field, num_field_mods)
-            for _ in range(num_field_mods):    
+            for _ in range(num_field_mods):
                 row[pos] = self._modify(field, row[pos])
                 self.field_mod_count[field]
                 self.num_mods_in_record += 1
-        self._reset()       
+        self._reset()
 
     def _modify(self, field, value):
         '''
@@ -294,7 +297,7 @@ class Modifier(object):
         modifier = self.random_select(self.prob_modifiers[field])
         self.__logger.info('Modifier: %s' % modifier)
         return self.modification_fcns[modifier](field, value)
-    
+
     def character_range(self, data):
         '''
         FEBRL defines the character type in the original configuration
@@ -387,12 +390,11 @@ class Modifier(object):
             value = self.generator_fcns[field][0]()
             return value
         else:
-            value = self.generator_fcns[field][0](self.generator_fcns[field][1])
-            return value
+            return self.generator_fcns[field][0](self.generator_fcns[field][1])
 
     def swap(self, field, data):
         '''
-        swap -- randomly swap two words if field has at least two words 
+        swap -- randomly swap two words if field has at least two words
         '''
         self.__logger.debug('swap')
         self.counters['swap'] += 1
@@ -461,32 +463,34 @@ class Modifier(object):
             value = self.generator_fcns[field][0]()
             return value
         else:
-            value = self.generator_fcns[field][0](self.generator_fcns[field][1])
-            return value
+            return self.generator_fcns[field][0](self.generator_fcns[field][1])
 
     def select_position(self, input_string, len_offset):
         '''
         dsgen::error_position
-        randomly select position of character for a string 
+        randomly select position of character for a string
         to introduce an error
         FEBRL description:
         function that randomly calculates an error position within the given
         input string and returns the position as integer number 0 or larger.
-        The argument 'len_offset' can be set to an integer (e.g. -1, 0, or 1) and
-        will give an offset relative to the string length of the maximal error
+        The argument 'len_offset' can be set to an integer (e.g. -1, 0, or 1).
+        Provides an offset relative to the string length of the maximal error
         position that can be returned.
-        Errors do not likely appear at the beginning of a word, so a gauss random
-        distribution is used with the mean being one position behind half the
-        string length (and standard deviation 1.0)
+        Errors do not likely appear at the beginning of a word.
+        Gaussian distribution is used with the mean being one position
+        behind half the string length (simga = 1.0) to simulate errors.
         '''
+
         str_len = len(input_string)
-        max_return_pos = str_len - 1 + len_offset  # Maximal position to be returned
+        # Maximal position to be returned
+        max_return_pos = str_len - 1 + len_offset
         if (str_len == 0):
             return None  # Empty input string
 
         mid_pos = (str_len + len_offset) / 2 + 1
         random_pos = self.fake.random.gauss(float(mid_pos), 1.0)
-        random_pos = max(0, int(round(random_pos)))  # Make it integer and 0 or larger
+        # Make it integer and 0 or larger
+        random_pos = max(0, int(round(random_pos)))
         return min(random_pos, max_return_pos)
 
     def error_character(self, input_char, char_range):
@@ -496,7 +500,8 @@ class Modifier(object):
         column keyboard dictionaires.
         Directly taken from FEBRL dsgen
         '''
-        # Keyboard substitutions gives two dictionaries with the neigbouring keys for
+        # Keyboard substitutions gives two dictionaries
+        # with the neigbouring keys for
         # all letters both for rows and columns (based on ideas implemented by
         # Mauricio A. Hernandez in his dbgen).
 
@@ -518,66 +523,82 @@ class Modifier(object):
                 'o': 'l',  'p': 'p',  'q': 'a',  'r': 'f',
                 's': 'wxz', 't': 'gf',  'u': 'j',
                 'v': 'fg', 'w': 's',  'x': 'sd', 'y': 'h',  'z': 'as'}
-
-        rand_num = self.fake.random.random()  # Create a random number between 0 and 1
+        # Create a random number between 0 and 1
+        rand_num = self.fake.random.random()
 
         if (char_range == 'digit'):
-        # A randomly chosen neigbouring key in the same keyboard row
-        #
-            if (input_char.isdigit()) and (rand_num <= self.single_typo_prob['same_row']):
+            # Randomly chosen neigbouring key in the same keyboard row
+            if (input_char.isdigit()) and \
+                    (rand_num <= self.single_typo_prob['same_row']):
                 output_char = self.fake.random.choice(rows[input_char])
             else:
-                # choice_str =  string.replace(string.digits, input_char, '') not sure why this is done
-                output_char = self.fake.random.choice(string.digit)  # A randomly choosen digit
-
+                # TODO following line not understood in original implementation
+                # choice_str =  string.replace(string.digits, input_char, '')
+                # A randomly choosen digit
+                output_char = self.fake.random.choice(string.digit)
         elif (char_range == 'alpha'):
-        # A randomly chosen neigbouring key in the same keyboard row
-        #
-            if (input_char.isalpha()) and (rand_num <= self.single_typo_prob['same_row']):
+            # A randomly chosen neigbouring key in the same keyboard row
+            if (input_char.isalpha()) and \
+                    (rand_num <= self.single_typo_prob['same_row']):
                 output_char = self.fake.random.choice(rows[input_char])
 
             # A randomly chosen neigbouring key in the same keyboard column
-            #
             elif (input_char.isalpha()) and \
-                (rand_num <= (self.single_typo_prob['same_row'] + \
-                         self.single_typo_prob['same_col'])):
-
+                    (rand_num <= (self.single_typo_prob['same_row'] +
+                                  self.single_typo_prob['same_col'])):
                 output_char = self.fake.random.choice(cols[input_char])
 
             else:
-                # Not sure the following lines, we just do choice of character set
-                #choice_str =  string.replace(string.lowercase, input_char, '')
-                #output_char = self.fake.random.choice(choice_str)  # A randomly choosen letter
+                # TODO Following line not understood in original implementation
+                # Just do choice of character set
+                # choice_str = string.replace(string.lowercase, input_char, '')
+                # output_char = self.fake.random.choice(choice_str)
+                # A randomly choosen letter
                 output_char = self.fake.random.choice(string.ascii_lowercase)
 
         else:  # Both letters and digits possible
-        # A randomly chosen neigbouring key in the same keyboard row
-        #
+            # A randomly chosen neigbouring key in the same keyboard row
+            #
             if (rand_num <= self.single_typo_prob['same_row']):
                 if (input_char in rows):
                     output_char = self.fake.random.choice(rows[input_char])
                 else:
-                    #choice_str =  string.replace(string.lowercase+string.digits, \
+                    # TODO
+                    # Following line not understood in original implementation
+                    # choice_str = \
+                    #   string.replace(string.lowercase+string.digits, \
                     #                     input_char, '')
-                    #output_char = self.fake.random.choice(choice_str)  # A randomly choosen character
-                    output_char = self.fake.random.choice(string.ascii_lowercase+string.digits)
-        # A randomly chosen neigbouring key in the same keyboard column
-        #
-
-            elif (rand_num <= (self.single_typo_prob['same_row'] + \
-                           self.single_typo_prob['same_col'])):
+                    # output_char = self.fake.random.choice(choice_str)
+                    # A randomly choosen character
+                    output_char = \
+                        self.fake.random.choice(string.ascii_lowercase +
+                                                string.digits)
+            # A randomly chosen neigbouring key in the same keyboard column
+            elif (rand_num <= (self.single_typo_prob['same_row'] +
+                  self.single_typo_prob['same_col'])):
                 if (input_char in cols):
                     output_char = self.fake.random.choice(cols[input_char])
                 else:
-                    #choice_str =  string.replace(string.lowercase+string.digits, \
+                    # TODO
+                    # Following line not understood in original implementation
+                    # choice_str = \
+                    # string.replace(string.lowercase+string.digits, \
                     #                     input_char, '')
-                    #output_char = self.fake.random.choice(choice_str)  # A randomly choosen character
-                    output_char = self.fake.random.choice(string.ascii_lowercase+string.digits)
+                    # output_char = self.fake.random.choice(choice_str)
+                    # A randomly choosen character
+                    output_char = \
+                        self.fake.random.choice(string.ascii_lowercase +
+                                                string.digits)
 
             else:
-                #choice_str =  string.replace(string.lowercase+string.digits, \
+                # TODO
+                # Following line not understood in original implementation
+                # choice_str =
+                # string.replace(string.lowercase+string.digits, \
                 #                       input_char, '')
-                #output_char = self.fake.random.choice(choice_str)  # A randomly choosen character
-                output_char = self.fake.random.choice(string.ascii_lowercase+string.digits)
+                # output_char = self.fake.random.choice(choice_str)
+                # A randomly choosen character
+                output_char = self.fake.random.choice(string.ascii_lowercase +
+                                                      string.digits)
 
         return output_char

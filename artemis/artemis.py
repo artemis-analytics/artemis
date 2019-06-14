@@ -87,16 +87,17 @@ class Artemis():
         self.properties = Properties()
         self._jp = JobProperties()
         self._jp.meta.CopyFrom(jobinfo)
-
+        self._jp.configure()
         # TODO
         # Validate the metadata
         #
         self._job_id = self._jp.meta.name + '-' + self._jp.meta.job_id
 
         # Logging
+        logobj = self._jp.store.register_log(self._jp.meta.dataset_id,
+                                             self._jp.meta.job_id)
         Logger.configure(self,
-                         jobname=self._job_id,
-                         path=self._jp.meta.output.repo,
+                         path=logobj.address,
                          loglevel=kwargs['loglevel'])
         #######################################################################
         # Initialize summary info in meta data
@@ -267,10 +268,9 @@ class Artemis():
                            self.properties)
         self.__logger.info("Job ID %s", self._job_id)
         self.__logger.info("Job path %s", self._path)
-        if hasattr(self._jp.meta, 'config') is False:
-            self.__logger.error("Configuration not provided")
-            raise AttributeError
-
+        # if hasattr(self._jp.meta, 'config') is False:
+        #    self.__logger.error("Configuration not provided")
+        #    raise AttributeError
         # Create Steering instance
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
         self.collector = Collector('collector',
@@ -280,7 +280,8 @@ class Artemis():
                                    loglevel=Logger.CONFIGURED_LEVEL)
 
         # Configure the data handler
-        _msggen = self._jp.meta.config.input.generator.config
+        # _msggen = self._jp.meta.config.input.generator.config
+        _msggen = self._jp.config.input.generator.config
         try:
             self.datahandler = AlgoBase.from_msg(self.__logger, _msggen)
         except Exception:
@@ -288,7 +289,7 @@ class Artemis():
             raise
 
         # Add tools
-        for toolcfg in self._jp.meta.config.tools:
+        for toolcfg in self._jp.config.tools:
             self.__logger.info("Add Tool %s", toolcfg.name)
             self.__tools.add(self.__logger, toolcfg)
 
@@ -300,7 +301,7 @@ class Artemis():
         # Exceptions?
         self.__logger.info("{}: Lock".format('artemis'))
         self.properties.lock = True
-        self._jp.meta.properties.CopyFrom(self.properties.to_msg())
+        # self._jp.meta.properties.CopyFrom(self.properties.to_msg())
         try:
             self.steer.lock()
         except Exception:
@@ -322,7 +323,7 @@ class Artemis():
             self.__logger.error("Cannot initialize algo %s" % 'generator')
             raise
 
-        for toolcfg in self._jp.meta.config.tools:
+        for toolcfg in self._jp.config.tools:
             if toolcfg.name == "bufferwriter":
                 continue
             try:

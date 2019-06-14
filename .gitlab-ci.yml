@@ -56,6 +56,8 @@ prepare:
     stage: prepare
     image: $IMAGE_NAME 
     script:
+        - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
+        - cd cronus; python setup.py install; cd ..
         - python tests/test_artemis.py
         - cp test.log valid.log
     only:
@@ -139,6 +141,7 @@ build:
         DOCKER_DRIVER: overlay2
     script:
         - echo "Building ${PROJECT_NAME}"
+        - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
         - setup_docker
         - build
     only:
@@ -434,7 +437,8 @@ validate:
                --build-arg https_proxy=$HTTP_PROXY \
                --build-arg HTTPS_PROXY=$HTTP_PROXY \
                --build-arg USERNAME=$USERNAME \
-               --build-arg PASSWORD=$PASSWORD .
+               --build-arg PASSWORD=$PASSWORD \
+               --build-arg CI_JOB_TOKEN=$CI_JOB_TOKEN .
     else
       echo "Building Heroku-based application using gliderlabs/herokuish docker image..."
       docker run -i --name="$CI_CONTAINER_NAME" -v "$(pwd):/tmp/app:ro" gliderlabs/herokuish /bin/herokuish buildpack build

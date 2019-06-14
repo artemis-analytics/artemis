@@ -11,196 +11,388 @@ Test protobuf model implementation
 """
 
 import unittest
-# import tempfile
+import tempfile
+import os
+import uuid
+import logging
 # from collections import OrderedDict
-
+from artemis.artemis import Artemis, ArtemisFactory
+from cronus.core.cronus import BaseObjectStore
+from cronus.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, FileObjectInfo, TableObjectInfo
+from cronus.io.protobuf.table_pb2 import Table
 from artemis.generators.simutable.synthesizer import Synthesizer
 from artemis.io.protobuf.simutable_pb2 import SimuTable
+from artemis.generators.simutablegen import SimuTableGen
+from cronus.io.protobuf.table_pb2 import Table
+
+from artemis.core.singleton import Singleton
+from artemis.core.tree import Tree
+from artemis.core.datastore import ArrowSets
+from artemis.core.properties import JobProperties
+from artemis.configurables.factories import MenuFactory, JobConfigFactory
+from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 
-class TestCase(unittest.TestCase):
+logging.getLogger().setLevel(logging.INFO)
+
+
+class SimuTableTestCase(unittest.TestCase):
 
     def test(self):
-        model = SimuTable()
+        model = Table()
         model.name = 'EvolveModel'
-        model.description = 'Evolution of the mind'
-        field = model.fields.add()
+        schema = model.info.schema.info
+        field = schema.fields.add()
         field.name = 'Name'
-        field.type = 'String'
-        field.length = 10
-        field.generator.name = 'name'
-
+        field.info.type = 'String'
+        field.info.length = 10
+        field.info.aux.generator.name = 'name'
         print(model)
 
     def test_gen_from_proto(self):
 
-        model = SimuTable()
+        model = Table()
         model.name = 'EvolveModel'
-        model.description = 'Evolution of the mind'
-        field = model.fields.add()
+        schema = model.info.schema.info
+        field = schema.fields.add()
         field.name = 'Name'
-        field.type = 'String'
-        field.length = 10
-        field.generator.name = 'name'
+        field.info.type = 'String'
+        field.info.length = 10
+        field.info.aux.generator.name = 'name'
 
         s2 = Synthesizer(model, 'en_CA', idx=0, seed=4053)
         print(s2.generate())
-        s2 = Synthesizer(model, 'en_CA', idx=0, seed=4053)
-        print(s2.generate())
 
+    def test_simutablegen(self):
+        with tempfile.TemporaryDirectory() as dirpath:
+            store = BaseObjectStore(dirpath, 'artemis')
+            
+            g_dataset = store.register_dataset()
+            store.new_partition(g_dataset.uuid, 'generator')
+            job_id = store.new_job(g_dataset.uuid)
+            
+            # define the schema for the data
+            g_table = Table()
+            g_table.name = 'EvolveModel'
+            g_table.uuid = str(uuid.uuid4())
+            schema = g_table.info.schema.info
+            field = schema.fields.add()
+            field.name = 'Name'
+            field.info.type = 'String'
+            field.info.length = 10
+            field.info.aux.generator.name = 'name'
+            
+            tinfo = TableObjectInfo()
+            store.register_content(g_table, 
+                                   tinfo, 
+                                   dataset_id=g_dataset.uuid,
+                                   job_id=job_id,
+                                   partition_key='generator')
+
+            generator = SimuTableGen('generator',
+                                     nbatches=1,
+                                     num_rows=10000,
+                                     file_type = 1,
+                                     table_id=g_table.uuid)
+
+            generator._jp.meta.parentset_id = g_dataset.uuid
+            generator._jp.meta.job_id = str(job_id)
+            generator._jp.store = store
+            generator.initialize()
+            for batch in generator:
+                print(batch)
+
+    def test_simutable_artemis(self): 
+        Singleton.reset(JobProperties)
+        Singleton.reset(Tree)
+        Singleton.reset(ArrowSets)
+        with tempfile.TemporaryDirectory() as dirpath:
+            mb = MenuFactory('csvgen')
+            msgmenu = mb.build()
+            menuinfo = MenuObjectInfo()
+            menuinfo.created.GetCurrentTime()
+                
+            store = BaseObjectStore(dirpath, 'artemis')
+            
+            g_dataset = store.register_dataset()
+            store.new_partition(g_dataset.uuid, 'generator')
+            job_id = store.new_job(g_dataset.uuid)
+            
+            # define the schema for the data
+            g_table = Table()
+            g_table.name = 'EvolveModel'
+            g_table.uuid = str(uuid.uuid4())
+            schema = g_table.info.schema.info
+                
+            field1 = schema.fields.add()
+            field1.name = 'record_id'
+            field1.info.type = 'String'
+            field1.info.length = 10
+
+            field2 = schema.fields.add()
+            field2.name = 'Name'
+            field2.info.type = 'String'
+            field2.info.length = 10
+            field2.info.aux.generator.name = 'name'
+
+            field3 = schema.fields.add()
+            field3.name = 'SIN' 
+            field3.info.type = 'String'
+            field3.info.length = 10
+            field3.info.aux.generator.name = 'ssn'
+
+            field4 = schema.fields.add()
+            field4.name = 'StreetNumber'
+            field4.info.type = 'String'
+            field4.info.length = 40
+            field4.info.aux.generator.name = 'building_number'
+
+            field5 = schema.fields.add()
+            field5.name = 'Street'
+            field5.info.type = 'String'
+            field5.info.length = 40
+            field5.info.aux.generator.name = 'street_name'
+
+            field6 = schema.fields.add()
+            field6.name = 'City'
+            field6.info.type = 'String'
+            field6.info.length = 40
+            field6.info.aux.generator.name = 'city'
+
+            field7 = schema.fields.add()
+            field7.name = 'Province'
+            field7.info.type = 'String'
+            field7.info.length = 40
+            field7.info.aux.generator.name = 'province'
+
+            field8 = schema.fields.add()
+            field8.name = 'PostalCode'
+            field8.info.type = 'String'
+            field8.info.length = 40
+            field8.info.aux.generator.name = 'postcode'
+
+            field9 = schema.fields.add()
+            field9.name = 'DOB'
+            field9.info.type = 'DateTime'
+            field9.info.length = 40
+            field9.info.aux.generator.name = 'date'
+
+            field10 = schema.fields.add()
+            field10.name = 'PhoneNum'
+            field10.info.type = 'String'
+            field10.info.length = 11
+            field10.info.aux.generator.name = 'phone_number'
+            
+            tinfo = TableObjectInfo()
+            store.register_content(g_table, 
+                                   tinfo, 
+                                   dataset_id=g_dataset.uuid,
+                                   job_id=job_id,
+                                   partition_key='generator')
+
+            store.save_store()
+            config = JobConfigFactory('csvgen', msgmenu,
+                                      jobname='arrowproto',
+                                      generator_type='simutable',
+                                      filehandler_type='csv',
+                                      nbatches=10,
+                                      #num_cols=20,
+                                      num_rows=10000,
+                                      table_id=g_table.uuid,
+                                      linesep='\r\n',
+                                      delimiter=",",
+                                      max_buffer_size=10485760,
+                                      max_malloc=2147483648,
+                                      write_csv=True,
+                                      output_repo=dirpath,
+                                      seed=42
+                                      )
+            config.configure()
+            config.add_algos(mb.algos)
+            configinfo = ConfigObjectInfo()
+            configinfo.created.GetCurrentTime()
+            
+            menu_uuid = store.register_content(msgmenu, menuinfo).uuid
+            config_uuid = store.register_content(config._msg, configinfo).uuid
+
+            dataset = store.register_dataset(menu_id=menu_uuid, config_id=config_uuid)
+            job_id = store.new_job(dataset.uuid)
+            store.save_store()
+
+            msg = config.job_config
+            job = JobInfo_pb()
+            job.name = 'arrowproto'
+            job.job_id = 'example'
+            job.output.repo = dirpath
+            job.store_id = store.store_uuid
+            job.store_name = store.store_name
+            job.menu_id = menu_uuid
+            job.config_id = config_uuid
+            job.dataset_id = dataset.uuid
+            job.parentset_id = g_dataset.uuid
+            #job.config.CopyFrom(msg)
+            job.job_id = str(job_id) 
+            print(job)
+            bow = ArtemisFactory(job, 'INFO')
+            bow.control()
+            store = BaseObjectStore(dirpath, store.store_name, store_uuid=job.store_id)
+    
     def test_glm_proto(self):
-        model = SimuTable()
-        field1 = model.fields.add()
+        model = Table()
+        schema = model.info.schema.info
+        field1 = schema.fields.add()
         field1.name = 'Value1'
-        field1.type = 'Float'
-        field1.length = 10
-        field1.generator.name = 'random_int'
-        field1.dependent = 'Prediction'
+        field1.info.type = 'Float'
+        field1.info.length = 10
+        field1.info.aux.generator.name = 'random_int'
+        field1.info.aux.dependent = 'Prediction'
 
-        field2 = model.fields.add()
+        field2 = schema.fields.add()
         field2.name = 'Value2'
-        field2.type = 'Float'
-        field2.length = 10
-        field2.generator.name = 'random_int'
-        field2.dependent = 'Prediction'
+        field2.info.type = 'Float'
+        field2.info.length = 10
+        field2.info.aux.generator.name = 'random_int'
+        field2.info.aux.dependent = 'Prediction'
 
-        field3 = model.fields.add()
+        field3 = schema.fields.add()
         field3.name = 'Prediction'
-        field3.type = 'Float'
-        field3.length = 10
-        field3.generator.name = 'glm'
+        field3.info.type = 'Float'
+        field3.info.length = 10
+        field3.info.aux.generator.name = 'glm'
 
-        beta1 = field3.generator.parameters.add()
+        beta1 = field3.info.aux.generator.parameters.add()
         beta1.name = 'beta1'
         beta1.value = 10
         beta1.type = 'int'
-        beta2 = field3.generator.parameters.add()
+        beta2 = field3.info.aux.generator.parameters.add()
         beta2.name = 'beta2'
         beta2.value = 0.1
         beta2.type = 'float'
-        beta3 = field3.generator.parameters.add()
+        beta3 = field3.info.aux.generator.parameters.add()
         beta3.name = 'beta3'
         beta3.value = 100
         beta3.type = 'int'
-        sigma = field3.generator.parameters.add()
+        sigma = field3.info.aux.generator.parameters.add()
         sigma.name = 'sigma'
         sigma.value = 1
         sigma.type = 'int'
 
-        var1 = field3.generator.parameters.add()
+        var1 = field3.info.aux.generator.parameters.add()
         var1.name = 'Value1'
         var1.type = 'Field'
         var1.variable.CopyFrom(field1)
 
-        var2 = field3.generator.parameters.add()
+        var2 = field3.info.aux.generator.parameters.add()
         var2.name = 'Value2'
         var2.type = 'Field'
         var2.variable.CopyFrom(field2)
 
         s2 = Synthesizer(model, 'en_CA')
         print(s2.generate())
-
+    
     def test_xduplicates(self):
 
-        model = SimuTable()
+        model = Table()
 
-        model.duplicate.probability = 1
-        model.duplicate.distribution = 'uniform'
-        model.duplicate.maximum = 1
-
-        field1 = model.fields.add()
+        model.info.aux.duplicate.probability = 1
+        model.info.aux.duplicate.distribution = 'uniform'
+        model.info.aux.duplicate.maximum = 1
+        schema = model.info.schema.info
+        
+        field1 = schema.fields.add()
         field1.name = 'record_id'
-        field1.type = 'String'
-        field1.length = 10
+        field1.info.type = 'String'
+        field1.info.length = 10
 
-        field2 = model.fields.add()
+        field2 = schema.fields.add()
         field2.name = 'Name'
-        field2.type = 'String'
-        field2.length = 10
-        field2.generator.name = 'name'
+        field2.info.type = 'String'
+        field2.info.length = 10
+        field2.info.aux.generator.name = 'name'
 
-        field3 = model.fields.add()
+        field3 = schema.fields.add()
         field3.name = 'UPC'
-        field3.type = 'Integer'
-        field3.length = 13
-        field3.generator.name = 'ean'
+        field3.info.type = 'Integer'
+        field3.info.length = 13
+        field3.info.aux.generator.name = 'ean'
 
-        parm = field3.generator.parameters.add()
+        parm = field3.info.aux.generator.parameters.add()
         parm.name = 'ndigits'
         parm.value = 13
         parm.type = 'int'
 
         s2 = Synthesizer(model, 'en_CA', idx=0, seed=4053)
         print(s2.generate())
-
+    
     def test_xmodifer(self):
 
-        model = SimuTable()
-
-        field1 = model.fields.add()
+        model = Table()
+        schema = model.info.schema.info
+        
+        field1 = schema.fields.add()
         field1.name = 'record_id'
-        field1.type = 'String'
-        field1.length = 10
+        field1.info.type = 'String'
+        field1.info.length = 10
 
-        field2 = model.fields.add()
+        field2 = schema.fields.add()
         field2.name = 'Name'
-        field2.type = 'String'
-        field2.length = 10
-        field2.generator.name = 'name'
+        field2.info.type = 'String'
+        field2.info.length = 10
+        field2.info.aux.generator.name = 'name'
 
-        field3 = model.fields.add()
+        field3 = schema.fields.add()
         field3.name = 'SIN' 
-        field3.type = 'String'
-        field3.length = 10
-        field3.generator.name = 'ssn'
+        field3.info.type = 'String'
+        field3.info.length = 10
+        field3.info.aux.generator.name = 'ssn'
 
-        field4 = model.fields.add()
+        field4 = schema.fields.add()
         field4.name = 'StreetNumber'
-        field4.type = 'String'
-        field4.length = 40
-        field4.generator.name = 'building_number'
+        field4.info.type = 'String'
+        field4.info.length = 40
+        field4.info.aux.generator.name = 'building_number'
 
-        field5 = model.fields.add()
+        field5 = schema.fields.add()
         field5.name = 'Street'
-        field5.type = 'String'
-        field5.length = 40
-        field5.generator.name = 'street_name'
+        field5.info.type = 'String'
+        field5.info.length = 40
+        field5.info.aux.generator.name = 'street_name'
 
-        field6 = model.fields.add()
+        field6 = schema.fields.add()
         field6.name = 'City'
-        field6.type = 'String'
-        field6.length = 40
-        field6.generator.name = 'city'
+        field6.info.type = 'String'
+        field6.info.length = 40
+        field6.info.aux.generator.name = 'city'
 
-        field7 = model.fields.add()
+        field7 = schema.fields.add()
         field7.name = 'Province'
-        field7.type = 'String'
-        field7.length = 40
-        field7.generator.name = 'province'
+        field7.info.type = 'String'
+        field7.info.length = 40
+        field7.info.aux.generator.name = 'province'
 
-        field8 = model.fields.add()
+        field8 = schema.fields.add()
         field8.name = 'PostalCode'
-        field8.type = 'String'
-        field8.length = 40
-        field8.generator.name = 'postcode'
+        field8.info.type = 'String'
+        field8.info.length = 40
+        field8.info.aux.generator.name = 'postcode'
 
-        field9 = model.fields.add()
+        field9 = schema.fields.add()
         field9.name = 'DOB'
-        field9.type = 'DateTime'
-        field9.length = 40
-        field9.generator.name = 'date'
+        field9.info.type = 'DateTime'
+        field9.info.length = 40
+        field9.info.aux.generator.name = 'date'
 
-        field10 = model.fields.add()
+        field10 = schema.fields.add()
         field10.name = 'PhoneNum'
-        field10.type = 'String'
-        field10.length = 11
-        field10.generator.name = 'phone_number'
+        field10.info.type = 'String'
+        field10.info.length = 11
+        field10.info.aux.generator.name = 'phone_number'
 
-        model.duplicate.probability = 1
-        model.duplicate.distribution = 'uniform'
-        model.duplicate.maximum = 5
+        model.info.aux.duplicate.probability = 1
+        model.info.aux.duplicate.distribution = 'uniform'
+        model.info.aux.duplicate.maximum = 5
 
-        modifier = model.record_modifier
+        modifier = model.info.aux.record_modifier
 
         modifier.max_modifications_in_record = 1
         modifier.max_field_modifiers = 1
@@ -244,8 +436,11 @@ class TestCase(unittest.TestCase):
         for _ in range(10):
             protorows.append(s2.generate())
         print(protorows) 
+    
 
 if __name__ == '__main__':
     print('Unit Test: Faker')
     unittest.main()
+    #test = SimuTableTestCase()
+    #test.test_simutable_artemis()
     print('====================================')

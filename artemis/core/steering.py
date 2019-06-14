@@ -38,13 +38,14 @@ class Steering(AlgoBase):
         Configure steering from a protobuf msg
         '''
         self.__logger.info('Loading menu from protobuf')
-        msg = self._jp.meta.config.menu
+        # msg = self._jp.meta.config.menu
+        msg = self._jp.menu
         self.__logger.info('Initializing Tree and Algos')
 
         # Initialize algorithms
         # Look up instance to add to execution graph
         self._algo_instances = {}
-        for algo in msg.algos:
+        for algo in self._jp.config.algos:
             try:
                 self._algo_instances[algo.name] = \
                         AlgoBase.from_msg(self.__logger, algo)
@@ -56,30 +57,30 @@ class Steering(AlgoBase):
             except Exception:
                 self.__logger.error("Cannot initialize algo %s" % algo.name)
                 raise
-
-        for node in msg.tree.nodes:
-            self.__logger.debug("graph node %s" % (node.name))
-            # Create the nodes for the tree
-            if node.name == 'initial':
-                self._seq_tree.root = Node(node.name, [])
-                self._seq_tree.add_node(self._seq_tree.root)
-            else:
-                self._seq_tree.add_node(Node(node.name, node.parents))
-
-            # Initialize the algorithms
-            # Create the execution graph
-            algos = []
-            for algo in node.algos:
-                self.__logger.debug("%s in graph node %s" % (algo, node.name))
-                # TODO
-                # Initial node has placeholder algo iorequest
-                # iorequest algo is just a string name
-                # no algo message, in json dict this is stored as an empt dict
+        for graph in msg.graphs:
+            for node in graph.nodes:
+                self.__logger.debug("graph node %s" % (node.name))
+                # Create the nodes for the tree
                 if node.name == 'initial':
-                    algos.append('iorequest')
-                    continue
-                algos.append(self._algo_instances[algo])
-            self._menu[node.name] = tuple(algos)
+                    self._seq_tree.root = Node(node.name, [])
+                    self._seq_tree.add_node(self._seq_tree.root)
+                else:
+                    self._seq_tree.add_node(Node(node.name, node.parents))
+
+                # Initialize the algorithms
+                # Create the execution graph
+                algos = []
+                for algo in node.algos:
+                    self.__logger.debug("%s in graph node %s", algo, node.name)
+                    # TODO
+                    # Initial node has placeholder algo iorequest
+                    # iorequest algo is just a string name
+                    # no algo message, in json dict stored as an empty dict
+                    if node.name == 'initial':
+                        algos.append('iorequest')
+                        continue
+                    algos.append(self._algo_instances[algo])
+                self._menu[node.name] = tuple(algos)
 
         self._seq_tree.update_parents()
         self._seq_tree.update_leaves()

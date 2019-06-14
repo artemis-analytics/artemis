@@ -37,11 +37,13 @@ class CsvGenConfig(Configurable):
         options.update(dict(CsvGenOptions()))
         options.update(kwargs)
         super().__init__(menu, **options)
+        self.__logger.info(options)
 
     def configure(self):
 
         self._config_generator(nbatches=self.nbatches,
-                               num_cols=self.num_cols,
+                               # num_cols=self.num_cols,
+                               table_id=self.table_id,
                                num_rows=self.num_rows,
                                seed=self.seed)
 

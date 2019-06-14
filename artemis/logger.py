@@ -11,7 +11,7 @@
 
 """
 import logging
-import os
+import urllib
 
 
 class Logger():
@@ -47,16 +47,9 @@ class Logger():
 
     @staticmethod
     def logfilehandler(**kwargs):
-        if 'jobname' not in kwargs:
-            name = 'test'
-        else:
-            name = kwargs['jobname']
-        print(kwargs)
-        print(name)
-        logging_fname = name + '.log'
-        if 'path' in kwargs:
-            logging_fname = os.path.join(kwargs['path'], logging_fname)
-        fh = logging.FileHandler(logging_fname, 'w')
+        urldata = urllib.parse.urlparse(kwargs['path'])
+        path = urllib.parse.unquote(urldata.path)
+        fh = logging.FileHandler(path, 'w')
         fh.setFormatter(logging.Formatter(Logger.FMT))
         fh.setLevel(Logger.CONFIGURED_LEVEL)
         logging.getLogger().addHandler(fh)

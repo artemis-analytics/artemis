@@ -49,9 +49,9 @@ class Synthesizer(object):
         self.add_providers()
         self.schema = []
         self.is_dependent = []
-        for field in model.fields:
+        for field in model.info.schema.info.fields:
             self.schema.append(field.name)
-            if field.dependent == '':
+            if field.info.aux.dependent == '':
                 self.is_dependent.append(False)
             else:
                 self.is_dependent.append(True)
@@ -82,19 +82,22 @@ class Synthesizer(object):
                       "Duplicate": 0}
         self.h_dupdist = Histogram1D(range(10))
 
-        if model.HasField('duplicate'):
+        if model.info.aux.HasField('duplicate'):
             self.duplicate = True
             self.duplicate_cfg = dict()
-            self.duplicate_cfg['Prob_duplicate'] = model.duplicate.probability
-            self.duplicate_cfg['Dist_duplicate'] = model.duplicate.distribution
-            self.duplicate_cfg['Max_duplicate'] = model.duplicate.maximum
+            self.duplicate_cfg['Prob_duplicate'] = \
+                model.info.aux.duplicate.probability
+            self.duplicate_cfg['Dist_duplicate'] = \
+                model.info.aux.duplicate.distribution
+            self.duplicate_cfg['Max_duplicate'] = \
+                model.info.aux.duplicate.maximum
 
             self.nduplicate_weights = self.generate_duplicate_pdf()
-            if model.HasField('record_modifier'):
+            if model.info.aux.HasField('record_modifier'):
                 self.mod = Modifier(self.fake,
                                     self.generator_fcns,
                                     self.schema,
-                                    model.record_modifier)
+                                    model.info.aux.record_modifier)
 
         self.__logger.info('')
         self.__logger.info('Synthesizer configured')
@@ -115,7 +118,7 @@ class Synthesizer(object):
             self.__logger.info('Duplicate PDF')
             self.__logger.info(pformat(self.nduplicate_weights))
             self.__logger.info('Record modifier configuration')
-            self.__logger.info(model.record_modifier)
+            self.__logger.info(model.info.aux.record_modifier)
 
     @property
     def record_count(self):
@@ -177,23 +180,25 @@ class Synthesizer(object):
         else:
             return values
 
-    def set_generators_from_proto(self, msg):
+    def set_generators_from_proto(self, table):
         self.__logger.info("Setting Generator functions from Msg")
-        for field in msg.fields:
+        for field in table.info.schema.info.fields:
             self.__logger.info("Gathering fakers %s", field.name)
-            if field.dependent != '':
+            if field.info.aux.dependent != '':
                 continue
             self.__logger.info('Independent field %s', field)
-            parms = self.get_field_parameters(field.generator.parameters)
+            parms = \
+                self.get_field_parameters(field.info.aux.generator.parameters)
             fake = None
             if field.name == 'record_id':
                 fake = self.record_id
             else:
                 try:
-                    fake = self.fake.get_formatter(field.generator.name)
+                    fake = \
+                        self.fake.get_formatter(field.info.aux.generator.name)
                 except Exception:
                     self.__logger.error('Cannot find fake in Faker ',
-                                        field.generator.name)
+                                        field.info.aux.generator.name)
 
             self.generator_fcns[field.name] = (fake, parms)
             self.__logger.debug(parms)
@@ -231,14 +236,15 @@ class Synthesizer(object):
         self.__logger.debug('generate_original()')
         self.__logger.debug('Event ID %d' % self.record_count)
         darr = []
-        for i, fname in enumerate(fakers):
+        for i, fake in enumerate(fakers):
             if self.is_dependent[i] is True:
                 continue
-            if self.generator_fcns[fname][1] is None:
-                value = self.generator_fcns[fname][0]()
+            if self.generator_fcns[fake][1] is None:
+                value = self.generator_fcns[fake][0]()
                 darr.append(value)
             else:
-                value = self.generator_fcns[fname][0](self.generator_fcns[fname][1])
+                value = \
+                    self.generator_fcns[fake][0](self.generator_fcns[fake][1])
                 if isinstance(value, list):
                     darr.extend(value)
                 else:
@@ -287,7 +293,7 @@ class Synthesizer(object):
             self._expect_duplicate = False
             self.__maxdup = 0
 
-        self.__logger.debug('expect_duplicate generate ndups: %d' % self.__maxdup)    
+        self.__logger.debug('expect_duplicate ndups: %d', self.__maxdup)
 
     def generate(self):
         darr = []
@@ -322,7 +328,7 @@ class Synthesizer(object):
             darr = self.generate_original()
 
         self.stats['Total'] += 1
-        if self.stats['Total'] % 10 == 0:
+        if self.stats['Total'] % 10000 == 0:
             self.__logger.info("Event counter: %d" % self.stats['Total'])
         self.__logger.debug('Complete Event ID %d' % self.record_count)
         return darr

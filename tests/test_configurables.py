@@ -38,45 +38,14 @@ class ConfigurableTestCase(unittest.TestCase):
         print("================================================")
         mb = MenuFactory('csvgen')
         msgmenu = mb.build()
-        config = CsvGenConfig(msgmenu)
+        config = CsvGenConfig(msgmenu, table_id='dummy')
         config.configure()
 
     def test_config_artemis(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
-        Singleton.reset(ArrowSets)
-        print("================================================")
-        print("Beginning new TestCase %s" % self._testMethodName)
-        print("================================================")
-        
-        mb = MenuFactory('csvgen')
-        with tempfile.TemporaryDirectory() as dirpath:
-            mb = MenuFactory('csvgen')
-            msgmenu = mb.build()
-            config = JobConfigFactory('csvgen', msgmenu,
-                                      jobname='arrowproto',
-                                      generator_type='csv',
-                                      filehandler_type='csv',
-                                      nbatches=10,
-                                      num_cols=20,
-                                      num_rows=10000,
-                                      linesep='\r\n',
-                                      delimiter=',',
-                                      max_file_size=10485760,
-                                      write_csv=True,
-                                      output_repo=dirpath
-                                      )
-            config.configure()
-            msg = config.job_config
-            job = JobInfo_pb()
-            job.name = 'arrowproto'
-            job.job_id = 'example'
-            job.output.repo = dirpath
-            job.config.CopyFrom(msg)
-            #job.job_id = str(uuid.uuid4())
-            print(job)
-            bow = ArtemisFactory(job, 'INFO')
-            bow.control()
+        '''
+        See test_artemis.py
+        '''
+        pass
 
 
 if __name__ == "__main__":

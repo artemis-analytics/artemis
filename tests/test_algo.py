@@ -21,7 +21,7 @@ from google.protobuf import text_format
 
 from artemis.decorators import timethis
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 class AlgoTestCase(unittest.TestCase):
     class TestAlgo(AlgoBase):
@@ -74,7 +74,7 @@ class AlgoTestCase(unittest.TestCase):
         print(self.testalgo.properties.myproperty)
     
     def tearDown(self):
-        pass
+        logging.getLogger().setLevel(logging.INFO)
     
     def test_algo(self):
         print('Timing--------------')

@@ -36,7 +36,7 @@ import pyarrow as pa
 from artemis.logger import Logger
 from artemis.core.algo import AbcAlgoBase
 from artemis.core.properties import JobProperties, Properties
-from artemis.io.protobuf.artemis_pb2 import Algo as Algo_pb
+from cronus.io.protobuf.configuration_pb2 import Module as Algo_pb
 from artemis.errors import AbstractMethodError
 
 KILOBYTE = 1 << 10
@@ -180,6 +180,8 @@ class GeneratorBase(metaclass=AbcAlgoBase):
             self._batch_iter = iter(range(self.properties.nbatches))
         else:
             self.__logger.warning("Number of batches not defined")
+
+        self._batchidx = 0
 
     @property
     def random_state(self):

@@ -20,13 +20,14 @@ https://bitbucket.org/ericvsmith/toposort
 """
 import sys
 import json
+import uuid
 from pprint import pformat
 from toposort import toposort, toposort_flatten
 from collections import OrderedDict, deque, namedtuple
 from functools import reduce as _reduce
 
 from artemis.logger import Logger
-from artemis.io.protobuf.artemis_pb2 import Menu as Menu_pb
+from cronus.io.protobuf.menu_pb2 import Menu as Menu_pb
 
 
 @Logger.logged
@@ -351,6 +352,8 @@ class Menu():
 
     def to_msg(self):
         msg = Menu_pb()
+        msg.uuid = str(uuid.uuid4())
+        msg.name = f"{msg.uuid}.menu.pb"
         algos = []
         for key in self._sequence:
             node = msg.tree.nodes.add()
@@ -361,8 +364,6 @@ class Menu():
                     node.algos.append(algo.name)
                     if algo.name not in algos:
                         algos.append(algo.name)
-                        algo_pb = msg.algos.add()
-                        algo_pb.CopyFrom(algo.to_msg())
                 except AttributeError:
                     if isinstance(algo, str):
                         self.__logger.warning("%s: Algo type<str>" % algo)

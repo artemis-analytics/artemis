@@ -23,10 +23,9 @@ import pyarrow as pa
 from sas7bdat import SAS7BDAT
 
 from artemis.decorators import iterable
-from artemis.core.tool import ToolBase
+from artemis.core.algo import AlgoBase
 from artemis.generators.common import BuiltinsGenerator
 from artemis.io.readers import ReaderFactory
-from artemis.core.properties import JobProperties
 
 
 @iterable
@@ -47,7 +46,7 @@ class FileHandlerOptions:
     header_rows = 1
 
 
-class FileHandlerTool(ToolBase):
+class FileHandlerTool(AlgoBase):
 
     def __init__(self, name, **kwargs):
         options = dict(FileHandlerOptions())
@@ -98,7 +97,7 @@ class FileHandlerTool(ToolBase):
         self.exec_dict['ipc'] = self.exec_ipc
 
         # JobProperties
-        self.jp = None
+        # self._jp = None
 
     def initialize(self):
         self.__logger.info("%s properties: %s",
@@ -108,7 +107,7 @@ class FileHandlerTool(ToolBase):
             self.__logger.error("Unknown filetype %s", self.filetype)
             raise ValueError
 
-        self.jp = JobProperties()
+        # self._jp = JobProperties()
 
     @property
     def size_bytes(self):
@@ -260,7 +259,8 @@ class FileHandlerTool(ToolBase):
 
     def prepare_ipc(self, filepath_or_buffer):
         try:
-            reader = pa.ipc.open_file(filepath_or_buffer)
+            # reader = pa.ipc.open_file(filepath_or_buffer)
+            reader = self._jp.store.open(filepath_or_buffer)
         except Exception:
             raise
 
@@ -318,13 +318,14 @@ class FileHandlerTool(ToolBase):
 
     def execute(self, filepath_or_buffer):
 
-        self.__logger.info("Prepare input stream")
+        self.__logger.info("Prepare input stream %s", filepath_or_buffer)
 
         if self.filetype == 'ipc':  # or self.filetype == 'sas':
             stream = filepath_or_buffer
+            # stream = self._jp.store.open(filepath_or_buffer)
         else:
-            stream = pa.input_stream(filepath_or_buffer)
-
+            # stream = pa.input_stream(filepath_or_buffer)
+            stream = self._jp.store.open(filepath_or_buffer)
             if stream.tell() != 0:
                 stream.seek(0)
 
@@ -348,7 +349,7 @@ class FileHandlerTool(ToolBase):
         self.__logger.info("Schema %s", self.schema)
         self.__logger.info("File size %s", self._size)
 
-        self._update()
+        self._update(filepath_or_buffer)
 
         return ReaderFactory(self.filetype, filepath_or_buffer,
                              self.header,
@@ -358,18 +359,19 @@ class FileHandlerTool(ToolBase):
                              self.nsamples,
                              self.num_rows)
 
-    def _update(self):
+    def _update(self, filepath_or_buffer):
         # Add fileinfo to message
         # TODO
         # Create file UUID, check UUID when creating block info???
-        finfo = self.jp.meta.data.add()
-        finfo.name = 'file_' + str(self.jp.meta.summary.processed_ndatums)
+        finfo = self._jp.meta.data.add()
+        finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
 
         # Update the raw metadata
         finfo.raw.size_bytes = self._size
-
+        self.__logger.info(self._jp.store[filepath_or_buffer])
+        self._jp.store[filepath_or_buffer].file.size_bytes = self._size
         # Update datum input count
-        self.jp.meta.summary.processed_ndatums += 1
+        self._jp.meta.summary.processed_ndatums += 1
 
         finfo.schema.size_bytes = self.header_offset
         finfo.schema.header = self.header
@@ -383,11 +385,12 @@ class FileHandlerTool(ToolBase):
                     a_col.name = col
 
         for i, block in enumerate(self.blocks):
-            msg = finfo.blocks.add()
-            msg.range.offset_bytes = block[0]
-            msg.range.size_bytes = block[1]
+            msg = self._jp.store[filepath_or_buffer].file.blocks.add()
+            msg.index = i
+            msg.info.offset = block[0]
+            msg.info.size_bytes = block[1]
             finfo.processed.size_bytes += block[1]
-            self.__logger.debug(msg)
+            self.__logger.info(msg)
 
     def _create_header(self, schema):
         csv = io.StringIO()

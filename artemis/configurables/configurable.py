@@ -13,13 +13,12 @@ import uuid
 
 from artemis.logger import Logger
 from artemis.decorators import iterable
-
-import artemis.io.protobuf.artemis_pb2 as artemis_pb2
-
 from artemis.io.writer import BufferOutputWriter
 from artemis.configurables.factories import GeneratorFactory
 from artemis.configurables.factories import FileHandlerFactory
-from artemis.core.dag import Menu
+
+from cronus.io.protobuf.configuration_pb2 import Configuration
+from cronus.core.Directed_Graph import Menu
 
 
 @iterable
@@ -71,7 +70,10 @@ class Configurable():
         if self.dbkey:
             self._msg = self.retrieve_from_db()
         else:
-            self._msg = artemis_pb2.JobConfig()
+            # self._msg = artemis_pb2.JobConfig()
+            self._msg = Configuration()
+            self._msg.uuid = str(uuid.uuid4())
+            self._msg.name = f"{self._msg.uuid}.config.pb"
 
         self._msg.max_malloc_size_bytes = self.max_malloc
         self._tools = []
@@ -80,8 +82,8 @@ class Configurable():
             self._msg.config_id = str(uuid.uuid4())
             self.__logger.info('Job configuration uuid %s',
                                self._msg.config_id)
-        if menu:
-            self._msg.menu.CopyFrom(menu)
+        # if menu:
+        #    self._msg.menu.CopyFrom(menu)
 
     @property
     def job_config(self):
@@ -107,6 +109,7 @@ class Configurable():
 
         kwargs specified in inherited job configurables
         '''
+        self.__logger.info(kwargs)
         generator = GeneratorFactory(self.generator_type, **kwargs)
         self._msg.input.generator.config.CopyFrom(generator.to_msg())
 
@@ -143,6 +146,14 @@ class Configurable():
             msg = self._msg.tools.add()
             msg.CopyFrom(tool)
 
+    def add_algos(self, algos):
+        '''
+        algos : dict of algos from MenuBuilder
+        '''
+        for key in algos:
+            msg = self._msg.algos.add()
+            msg.CopyFrom(algos[key].to_msg())
+
 
 @Logger.logged
 class MenuBuilder():
@@ -159,6 +170,10 @@ class MenuBuilder():
         self._seqs = dict()
         self._chains = dict()
 
+    @property
+    def algos(self):
+        return self._algos
+
     def _algo_builder(self):
         pass
 
@@ -174,7 +189,8 @@ class MenuBuilder():
         self._seq_builder()
         self._chain_builder()
         for chain in self._chains:
+            self._chains[chain].build()
             menu.add(self._chains[chain])
-        menu.generate()
+        menu.build()
 
         return menu.to_msg()

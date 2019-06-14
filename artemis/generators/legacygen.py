@@ -12,9 +12,11 @@ Classes for generating legacy (mainframe) like data
 """
 import string
 import tempfile
+import pyarrow as pa
 
 from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
+from cronus.io.protobuf.cronus_pb2 import FileObjectInfo
 
 
 @iterable
@@ -196,13 +198,38 @@ class GenMF(GeneratorBase):
             data = self.gen_chunk()
             self.__logger.debug('%s: type data: %s' %
                                 (self.__class__.__name__, type(data)))
-            yield data
+            fileinfo = FileObjectInfo()
+            fileinfo.type = 2
+            job_id = f"{self._jp.meta.job_id}_sample_{self.nsamples}"
+            ds_id = self._jp.meta.parentset_id
+            id_ = self._jp.store.register_content(data,
+                                                  fileinfo,
+                                                  dataset_id=ds_id,
+                                                  partition_key=self.name,
+                                                  job_id=job_id).uuid
+            buf = pa.py_buffer(data)
+            self._jp.store.put(id_, buf)
+            yield id_
             self.nsamples -= 1
             self.__logger.debug("Batch %i", self.nsamples)
 
     def __next__(self):
         next(self._batch_iter)
-        return self.gen_chunk()
+        data = self.gen_chunk()
+        fileinfo = FileObjectInfo()
+        fileinfo.type = 2
+        job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
+        ds_id = self._jp.meta.parentset_id
+        id_ = self._jp.store.register_content(data,
+                                              fileinfo,
+                                              dataset_id=ds_id,
+                                              partition_key=self.name,
+                                              job_id=job_id).uuid
+        buf = pa.py_buffer(data)
+        self._jp.store.put(id_, buf)
+        self._batchidx += 1
+        return id_
+        # return self.gen_chunk()
 
     def write(self):
         self.__logger.info("Batch %i", self._nbatches)
