@@ -222,20 +222,20 @@ class SimuTableTestCase(unittest.TestCase):
             msg = config.job_config
             job = JobInfo_pb()
             job.name = 'arrowproto'
-            job.job_id = 'example'
-            job.output.repo = dirpath
             job.store_id = store.store_uuid
             job.store_name = store.store_name
+            job.store_path = dirpath
             job.menu_id = menu_uuid
             job.config_id = config_uuid
             job.dataset_id = dataset.uuid
             job.parentset_id = g_dataset.uuid
-            #job.config.CopyFrom(msg)
             job.job_id = str(job_id) 
-            print(job)
-            bow = ArtemisFactory(job, 'INFO')
+            bow = Artemis(job, loglevel='INFO')
             bow.control()
-            store = BaseObjectStore(dirpath, store.store_name, store_uuid=job.store_id)
+            bow._jp.store.save_store()
+            store = BaseObjectStore(dirpath, 
+                                    store.store_name, 
+                                    store_uuid=job.store_id)
     
     def test_glm_proto(self):
         model = Table()

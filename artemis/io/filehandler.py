@@ -19,6 +19,7 @@ Extracting meta data from a header
 import io
 import pathlib
 import six
+import uuid
 import pyarrow as pa
 from sas7bdat import SAS7BDAT
 
@@ -26,6 +27,8 @@ from artemis.decorators import iterable
 from artemis.core.algo import AlgoBase
 from artemis.generators.common import BuiltinsGenerator
 from artemis.io.readers import ReaderFactory
+from cronus.io.protobuf.table_pb2 import Table
+from cronus.io.protobuf.cronus_pb2 import TableObjectInfo
 
 
 @iterable
@@ -319,7 +322,7 @@ class FileHandlerTool(AlgoBase):
     def execute(self, filepath_or_buffer):
 
         self.__logger.info("Prepare input stream %s", filepath_or_buffer)
-
+        self._jp.current_file = filepath_or_buffer
         if self.filetype == 'ipc':  # or self.filetype == 'sas':
             stream = filepath_or_buffer
             # stream = self._jp.store.open(filepath_or_buffer)
@@ -359,37 +362,53 @@ class FileHandlerTool(AlgoBase):
                              self.nsamples,
                              self.num_rows)
 
-    def _update(self, filepath_or_buffer):
-        # Add fileinfo to message
-        # TODO
-        # Create file UUID, check UUID when creating block info???
-        finfo = self._jp.meta.data.add()
-        finfo.name = 'file_' + str(self._jp.meta.summary.processed_ndatums)
+    def _build_table_from_file(self, file_id):
+        ds_id = self._jp.store[file_id].parent_uuid
+        pkey = self._jp.store[file_id].file.partition
+        job_id = self._jp.meta.job_id
 
-        # Update the raw metadata
-        finfo.raw.size_bytes = self._size
-        self.__logger.info(self._jp.store[filepath_or_buffer])
-        self._jp.store[filepath_or_buffer].file.size_bytes = self._size
-        # Update datum input count
-        self._jp.meta.summary.processed_ndatums += 1
+        table = Table()
+        table.uuid = str(uuid.uuid4())
+        table.name = \
+            f"{ds_id}.job_{job_id}.part_{pkey}.file_{file_id}.{table.uuid}.table.pb"
+        tinfo = TableObjectInfo()
 
-        finfo.schema.size_bytes = self.header_offset
-        finfo.schema.header = self.header
+        table.info.schema.info.aux.raw_header_size_bytes = self.header_offset
+        table.info.schema.info.aux.raw_header = self.header
 
         if self.schema is not None:
             for col in self.schema:
-                a_col = finfo.schema.columns.add()
+                a_col = table.info.schema.info.fields.add()
                 if self.filetype == 'ipc':
                     a_col.name = col.name
                 else:
                     a_col.name = col
+                tinfo.fields.append(a_col.name)
 
+        self._jp.store.register_content(table,
+                                        tinfo,
+                                        dataset_id=ds_id,
+                                        partition_key=pkey,
+                                        job_id=job_id)
+
+    def _update(self, filepath_or_buffer):
+
+        self.__logger.info("Update input datum metadata id: %s",
+                           self._jp.store[filepath_or_buffer])
+        self._jp.store[filepath_or_buffer].file.size_bytes = self._size
+        
+        # Update datum input count
+        self._jp.meta.summary.processed_ndatums += 1
+
+        # Build the table schema from the input file
+        self._build_table_from_file(filepath_or_buffer)
+
+        # Record the blocks chunked from input datum
         for i, block in enumerate(self.blocks):
             msg = self._jp.store[filepath_or_buffer].file.blocks.add()
             msg.index = i
             msg.info.offset = block[0]
             msg.info.size_bytes = block[1]
-            finfo.processed.size_bytes += block[1]
             self.__logger.info(msg)
 
     def _create_header(self, schema):

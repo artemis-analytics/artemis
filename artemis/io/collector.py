@@ -45,7 +45,6 @@ class Collector(AlgoBase):
 
         self.max_malloc = self.properties.max_malloc
         self.job_id = self.properties.job_id
-        self.path = self.properties.path
 
         self.tools = None
         self.tree = None
@@ -95,7 +94,6 @@ class Collector(AlgoBase):
                 self.tools.add(self.__logger, _wrtcfg)
                 self.tools.get(_wrtcfg.name)._schema = _last.schema
                 self.tools.get(_wrtcfg.name)._fbasename = self.job_id
-                self.tools.get(_wrtcfg.name)._path = self.path
                 self.tools.get(_wrtcfg.name).initialize()
                 self.jp.store.new_partition(self.jp.meta.dataset_id, key)
 

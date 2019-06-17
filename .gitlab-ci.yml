@@ -56,8 +56,8 @@ prepare:
     stage: prepare
     image: $IMAGE_NAME 
     script:
-        - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
-        - cd cronus; python setup.py install; cd ..
+        #- git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
+        #- cd cronus; python setup.py install; cd ..
         - python tests/test_artemis.py
         - cp test.log valid.log
     only:
@@ -120,7 +120,7 @@ document:
 
 package:
   stage: package
-  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/centos7-py36-artemispq:latest
+  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
   variables:
     DOCKER_DRIVER: overlay2
   script:

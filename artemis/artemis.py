@@ -86,13 +86,8 @@ class Artemis():
     def __init__(self, jobinfo, **kwargs):
         self.properties = Properties()
         self._jp = JobProperties()
-        self._jp.meta.CopyFrom(jobinfo)
-        self._jp.configure()
-        # TODO
-        # Validate the metadata
-        #
-        self._job_id = self._jp.meta.name + '-' + self._jp.meta.job_id
-
+        self._jp.configure(jobinfo)
+        self._jp.job_state = artemis_pb2.JOB_STARTING
         # Logging
         logobj = self._jp.store.register_log(self._jp.meta.dataset_id,
                                              self._jp.meta.job_id)
@@ -100,15 +95,6 @@ class Artemis():
                          path=logobj.address,
                          loglevel=kwargs['loglevel'])
         #######################################################################
-        # Initialize summary info in meta data
-        self._jp.meta.started.GetCurrentTime()
-        self._update_state(artemis_pb2.JOB_STARTING)
-        self._jp.meta.summary.processed_bytes = 0
-        self._jp.meta.summary.processed_ndatums = 0
-
-        # Define internal properties from job configuration
-        self._path = self._jp.meta.output.repo
-        self.MALLOC_MAX_SIZE = self._jp.meta.config.max_malloc_size_bytes
 
         # Define the internal objects for Artemis
         self.steer = None  # Manages traversing compute graph
@@ -118,22 +104,15 @@ class Artemis():
         # List of timer histos for easy access
         self.__tools = ToolStore()
 
-        self._jp.job_id = self._job_id
-        self._jp.path = self._path
-
-    @property
-    def job_id(self):
-        return self._job_id
-
     def control(self):
         '''
         Stateful Job processing via pytransitions
         '''
-        self._jp.meta.state = artemis_pb2.JOB_RUNNING
+        self._jp.job_state = artemis_pb2.JOB_RUNNING
         self.launch()
 
         # Configure Artemis job
-        self._jp.meta.state = artemis_pb2.JOB_CONFIGURE
+        self._jp.job_state = artemis_pb2.JOB_CONFIGURE
         try:
             self.configure()
         except Exception as e:
@@ -150,7 +129,7 @@ class Artemis():
             self.abort(e)
             return False
 
-        self._jp.meta.state = artemis_pb2.JOB_INITIALIZE
+        self._jp.job_state = artemis_pb2.JOB_INITIALIZE
         try:
             self.initialize()
         except Exception as e:
@@ -162,7 +141,7 @@ class Artemis():
         # Book
         # Histograms
         # Timers
-        self._jp.meta.state = artemis_pb2.JOB_BOOK
+        self._jp.job_state = artemis_pb2.JOB_BOOK
         try:
             self.book()
         except Exception as e:
@@ -177,7 +156,7 @@ class Artemis():
         # sample first
         # Artemis should always run in a sampling mode first
         # Make number of samples configurable
-        self._jp.meta.state = artemis_pb2.JOB_SAMPLE
+        self._jp.job_state = artemis_pb2.JOB_SAMPLE
         try:
             r, time_ = self.execute()
             self._jp.hbook.fill('artemis', 'time.execute', time_)
@@ -187,7 +166,7 @@ class Artemis():
             self.abort(e)
             return False
 
-        self._jp.meta.state = artemis_pb2.JOB_REBOOK
+        self._jp.job_state = artemis_pb2.JOB_REBOOK
         try:
             self.rebook()
         except Exception as e:
@@ -216,7 +195,7 @@ class Artemis():
 
         self.__logger.info("artemis: sampleing complete malloc %i",
                            pa.total_allocated_bytes())
-        self._jp.meta.state = artemis_pb2.JOB_EXECUTE
+        self._jp.job_state = artemis_pb2.JOB_EXECUTE
         try:
             r, time_ = self.execute()
             self._jp.hbook.fill('artemis', 'time.execute', time_)
@@ -225,7 +204,8 @@ class Artemis():
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
-        self._jp.meta.state = artemis_pb2.JOB_FINALIZE
+
+        self._jp.job_state = artemis_pb2.JOB_FINALIZE
         try:
             self.finalize()
         except Exception as e:
@@ -266,21 +246,21 @@ class Artemis():
         self.__logger.info("%s properties: %s",
                            self.__class__.__name__,
                            self.properties)
-        self.__logger.info("Job ID %s", self._job_id)
-        self.__logger.info("Job path %s", self._path)
-        # if hasattr(self._jp.meta, 'config') is False:
-        #    self.__logger.error("Configuration not provided")
-        #    raise AttributeError
+        self.__logger.info("Job ID %s", self._jp.job_id)
+
         # Create Steering instance
+        self.__logger.info(self._jp.config)
         self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
-        self.collector = Collector('collector',
-                                   max_malloc=self.MALLOC_MAX_SIZE,
-                                   job_id=self._job_id,
-                                   path=self._path,
-                                   loglevel=Logger.CONFIGURED_LEVEL)
+
+        # Create the collector
+        # Monitors the arrow memory pool
+        self.collector = \
+            Collector('collector',
+                      max_malloc=self._jp.config.max_malloc_size_bytes,
+                      job_id=self._jp.job_id,
+                      loglevel=Logger.CONFIGURED_LEVEL)
 
         # Configure the data handler
-        # _msggen = self._jp.meta.config.input.generator.config
         _msggen = self._jp.config.input.generator.config
         try:
             self.datahandler = AlgoBase.from_msg(self.__logger, _msggen)
@@ -301,7 +281,6 @@ class Artemis():
         # Exceptions?
         self.__logger.info("{}: Lock".format('artemis'))
         self.properties.lock = True
-        # self._jp.meta.properties.CopyFrom(self.properties.to_msg())
         try:
             self.steer.lock()
         except Exception:
@@ -381,7 +360,6 @@ class Artemis():
         _summary = self._jp.meta.summary
         _summary.processed_bytes = 0
         _summary.processed_ndatums = 0
-        del self._jp.meta.data[:]  # Remove all the fileinfo msgs
 
     @timethis
     def execute(self):

@@ -1,147 +1,20 @@
-/* 
-   Artemis metadata model
-   Protocol buffer implementation 
-   Menu
-    Dependency tree and execution graph
-    Algorithms and user-defined properties
-   Job Configuration
-    Input type and configuration
-    Job properties
-   JobInfo
-    In-process metadata information
-    Job state
-    Payload information
-    Block processing information
-    Histograms collections
-    Job Summary
-   
-*/
+//  Artemis metadata model
+//  Protocol buffer implementation 
+//  Holds all Artemis job configuration
+//  Specifically, the cronus store objects
+//  Menu
+//  Configuration
+//  Store information
+//
+//  Holds job state and summary information
+//  All other metadata related to the actual data
+//  is described in cronus
 
 syntax = "proto3";
 package artemis;
 
-// import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-
-message Property {
-    string name = 1;
-    // google.protobuf.Any value = 2; // Accepts any JSON value
-    string type = 2;
-    string value = 3;
-}
-
-message Properties {
-    repeated Property property = 1; 
-}
-
-message Tool {
-    string name = 1;
-    string module = 2;
-    string klass = 3;
-    Properties properties = 4;
-}
-
-message Algo {
-    string name = 1;
-    string module = 2;
-    string klass = 3;
-    Properties properties = 4;
-}
-
-message Node {
-    string name = 1;
-    repeated string parents = 2;
-    repeated string algos = 3;
-}
-
-message Tree {
-    repeated Node nodes = 1;
-}
-
-message Menu {
-    Tree tree = 1;
-}
-
-message GeneratorInput {
-    Algo config = 1;
-}
-
-message AtomInput {
-    string name = 1;
-    string repo = 2;
-    string glob = 3;
-}
-
-message Input {
-    GeneratorInput generator = 1;
-    AtomInput atom = 2;
-}
-
-message Output {
-    string repo = 1;
-}
-message Sampler {
-    int32 ndatums = 1;
-    int32 nchunks = 2;
-}
-
-message JobConfig {
-    Input input = 1;
-    Menu menu = 2;
-    uint64 max_malloc_size_bytes = 3;
-    Sampler sampler = 4;
-    repeated Tool tools = 5;
-    string config_id = 6;
-    repeated Algo algos = 7;
-}
-
-message RawInfo {
-    uint64 size_bytes = 1;
-}
-
-message ByteRange {
-    uint64 offset_bytes = 1;
-    uint64 size_bytes = 2; 
-}
-
-message BlockInfo {
-    ByteRange range = 1;
-}
-
-message Block {
-    BlockInfo block = 1;
-}
-
-message Schema {
-    string name = 1;
-    string raw_type = 2;
-    string py_type = 3;
-    string arrow_type = 4;
-}
-
-message SchemaInfo {
-    repeated Schema columns = 1;  
-    uint64 size_bytes = 2;
-    bytes header = 3;
-    bytes arrow_schema = 4;
-}
-
-message FileInfo {
-    string name = 1;
-    RawInfo raw = 2;
-    repeated BlockInfo blocks = 3;
-    SchemaInfo schema = 4;
-    RawInfo processed = 5;
-}
-
-message RecordBatchFileInfo {
-    string name = 1;
-    int32 num_columns = 2;
-    int32 num_rows = 3;
-    SchemaInfo schema = 4;
-    int32 num_batches = 5;
-}
 
 enum JobState {
     JOB_STARTING = 0;
@@ -168,7 +41,6 @@ message Summary {
     uint64 processed_bytes = 1;
     repeated Timer timers = 2;
     int32 processed_ndatums = 3;
-    repeated RecordBatchFileInfo tables = 4; 
     google.protobuf.Duration job_time = 5;
 }
 
@@ -176,18 +48,14 @@ message JobInfo {
     string name = 1;
     google.protobuf.Timestamp started = 2;
     google.protobuf.Timestamp finished = 3;
-    repeated FileInfo data = 4;
-    Summary summary = 5;
-    JobState state = 6;
-    JobConfig config = 7;
-    Properties properties = 8;
-    string job_id = 9;
-    Input input = 10;
-    Output output = 11;
-    string store_name = 12;
-    string store_id = 13;
-    string menu_id = 14;
-    string config_id = 15;
-    string dataset_id = 16;
-    string parentset_id = 17;
+    JobState state = 4;
+    string job_id = 5;
+    string store_name = 6;
+    string store_id = 7;
+    string store_path = 8;
+    string menu_id = 9;
+    string config_id = 10;
+    string dataset_id = 11;
+    string parentset_id = 12;
+    Summary summary = 13;
 }

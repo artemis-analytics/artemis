@@ -35,22 +35,11 @@ class ProfilerAlgo(AlgoBase):
     def execute(self, element):
 
         raw_ = element.get_data()
-        _finfo = self.jobops.meta.data[-1]
-        schema = [x.name for x in _finfo.schema.columns]
-        self.__logger.debug('Expected header %s' % _finfo.schema)
-        num_cols = raw_.num_columns
-        num_rows = raw_.num_rows
-
-        if len(schema) != num_cols:
-            self.__logger.error("Expected schema length not found in table")
-            self.__logger.error("File schema %i", len(schema))
-            self.__logger.error("RecordBatch %i", num_cols)
-        else:
-            self.__logger.debug("Records %s", num_rows)
+        self.__logger.debug('Num cols: %s Num rows: %s',
+                            raw_.num_columns, raw_.num_rows)
 
         # Redundant, it is the same object as the input!
         element.add_data(raw_)
 
     def finalize(self):
         self.__logger.info("Completed Profiling")
-        # summary = self.jobops.meta.summary

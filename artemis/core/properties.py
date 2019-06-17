@@ -111,32 +111,79 @@ class JobProperties(metaclass=Singleton):
     def __init__(self):
         self.meta = JobInfo_pb()
         self.hbook = ArtemisBook()
-        self._job_id = None
-        self._path = None
-        self.store = None
         self.menu = Menu()
         self.config = Configuration()
+        self.store = None
+        self._current_file_id = None
 
     @property
     def job_id(self):
-        return self._job_id
-
-    @job_id.setter
-    def job_id(self, value):
-        self._job_id = value
+        return self.meta.job_id
 
     @property
     def path(self):
-        return self._path
+        return self.meta.store_path
 
-    @path.setter
-    def path(self, value):
-        self._path = value
+    @property
+    def store_name(self):
+        return self.meta.store_name
 
-    def configure(self):
-        self._path = self.meta.output.repo
+    @property
+    def store_uuid(self):
+        return self.meta.store_id
+
+    @property
+    def menu_id(self):
+        return self.meta.menu_id
+
+    @property
+    def config_id(self):
+        return self.meta.config_id
+
+    @property
+    def input_id(self):
+        '''
+        Parent dataset uuid
+        '''
+        return self.meta.parentset_id
+
+    @property
+    def output_id(self):
+        '''
+        Output dataset uuid
+        '''
+        return self.meta.dataset_id
+
+    @property
+    def job_state(self):
+        return self.meta.state
+
+    @job_state.setter
+    def job_state(self, value):
+        self.meta.state = value
+
+    @property
+    def current_file(self):
+        return self._current_file_id
+
+    @current_file.setter
+    def current_file(self, value):
+        self._current_file_id = value
+
+    def configure(self, jobinfo):
         try:
-            self.store = BaseObjectStore(self._path,
+            self.meta.CopyFrom(jobinfo)
+        except Exception:
+            self.__logger.info("Fail to copy job info message")
+            raise
+
+        # Initialize summary info in meta data
+        self.meta.started.GetCurrentTime()
+        self.meta.summary.processed_bytes = 0
+        self.meta.summary.processed_ndatums = 0
+
+        try:
+            self.store = BaseObjectStore(self.meta.store_path,
                                          self.meta.store_name,
                                          self.meta.store_id)
         except FileNotFoundError:
@@ -166,14 +213,6 @@ class JobProperties(metaclass=Singleton):
         self.__logger.info("Total job time %i seconds",
                            self.meta.summary.job_time.seconds)
         self.__logger.info("Processed file summary")
-        for f in self.meta.data:
-            self.__logger.info("File: %s size: %2.2f MB",
-                               f.name, bytes_to_mb(f.raw.size_bytes))
-        self.__logger.info("Arrow Table summary")
-        for table in self.meta.summary.tables:
-            self.__logger.info("Table %s, rows %i columns %i batches %i",
-                               table.name, table.num_rows,
-                               table.num_columns, table.num_batches)
 
         self.__logger.info("Total datums requested %i",
                            self.meta.summary.processed_ndatums)
@@ -212,3 +251,17 @@ class JobProperties(metaclass=Singleton):
         # except Exception:
         #    self.__logger.error("Error persisting metastore")
         #    raise
+
+
+class StoreMixin():
+    '''
+    Methods for interacting with Cronus BaseObjectStore
+    '''
+    pass
+
+
+class MetaMixin():
+    '''
+    Methods for setting / getting job attributes
+    '''
+    pass

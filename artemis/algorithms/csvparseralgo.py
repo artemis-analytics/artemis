@@ -51,9 +51,6 @@ class CsvParserAlgo(AlgoBase):
     def execute(self, element):
 
         raw_ = element.get_data()
-        _finfo = self._jp.meta.data[-1]
-        schema = [x.name for x in _finfo.schema.columns]
-        self.__logger.debug('Expected header %s' % schema)
 
         try:
             tbatch, time_ = self.pyarrow_parsing(raw_)
@@ -66,9 +63,6 @@ class CsvParserAlgo(AlgoBase):
 
         #  TODO
         #  Arrow schema validation per batch
-
-        #  If already stored, no need to update
-        _finfo.schema.arrow_schema = tbatch.schema.serialize().to_pybytes()
 
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)

@@ -53,7 +53,6 @@ class LegacyDataAlgo(AlgoBase):
 
     def execute(self, element):
 
-        _finfo = self._jp.meta.data[-1]
         raw_ = element.get_data().to_pybytes()
 
         try:
@@ -65,7 +64,6 @@ class LegacyDataAlgo(AlgoBase):
 
         self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
 
-        _finfo.schema.arrow_schema = tbatch.schema.serialize().to_pybytes()
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
         self.__logger.debug("Element Data type %s", type(element.get_data()))
