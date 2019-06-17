@@ -145,6 +145,7 @@ class ReaderTestCase(unittest.TestCase):
             
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
+            fileinfo.partition = 'generator'
             job_id = str(job_id) 
             id_ = generator._jp.store.register_content(data,
                                        fileinfo,
@@ -185,6 +186,7 @@ class ReaderTestCase(unittest.TestCase):
             buf = pa.py_buffer(data)
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
+            fileinfo.partition = 'generator'
             job_id = str(job_id) 
             id_ = generator._jp.store.register_content(data,
                                        fileinfo,
@@ -234,7 +236,8 @@ class ReaderTestCase(unittest.TestCase):
             data = next(generator.generate()) 
             buf = pa.py_buffer(data)
             fileinfo = FileObjectInfo()
-            fileinfo.type = 1
+            fileinfo.type = 2
+            fileinfo.partition = 'generator'
             job_id = str(job_id) 
             id_ = generator._jp.store.register_content(data,
                                        fileinfo,
@@ -322,6 +325,7 @@ class ReaderTestCase(unittest.TestCase):
             buf = sink.getvalue()
             fileinfo = FileObjectInfo()
             fileinfo.type = 5
+            fileinfo.partition = 'generator'
             job_id = str(job_id) 
             id_ = generator._jp.store.register_content(buf,
                                        fileinfo,
@@ -349,6 +353,7 @@ class ReaderTestCase(unittest.TestCase):
             path = 'tests/data/accidents.sas7bdat'
             fileinfo = FileObjectInfo()
             fileinfo.type = 7
+            fileinfo.partition = 'generator'
             job_id = str(job_id) 
             obj = store.register_content(path,
                                        fileinfo,

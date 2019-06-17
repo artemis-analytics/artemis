@@ -79,7 +79,7 @@ class HCollections():
         text += '\nTotal records '
         text += str(nrecords)
         text += '\nJob time ' + str(self.jobinfo.summary.job_time.seconds)
-
+        print(text)
         return text
 
     def _unpack_collection(self):
@@ -106,10 +106,10 @@ class HCollections():
         with PdfPages(oname) as pdf:
 
             # Job Summary page
-            fig = plt.figure(figsize=(8.5, 11))
-            fig.text(0., 0.85, self._create_report(), size=10)
-            pdf.savefig(fig)
-            plt.close()
+            # fig = plt.figure(figsize=(8.5, 11))
+            # fig.text(0., 0.85, self._create_report(), size=10)
+            # pdf.savefig(fig)
+            # plt.close()
             for key in self.hgroups:
                 nplots = len(self.hgroups[key])
                 for i in range(nplots):

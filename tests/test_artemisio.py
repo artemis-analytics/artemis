@@ -152,7 +152,7 @@ class ArtemisTestCase(unittest.TestCase):
             job = JobInfo_pb()
             job.name = 'arrowproto'
             job.job_id = 'example'
-            job.output.repo = dirpath
+            job.store_path = dirpath
             job.store_id = store.store_uuid
             job.store_name = store.store_name
             job.menu_id = menu_uuid
@@ -161,13 +161,13 @@ class ArtemisTestCase(unittest.TestCase):
             #job.config.CopyFrom(msg)
             job.job_id = str(job_id) 
             print(job)
-            bow = ArtemisFactory(job, 'INFO')
+            bow = Artemis(job, loglevel='INFO')
             bow.control()
-            store = BaseObjectStore(dirpath, job.store_name, store_uuid=job.store_id)
+            #store = BaseObjectStore(dirpath, job.store_name, store_uuid=job.store_id)
             
             
-            print(store[dataset.uuid])
-            print(store[g_dataset.uuid])
+            print(bow._jp.store[dataset.uuid])
+            print(bow._jp.store[g_dataset.uuid])
   
 
     def test_distributed(self):
@@ -290,4 +290,5 @@ class ArtemisTestCase(unittest.TestCase):
 if __name__ == '__main__':
     #unittest.main()
     test = ArtemisTestCase()
-    test.test_distributed()
+    #test.test_distributed()
+    test.test_fileio()

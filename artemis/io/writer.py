@@ -2,6 +2,7 @@
 Dedicated Writer classes to manage output data streams
 """
 import urllib
+import uuid
 
 import pyarrow as pa
 
@@ -10,8 +11,8 @@ from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
 from artemis.core.properties import JobProperties
 
-from artemis.io.protobuf.artemis_pb2 import RecordBatchFileInfo
-from cronus.io.protobuf.cronus_pb2 import FileObjectInfo
+from cronus.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
+from cronus.io.protobuf.table_pb2 import Table
 
 
 @iterable
@@ -78,7 +79,6 @@ class BufferOutputWriter(ToolBase):
         self._buffer = None
         self._sink = pa.BufferOutputStream()
         self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
-        self._new_filename()
 
     def flush(self):
         '''If all else fails, clear everything
@@ -120,14 +120,6 @@ class BufferOutputWriter(ToolBase):
         self._total_records += self._nrecords
         self._total_batches += self._nbatches
 
-    def _set_metainfo(self):
-        metainfo = RecordBatchFileInfo()
-        metainfo.name = self._fname
-        metainfo.num_rows = self._nrecords
-        metainfo.num_batches = self._nbatches
-        metainfo.num_columns = self._ncolumns
-        self._finfo.append(metainfo)
-
     def _finalize_file(self):
         '''
         '''
@@ -150,11 +142,6 @@ class BufferOutputWriter(ToolBase):
             self._validate_metainfo()
         except Exception:
             self.__logger.error("Problem validating metadata")
-            raise
-        try:
-            self._set_metainfo()
-        except Exception:
-            self.__logger.error("Problem setting metadata info")
             raise
         try:
             self._reset()
@@ -194,7 +181,6 @@ class BufferOutputWriter(ToolBase):
         reset for new stream
         '''
         self._filecounter += 1
-        self._new_filename()
         self._new_sink()
         self._sizeof_batches = 0
         self._nbatches = 0
@@ -208,22 +194,6 @@ class BufferOutputWriter(ToolBase):
         self._buffer = None  # Clear the buffer cache
         self._sink = pa.BufferOutputStream()
 
-    def _new_filename(self):
-        '''
-        self.__logger.info("Output path %s", self._path)
-        _fname = self._fbasename + \
-            '_' + self.name + \
-            '_' + str(self._filecounter) + '.arrow'
-        if self._path == '':
-            self._fname = _fname
-        else:
-            path = os.path.abspath(self._path)
-            self.__logger.info("Absolute path %s", path)
-            self._fname = os.path.join(path, _fname)
-        self.__logger.info("Ouput file %s", self._fname)
-        '''
-        pass
-
     def _write_buffer(self):
         try:
             self._buffer = self._sink.getvalue()
@@ -231,6 +201,38 @@ class BufferOutputWriter(ToolBase):
         except Exception:
             self.__logger.error("Cannot flush stream")
             raise
+
+    def _build_table_from_file(self, file_id):
+
+        ds_id = self.jp.store[file_id].parent_uuid
+        pkey = self.jp.store[file_id].file.partition
+        job_id = self.jp.meta.job_id
+        raw_schema = self._schema.serialize().to_pybytes()
+        raw_schema_size = len(raw_schema)
+        self.__logger.info("Writing Table to DS %s partition %s job %s",
+                           ds_id,
+                           pkey,
+                           job_id)
+
+        table = Table()
+        table.uuid = str(uuid.uuid4())
+        table.name = \
+            f"{ds_id}.job_{job_id}.part_{pkey}.file_{file_id}.{table.uuid}.table.pb"
+        tinfo = TableObjectInfo()
+        for f in self._schema:
+            field = table.info.schema.info.fields.add()
+            field.name = f.name
+            field.info.type = str(f.type)
+            tinfo.fields.append(field.name)
+
+        table.info.schema.info.aux.raw_header_size_bytes = raw_schema_size
+        table.info.schema.info.aux.raw_header = raw_schema
+
+        self.jp.store.register_content(table,
+                                       tinfo,
+                                       dataset_id=ds_id,
+                                       partition_key=pkey,
+                                       job_id=job_id)
 
     def _write_file(self):
         fileinfo = FileObjectInfo()
@@ -247,6 +249,7 @@ class BufferOutputWriter(ToolBase):
                            ds_id,
                            p_key,
                            job_id)
+        fileinfo.partition = p_key
         try:
             obj = self.jp.store.register_content(self._buffer,
                                                  fileinfo,
@@ -259,6 +262,7 @@ class BufferOutputWriter(ToolBase):
             raise
         self.__logger.info("Writing to store id: %s", id_)
         self.jp.store.put(id_, self._buffer)
+        self._build_table_from_file(id_)
 
         if self._write_csv is True:
             fileinfo = FileObjectInfo()

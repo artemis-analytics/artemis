@@ -22,7 +22,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='artemis.proto',
   package='artemis',
   syntax='proto3',
-  serialized_pb=_b('\n\rartemis.proto\x12\x07\x61rtemis\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"5\n\x08Property\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"1\n\nProperties\x12#\n\x08property\x18\x01 \x03(\x0b\x32\x11.artemis.Property\"\\\n\x04Tool\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06module\x18\x02 \x01(\t\x12\r\n\x05klass\x18\x03 \x01(\t\x12\'\n\nproperties\x18\x04 \x01(\x0b\x32\x13.artemis.Properties\"\\\n\x04\x41lgo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0e\n\x06module\x18\x02 \x01(\t\x12\r\n\x05klass\x18\x03 \x01(\t\x12\'\n\nproperties\x18\x04 \x01(\x0b\x32\x13.artemis.Properties\"4\n\x04Node\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07parents\x18\x02 \x03(\t\x12\r\n\x05\x61lgos\x18\x03 \x03(\t\"$\n\x04Tree\x12\x1c\n\x05nodes\x18\x01 \x03(\x0b\x32\r.artemis.Node\"#\n\x04Menu\x12\x1b\n\x04tree\x18\x01 \x01(\x0b\x32\r.artemis.Tree\"/\n\x0eGeneratorInput\x12\x1d\n\x06\x63onfig\x18\x01 \x01(\x0b\x32\r.artemis.Algo\"5\n\tAtomInput\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04repo\x18\x02 \x01(\t\x12\x0c\n\x04glob\x18\x03 \x01(\t\"U\n\x05Input\x12*\n\tgenerator\x18\x01 \x01(\x0b\x32\x17.artemis.GeneratorInput\x12 \n\x04\x61tom\x18\x02 \x01(\x0b\x32\x12.artemis.AtomInput\"\x16\n\x06Output\x12\x0c\n\x04repo\x18\x01 \x01(\t\"+\n\x07Sampler\x12\x0f\n\x07ndatums\x18\x01 \x01(\x05\x12\x0f\n\x07nchunks\x18\x02 \x01(\x05\"\xd8\x01\n\tJobConfig\x12\x1d\n\x05input\x18\x01 \x01(\x0b\x32\x0e.artemis.Input\x12\x1b\n\x04menu\x18\x02 \x01(\x0b\x32\r.artemis.Menu\x12\x1d\n\x15max_malloc_size_bytes\x18\x03 \x01(\x04\x12!\n\x07sampler\x18\x04 \x01(\x0b\x32\x10.artemis.Sampler\x12\x1c\n\x05tools\x18\x05 \x03(\x0b\x32\r.artemis.Tool\x12\x11\n\tconfig_id\x18\x06 \x01(\t\x12\x1c\n\x05\x61lgos\x18\x07 \x03(\x0b\x32\r.artemis.Algo\"\x1d\n\x07RawInfo\x12\x12\n\nsize_bytes\x18\x01 \x01(\x04\"5\n\tByteRange\x12\x14\n\x0coffset_bytes\x18\x01 \x01(\x04\x12\x12\n\nsize_bytes\x18\x02 \x01(\x04\".\n\tBlockInfo\x12!\n\x05range\x18\x01 \x01(\x0b\x32\x12.artemis.ByteRange\"*\n\x05\x42lock\x12!\n\x05\x62lock\x18\x01 \x01(\x0b\x32\x12.artemis.BlockInfo\"M\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x10\n\x08raw_type\x18\x02 \x01(\t\x12\x0f\n\x07py_type\x18\x03 \x01(\t\x12\x12\n\narrow_type\x18\x04 \x01(\t\"h\n\nSchemaInfo\x12 \n\x07\x63olumns\x18\x01 \x03(\x0b\x32\x0f.artemis.Schema\x12\x12\n\nsize_bytes\x18\x02 \x01(\x04\x12\x0e\n\x06header\x18\x03 \x01(\x0c\x12\x14\n\x0c\x61rrow_schema\x18\x04 \x01(\x0c\"\xa5\x01\n\x08\x46ileInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x1d\n\x03raw\x18\x02 \x01(\x0b\x32\x10.artemis.RawInfo\x12\"\n\x06\x62locks\x18\x03 \x03(\x0b\x32\x12.artemis.BlockInfo\x12#\n\x06schema\x18\x04 \x01(\x0b\x32\x13.artemis.SchemaInfo\x12#\n\tprocessed\x18\x05 \x01(\x0b\x32\x10.artemis.RawInfo\"\x84\x01\n\x13RecordBatchFileInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0bnum_columns\x18\x02 \x01(\x05\x12\x10\n\x08num_rows\x18\x03 \x01(\x05\x12#\n\x06schema\x18\x04 \x01(\x0b\x32\x13.artemis.SchemaInfo\x12\x13\n\x0bnum_batches\x18\x05 \x01(\x05\"0\n\x05Timer\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04time\x18\x02 \x01(\x02\x12\x0b\n\x03std\x18\x03 \x01(\x02\"\xb8\x01\n\x07Summary\x12\x17\n\x0fprocessed_bytes\x18\x01 \x01(\x04\x12\x1e\n\x06timers\x18\x02 \x03(\x0b\x32\x0e.artemis.Timer\x12\x19\n\x11processed_ndatums\x18\x03 \x01(\x05\x12,\n\x06tables\x18\x04 \x03(\x0b\x32\x1c.artemis.RecordBatchFileInfo\x12+\n\x08job_time\x18\x05 \x01(\x0b\x32\x19.google.protobuf.Duration\"\xe9\x03\n\x07JobInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x07started\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12,\n\x08\x66inished\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12\x1f\n\x04\x64\x61ta\x18\x04 \x03(\x0b\x32\x11.artemis.FileInfo\x12!\n\x07summary\x18\x05 \x01(\x0b\x32\x10.artemis.Summary\x12 \n\x05state\x18\x06 \x01(\x0e\x32\x11.artemis.JobState\x12\"\n\x06\x63onfig\x18\x07 \x01(\x0b\x32\x12.artemis.JobConfig\x12\'\n\nproperties\x18\x08 \x01(\x0b\x32\x13.artemis.Properties\x12\x0e\n\x06job_id\x18\t \x01(\t\x12\x1d\n\x05input\x18\n \x01(\x0b\x32\x0e.artemis.Input\x12\x1f\n\x06output\x18\x0b \x01(\x0b\x32\x0f.artemis.Output\x12\x12\n\nstore_name\x18\x0c \x01(\t\x12\x10\n\x08store_id\x18\r \x01(\t\x12\x0f\n\x07menu_id\x18\x0e \x01(\t\x12\x11\n\tconfig_id\x18\x0f \x01(\t\x12\x12\n\ndataset_id\x18\x10 \x01(\t\x12\x14\n\x0cparentset_id\x18\x11 \x01(\t*\xd6\x01\n\x08JobState\x12\x10\n\x0cJOB_STARTING\x10\x00\x12\x0f\n\x0bJOB_RUNNING\x10\x01\x12\x0f\n\x0bJOB_FAILURE\x10\x02\x12\x0f\n\x0bJOB_SUCCESS\x10\x03\x12\r\n\tJOB_ABORT\x10\x04\x12\x11\n\rJOB_CONFIGURE\x10\x05\x12\x12\n\x0eJOB_INITIALIZE\x10\x06\x12\x0c\n\x08JOB_BOOK\x10\x07\x12\x0e\n\nJOB_SAMPLE\x10\x08\x12\x0e\n\nJOB_REBOOK\x10\t\x12\x0f\n\x0bJOB_EXECUTE\x10\n\x12\x10\n\x0cJOB_FINALIZE\x10\x0b\x62\x06proto3')
+  serialized_pb=_b('\n\rartemis.proto\x12\x07\x61rtemis\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\"0\n\x05Timer\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04time\x18\x02 \x01(\x02\x12\x0b\n\x03std\x18\x03 \x01(\x02\"\x8a\x01\n\x07Summary\x12\x17\n\x0fprocessed_bytes\x18\x01 \x01(\x04\x12\x1e\n\x06timers\x18\x02 \x03(\x0b\x32\x0e.artemis.Timer\x12\x19\n\x11processed_ndatums\x18\x03 \x01(\x05\x12+\n\x08job_time\x18\x05 \x01(\x0b\x32\x19.google.protobuf.Duration\"\xcf\x02\n\x07JobInfo\x12\x0c\n\x04name\x18\x01 \x01(\t\x12+\n\x07started\x18\x02 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12,\n\x08\x66inished\x18\x03 \x01(\x0b\x32\x1a.google.protobuf.Timestamp\x12 \n\x05state\x18\x04 \x01(\x0e\x32\x11.artemis.JobState\x12\x0e\n\x06job_id\x18\x05 \x01(\t\x12\x12\n\nstore_name\x18\x06 \x01(\t\x12\x10\n\x08store_id\x18\x07 \x01(\t\x12\x12\n\nstore_path\x18\x08 \x01(\t\x12\x0f\n\x07menu_id\x18\t \x01(\t\x12\x11\n\tconfig_id\x18\n \x01(\t\x12\x12\n\ndataset_id\x18\x0b \x01(\t\x12\x14\n\x0cparentset_id\x18\x0c \x01(\t\x12!\n\x07summary\x18\r \x01(\x0b\x32\x10.artemis.Summary*\xd6\x01\n\x08JobState\x12\x10\n\x0cJOB_STARTING\x10\x00\x12\x0f\n\x0bJOB_RUNNING\x10\x01\x12\x0f\n\x0bJOB_FAILURE\x10\x02\x12\x0f\n\x0bJOB_SUCCESS\x10\x03\x12\r\n\tJOB_ABORT\x10\x04\x12\x11\n\rJOB_CONFIGURE\x10\x05\x12\x12\n\x0eJOB_INITIALIZE\x10\x06\x12\x0c\n\x08JOB_BOOK\x10\x07\x12\x0e\n\nJOB_SAMPLE\x10\x08\x12\x0e\n\nJOB_REBOOK\x10\t\x12\x0f\n\x0bJOB_EXECUTE\x10\n\x12\x10\n\x0cJOB_FINALIZE\x10\x0b\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_timestamp__pb2.DESCRIPTOR,google_dot_protobuf_dot_duration__pb2.DESCRIPTOR,])
 
@@ -83,8 +83,8 @@ _JOBSTATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=2389,
-  serialized_end=2603,
+  serialized_start=621,
+  serialized_end=835,
 )
 _sym_db.RegisterEnumDescriptor(_JOBSTATE)
 
@@ -102,902 +102,6 @@ JOB_REBOOK = 9
 JOB_EXECUTE = 10
 JOB_FINALIZE = 11
 
-
-
-_PROPERTY = _descriptor.Descriptor(
-  name='Property',
-  full_name='artemis.Property',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.Property.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='type', full_name='artemis.Property.type', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='value', full_name='artemis.Property.value', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=91,
-  serialized_end=144,
-)
-
-
-_PROPERTIES = _descriptor.Descriptor(
-  name='Properties',
-  full_name='artemis.Properties',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='property', full_name='artemis.Properties.property', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=146,
-  serialized_end=195,
-)
-
-
-_TOOL = _descriptor.Descriptor(
-  name='Tool',
-  full_name='artemis.Tool',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.Tool.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='module', full_name='artemis.Tool.module', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='klass', full_name='artemis.Tool.klass', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='properties', full_name='artemis.Tool.properties', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=197,
-  serialized_end=289,
-)
-
-
-_ALGO = _descriptor.Descriptor(
-  name='Algo',
-  full_name='artemis.Algo',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.Algo.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='module', full_name='artemis.Algo.module', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='klass', full_name='artemis.Algo.klass', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='properties', full_name='artemis.Algo.properties', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=291,
-  serialized_end=383,
-)
-
-
-_NODE = _descriptor.Descriptor(
-  name='Node',
-  full_name='artemis.Node',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.Node.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='parents', full_name='artemis.Node.parents', index=1,
-      number=2, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='algos', full_name='artemis.Node.algos', index=2,
-      number=3, type=9, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=385,
-  serialized_end=437,
-)
-
-
-_TREE = _descriptor.Descriptor(
-  name='Tree',
-  full_name='artemis.Tree',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='nodes', full_name='artemis.Tree.nodes', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=439,
-  serialized_end=475,
-)
-
-
-_MENU = _descriptor.Descriptor(
-  name='Menu',
-  full_name='artemis.Menu',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='tree', full_name='artemis.Menu.tree', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=477,
-  serialized_end=512,
-)
-
-
-_GENERATORINPUT = _descriptor.Descriptor(
-  name='GeneratorInput',
-  full_name='artemis.GeneratorInput',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='config', full_name='artemis.GeneratorInput.config', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=514,
-  serialized_end=561,
-)
-
-
-_ATOMINPUT = _descriptor.Descriptor(
-  name='AtomInput',
-  full_name='artemis.AtomInput',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.AtomInput.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='repo', full_name='artemis.AtomInput.repo', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='glob', full_name='artemis.AtomInput.glob', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=563,
-  serialized_end=616,
-)
-
-
-_INPUT = _descriptor.Descriptor(
-  name='Input',
-  full_name='artemis.Input',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='generator', full_name='artemis.Input.generator', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='atom', full_name='artemis.Input.atom', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=618,
-  serialized_end=703,
-)
-
-
-_OUTPUT = _descriptor.Descriptor(
-  name='Output',
-  full_name='artemis.Output',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='repo', full_name='artemis.Output.repo', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=705,
-  serialized_end=727,
-)
-
-
-_SAMPLER = _descriptor.Descriptor(
-  name='Sampler',
-  full_name='artemis.Sampler',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='ndatums', full_name='artemis.Sampler.ndatums', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='nchunks', full_name='artemis.Sampler.nchunks', index=1,
-      number=2, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=729,
-  serialized_end=772,
-)
-
-
-_JOBCONFIG = _descriptor.Descriptor(
-  name='JobConfig',
-  full_name='artemis.JobConfig',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='input', full_name='artemis.JobConfig.input', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='menu', full_name='artemis.JobConfig.menu', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='max_malloc_size_bytes', full_name='artemis.JobConfig.max_malloc_size_bytes', index=2,
-      number=3, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='sampler', full_name='artemis.JobConfig.sampler', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='tools', full_name='artemis.JobConfig.tools', index=4,
-      number=5, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='config_id', full_name='artemis.JobConfig.config_id', index=5,
-      number=6, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='algos', full_name='artemis.JobConfig.algos', index=6,
-      number=7, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=775,
-  serialized_end=991,
-)
-
-
-_RAWINFO = _descriptor.Descriptor(
-  name='RawInfo',
-  full_name='artemis.RawInfo',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='size_bytes', full_name='artemis.RawInfo.size_bytes', index=0,
-      number=1, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=993,
-  serialized_end=1022,
-)
-
-
-_BYTERANGE = _descriptor.Descriptor(
-  name='ByteRange',
-  full_name='artemis.ByteRange',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='offset_bytes', full_name='artemis.ByteRange.offset_bytes', index=0,
-      number=1, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='size_bytes', full_name='artemis.ByteRange.size_bytes', index=1,
-      number=2, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1024,
-  serialized_end=1077,
-)
-
-
-_BLOCKINFO = _descriptor.Descriptor(
-  name='BlockInfo',
-  full_name='artemis.BlockInfo',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='range', full_name='artemis.BlockInfo.range', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1079,
-  serialized_end=1125,
-)
-
-
-_BLOCK = _descriptor.Descriptor(
-  name='Block',
-  full_name='artemis.Block',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='block', full_name='artemis.Block.block', index=0,
-      number=1, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1127,
-  serialized_end=1169,
-)
-
-
-_SCHEMA = _descriptor.Descriptor(
-  name='Schema',
-  full_name='artemis.Schema',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.Schema.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='raw_type', full_name='artemis.Schema.raw_type', index=1,
-      number=2, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='py_type', full_name='artemis.Schema.py_type', index=2,
-      number=3, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='arrow_type', full_name='artemis.Schema.arrow_type', index=3,
-      number=4, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1171,
-  serialized_end=1248,
-)
-
-
-_SCHEMAINFO = _descriptor.Descriptor(
-  name='SchemaInfo',
-  full_name='artemis.SchemaInfo',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='columns', full_name='artemis.SchemaInfo.columns', index=0,
-      number=1, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='size_bytes', full_name='artemis.SchemaInfo.size_bytes', index=1,
-      number=2, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='header', full_name='artemis.SchemaInfo.header', index=2,
-      number=3, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='arrow_schema', full_name='artemis.SchemaInfo.arrow_schema', index=3,
-      number=4, type=12, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b(""),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1250,
-  serialized_end=1354,
-)
-
-
-_FILEINFO = _descriptor.Descriptor(
-  name='FileInfo',
-  full_name='artemis.FileInfo',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.FileInfo.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='raw', full_name='artemis.FileInfo.raw', index=1,
-      number=2, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='blocks', full_name='artemis.FileInfo.blocks', index=2,
-      number=3, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='schema', full_name='artemis.FileInfo.schema', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='processed', full_name='artemis.FileInfo.processed', index=4,
-      number=5, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1357,
-  serialized_end=1522,
-)
-
-
-_RECORDBATCHFILEINFO = _descriptor.Descriptor(
-  name='RecordBatchFileInfo',
-  full_name='artemis.RecordBatchFileInfo',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='name', full_name='artemis.RecordBatchFileInfo.name', index=0,
-      number=1, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='num_columns', full_name='artemis.RecordBatchFileInfo.num_columns', index=1,
-      number=2, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='num_rows', full_name='artemis.RecordBatchFileInfo.num_rows', index=2,
-      number=3, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='schema', full_name='artemis.RecordBatchFileInfo.schema', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='num_batches', full_name='artemis.RecordBatchFileInfo.num_batches', index=4,
-      number=5, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=1525,
-  serialized_end=1657,
-)
 
 
 _TIMER = _descriptor.Descriptor(
@@ -1040,8 +144,8 @@ _TIMER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1659,
-  serialized_end=1707,
+  serialized_start=91,
+  serialized_end=139,
 )
 
 
@@ -1074,14 +178,7 @@ _SUMMARY = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='tables', full_name='artemis.Summary.tables', index=3,
-      number=4, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='job_time', full_name='artemis.Summary.job_time', index=4,
+      name='job_time', full_name='artemis.Summary.job_time', index=3,
       number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
@@ -1099,8 +196,8 @@ _SUMMARY = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1710,
-  serialized_end=1894,
+  serialized_start=142,
+  serialized_end=280,
 )
 
 
@@ -1133,100 +230,72 @@ _JOBINFO = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='data', full_name='artemis.JobInfo.data', index=3,
-      number=4, type=11, cpp_type=10, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='summary', full_name='artemis.JobInfo.summary', index=4,
-      number=5, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='state', full_name='artemis.JobInfo.state', index=5,
-      number=6, type=14, cpp_type=8, label=1,
+      name='state', full_name='artemis.JobInfo.state', index=3,
+      number=4, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='config', full_name='artemis.JobInfo.config', index=6,
-      number=7, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='job_id', full_name='artemis.JobInfo.job_id', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='properties', full_name='artemis.JobInfo.properties', index=7,
-      number=8, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='store_name', full_name='artemis.JobInfo.store_name', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='job_id', full_name='artemis.JobInfo.job_id', index=8,
+      name='store_id', full_name='artemis.JobInfo.store_id', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='store_path', full_name='artemis.JobInfo.store_path', index=7,
+      number=8, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='menu_id', full_name='artemis.JobInfo.menu_id', index=8,
       number=9, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='input', full_name='artemis.JobInfo.input', index=9,
-      number=10, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='config_id', full_name='artemis.JobInfo.config_id', index=9,
+      number=10, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='output', full_name='artemis.JobInfo.output', index=10,
-      number=11, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
+      name='dataset_id', full_name='artemis.JobInfo.dataset_id', index=10,
+      number=11, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='store_name', full_name='artemis.JobInfo.store_name', index=11,
+      name='parentset_id', full_name='artemis.JobInfo.parentset_id', index=11,
       number=12, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='store_id', full_name='artemis.JobInfo.store_id', index=12,
-      number=13, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='menu_id', full_name='artemis.JobInfo.menu_id', index=13,
-      number=14, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='config_id', full_name='artemis.JobInfo.config_id', index=14,
-      number=15, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='dataset_id', full_name='artemis.JobInfo.dataset_id', index=15,
-      number=16, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='parentset_id', full_name='artemis.JobInfo.parentset_id', index=16,
-      number=17, type=9, cpp_type=9, label=1,
-      has_default_value=False, default_value=_b("").decode('utf-8'),
+      name='summary', full_name='artemis.JobInfo.summary', index=12,
+      number=13, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
@@ -1242,216 +311,21 @@ _JOBINFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1897,
-  serialized_end=2386,
+  serialized_start=283,
+  serialized_end=618,
 )
 
-_PROPERTIES.fields_by_name['property'].message_type = _PROPERTY
-_TOOL.fields_by_name['properties'].message_type = _PROPERTIES
-_ALGO.fields_by_name['properties'].message_type = _PROPERTIES
-_TREE.fields_by_name['nodes'].message_type = _NODE
-_MENU.fields_by_name['tree'].message_type = _TREE
-_GENERATORINPUT.fields_by_name['config'].message_type = _ALGO
-_INPUT.fields_by_name['generator'].message_type = _GENERATORINPUT
-_INPUT.fields_by_name['atom'].message_type = _ATOMINPUT
-_JOBCONFIG.fields_by_name['input'].message_type = _INPUT
-_JOBCONFIG.fields_by_name['menu'].message_type = _MENU
-_JOBCONFIG.fields_by_name['sampler'].message_type = _SAMPLER
-_JOBCONFIG.fields_by_name['tools'].message_type = _TOOL
-_JOBCONFIG.fields_by_name['algos'].message_type = _ALGO
-_BLOCKINFO.fields_by_name['range'].message_type = _BYTERANGE
-_BLOCK.fields_by_name['block'].message_type = _BLOCKINFO
-_SCHEMAINFO.fields_by_name['columns'].message_type = _SCHEMA
-_FILEINFO.fields_by_name['raw'].message_type = _RAWINFO
-_FILEINFO.fields_by_name['blocks'].message_type = _BLOCKINFO
-_FILEINFO.fields_by_name['schema'].message_type = _SCHEMAINFO
-_FILEINFO.fields_by_name['processed'].message_type = _RAWINFO
-_RECORDBATCHFILEINFO.fields_by_name['schema'].message_type = _SCHEMAINFO
 _SUMMARY.fields_by_name['timers'].message_type = _TIMER
-_SUMMARY.fields_by_name['tables'].message_type = _RECORDBATCHFILEINFO
 _SUMMARY.fields_by_name['job_time'].message_type = google_dot_protobuf_dot_duration__pb2._DURATION
 _JOBINFO.fields_by_name['started'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
 _JOBINFO.fields_by_name['finished'].message_type = google_dot_protobuf_dot_timestamp__pb2._TIMESTAMP
-_JOBINFO.fields_by_name['data'].message_type = _FILEINFO
-_JOBINFO.fields_by_name['summary'].message_type = _SUMMARY
 _JOBINFO.fields_by_name['state'].enum_type = _JOBSTATE
-_JOBINFO.fields_by_name['config'].message_type = _JOBCONFIG
-_JOBINFO.fields_by_name['properties'].message_type = _PROPERTIES
-_JOBINFO.fields_by_name['input'].message_type = _INPUT
-_JOBINFO.fields_by_name['output'].message_type = _OUTPUT
-DESCRIPTOR.message_types_by_name['Property'] = _PROPERTY
-DESCRIPTOR.message_types_by_name['Properties'] = _PROPERTIES
-DESCRIPTOR.message_types_by_name['Tool'] = _TOOL
-DESCRIPTOR.message_types_by_name['Algo'] = _ALGO
-DESCRIPTOR.message_types_by_name['Node'] = _NODE
-DESCRIPTOR.message_types_by_name['Tree'] = _TREE
-DESCRIPTOR.message_types_by_name['Menu'] = _MENU
-DESCRIPTOR.message_types_by_name['GeneratorInput'] = _GENERATORINPUT
-DESCRIPTOR.message_types_by_name['AtomInput'] = _ATOMINPUT
-DESCRIPTOR.message_types_by_name['Input'] = _INPUT
-DESCRIPTOR.message_types_by_name['Output'] = _OUTPUT
-DESCRIPTOR.message_types_by_name['Sampler'] = _SAMPLER
-DESCRIPTOR.message_types_by_name['JobConfig'] = _JOBCONFIG
-DESCRIPTOR.message_types_by_name['RawInfo'] = _RAWINFO
-DESCRIPTOR.message_types_by_name['ByteRange'] = _BYTERANGE
-DESCRIPTOR.message_types_by_name['BlockInfo'] = _BLOCKINFO
-DESCRIPTOR.message_types_by_name['Block'] = _BLOCK
-DESCRIPTOR.message_types_by_name['Schema'] = _SCHEMA
-DESCRIPTOR.message_types_by_name['SchemaInfo'] = _SCHEMAINFO
-DESCRIPTOR.message_types_by_name['FileInfo'] = _FILEINFO
-DESCRIPTOR.message_types_by_name['RecordBatchFileInfo'] = _RECORDBATCHFILEINFO
+_JOBINFO.fields_by_name['summary'].message_type = _SUMMARY
 DESCRIPTOR.message_types_by_name['Timer'] = _TIMER
 DESCRIPTOR.message_types_by_name['Summary'] = _SUMMARY
 DESCRIPTOR.message_types_by_name['JobInfo'] = _JOBINFO
 DESCRIPTOR.enum_types_by_name['JobState'] = _JOBSTATE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
-
-Property = _reflection.GeneratedProtocolMessageType('Property', (_message.Message,), dict(
-  DESCRIPTOR = _PROPERTY,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Property)
-  ))
-_sym_db.RegisterMessage(Property)
-
-Properties = _reflection.GeneratedProtocolMessageType('Properties', (_message.Message,), dict(
-  DESCRIPTOR = _PROPERTIES,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Properties)
-  ))
-_sym_db.RegisterMessage(Properties)
-
-Tool = _reflection.GeneratedProtocolMessageType('Tool', (_message.Message,), dict(
-  DESCRIPTOR = _TOOL,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Tool)
-  ))
-_sym_db.RegisterMessage(Tool)
-
-Algo = _reflection.GeneratedProtocolMessageType('Algo', (_message.Message,), dict(
-  DESCRIPTOR = _ALGO,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Algo)
-  ))
-_sym_db.RegisterMessage(Algo)
-
-Node = _reflection.GeneratedProtocolMessageType('Node', (_message.Message,), dict(
-  DESCRIPTOR = _NODE,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Node)
-  ))
-_sym_db.RegisterMessage(Node)
-
-Tree = _reflection.GeneratedProtocolMessageType('Tree', (_message.Message,), dict(
-  DESCRIPTOR = _TREE,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Tree)
-  ))
-_sym_db.RegisterMessage(Tree)
-
-Menu = _reflection.GeneratedProtocolMessageType('Menu', (_message.Message,), dict(
-  DESCRIPTOR = _MENU,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Menu)
-  ))
-_sym_db.RegisterMessage(Menu)
-
-GeneratorInput = _reflection.GeneratedProtocolMessageType('GeneratorInput', (_message.Message,), dict(
-  DESCRIPTOR = _GENERATORINPUT,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.GeneratorInput)
-  ))
-_sym_db.RegisterMessage(GeneratorInput)
-
-AtomInput = _reflection.GeneratedProtocolMessageType('AtomInput', (_message.Message,), dict(
-  DESCRIPTOR = _ATOMINPUT,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.AtomInput)
-  ))
-_sym_db.RegisterMessage(AtomInput)
-
-Input = _reflection.GeneratedProtocolMessageType('Input', (_message.Message,), dict(
-  DESCRIPTOR = _INPUT,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Input)
-  ))
-_sym_db.RegisterMessage(Input)
-
-Output = _reflection.GeneratedProtocolMessageType('Output', (_message.Message,), dict(
-  DESCRIPTOR = _OUTPUT,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Output)
-  ))
-_sym_db.RegisterMessage(Output)
-
-Sampler = _reflection.GeneratedProtocolMessageType('Sampler', (_message.Message,), dict(
-  DESCRIPTOR = _SAMPLER,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Sampler)
-  ))
-_sym_db.RegisterMessage(Sampler)
-
-JobConfig = _reflection.GeneratedProtocolMessageType('JobConfig', (_message.Message,), dict(
-  DESCRIPTOR = _JOBCONFIG,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.JobConfig)
-  ))
-_sym_db.RegisterMessage(JobConfig)
-
-RawInfo = _reflection.GeneratedProtocolMessageType('RawInfo', (_message.Message,), dict(
-  DESCRIPTOR = _RAWINFO,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.RawInfo)
-  ))
-_sym_db.RegisterMessage(RawInfo)
-
-ByteRange = _reflection.GeneratedProtocolMessageType('ByteRange', (_message.Message,), dict(
-  DESCRIPTOR = _BYTERANGE,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.ByteRange)
-  ))
-_sym_db.RegisterMessage(ByteRange)
-
-BlockInfo = _reflection.GeneratedProtocolMessageType('BlockInfo', (_message.Message,), dict(
-  DESCRIPTOR = _BLOCKINFO,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.BlockInfo)
-  ))
-_sym_db.RegisterMessage(BlockInfo)
-
-Block = _reflection.GeneratedProtocolMessageType('Block', (_message.Message,), dict(
-  DESCRIPTOR = _BLOCK,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Block)
-  ))
-_sym_db.RegisterMessage(Block)
-
-Schema = _reflection.GeneratedProtocolMessageType('Schema', (_message.Message,), dict(
-  DESCRIPTOR = _SCHEMA,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.Schema)
-  ))
-_sym_db.RegisterMessage(Schema)
-
-SchemaInfo = _reflection.GeneratedProtocolMessageType('SchemaInfo', (_message.Message,), dict(
-  DESCRIPTOR = _SCHEMAINFO,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.SchemaInfo)
-  ))
-_sym_db.RegisterMessage(SchemaInfo)
-
-FileInfo = _reflection.GeneratedProtocolMessageType('FileInfo', (_message.Message,), dict(
-  DESCRIPTOR = _FILEINFO,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.FileInfo)
-  ))
-_sym_db.RegisterMessage(FileInfo)
-
-RecordBatchFileInfo = _reflection.GeneratedProtocolMessageType('RecordBatchFileInfo', (_message.Message,), dict(
-  DESCRIPTOR = _RECORDBATCHFILEINFO,
-  __module__ = 'artemis_pb2'
-  # @@protoc_insertion_point(class_scope:artemis.RecordBatchFileInfo)
-  ))
-_sym_db.RegisterMessage(RecordBatchFileInfo)
 
 Timer = _reflection.GeneratedProtocolMessageType('Timer', (_message.Message,), dict(
   DESCRIPTOR = _TIMER,

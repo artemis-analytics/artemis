@@ -11,7 +11,7 @@
 """
 import dask
 
-from artemis.artemis import ArtemisFactory
+from artemis.artemis import Artemis
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 
@@ -30,7 +30,7 @@ class JobBuilder():
         self.job = JobInfo_pb()
         self.job.name = 'arrowproto'
         self.job.job_id = 'example'
-        self.job.output.repo = dirpath
+        self.job.store_path = dirpath
         self.job.store_id = store_uuid
         self.job.store_name = store_name
         self.job.menu_id = menu_uuid
@@ -39,7 +39,7 @@ class JobBuilder():
         self.job.job_id = str(job_id)
 
     def execute(self):
-        bow = ArtemisFactory(self.job, 'INFO')
+        bow = Artemis(self.job, loglevel='INFO')
         bow.control()
         buf = bow._jp.store[self.job.dataset_id].dataset.SerializeToString()
         return buf

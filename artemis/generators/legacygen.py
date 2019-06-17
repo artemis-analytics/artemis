@@ -200,6 +200,7 @@ class GenMF(GeneratorBase):
                                 (self.__class__.__name__, type(data)))
             fileinfo = FileObjectInfo()
             fileinfo.type = 2
+            fileinfo.partition = self.name
             job_id = f"{self._jp.meta.job_id}_sample_{self.nsamples}"
             ds_id = self._jp.meta.parentset_id
             id_ = self._jp.store.register_content(data,
@@ -218,6 +219,7 @@ class GenMF(GeneratorBase):
         data = self.gen_chunk()
         fileinfo = FileObjectInfo()
         fileinfo.type = 2
+        fileinfo.partition = self.name
         job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
         ds_id = self._jp.meta.parentset_id
         id_ = self._jp.store.register_content(data,
