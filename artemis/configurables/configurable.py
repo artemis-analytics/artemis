@@ -17,6 +17,8 @@ from artemis.io.writer import BufferOutputWriter
 from artemis.configurables.factories import GeneratorFactory
 from artemis.configurables.factories import FileHandlerFactory
 
+from artemis.tools.tdigesttool import TDigestTool
+
 from cronus.io.protobuf.configuration_pb2 import Configuration
 from cronus.core.Directed_Graph import Menu
 
@@ -112,6 +114,15 @@ class Configurable():
         self.__logger.info(kwargs)
         generator = GeneratorFactory(self.generator_type, **kwargs)
         self._msg.input.generator.config.CopyFrom(generator.to_msg())
+
+    def _config_tdigest(self, **kwargs):
+        '''
+        creates the tdigest tool for tests
+
+        the **kwargs are not used in this configuration setup
+        '''
+        tdigesttool = TDigestTool('tdigesttool')
+        self._tools.append(tdigesttool.to_msg())
 
     def _config_filehandler(self, **kwargs):
         '''
