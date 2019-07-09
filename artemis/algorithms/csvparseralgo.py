@@ -10,7 +10,10 @@
 """
 Algorithm which configures a reader
 given a bytes object
+
+Algorithim that is used to configure the profiler and t digest algorithim
 """
+
 from artemis.core.algo import AlgoBase
 from artemis.decorators import timethis
 from artemis.utils.utils import range_positive
