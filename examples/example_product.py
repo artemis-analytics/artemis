@@ -115,20 +115,6 @@ class ExampleMenu(MenuBuilder):
         self._algos['csvalgo'] = CsvParserAlgo('csvparser', loglevel='INFO')
         self._algos['profileralgo'] = ProfilerAlgo('profiler', loglevel='INFO')
 
-class ExampleMenu(MenuBuilder):
-    def __init__(self, name='test'):
-        super().__init__(name)
-
-    def _algo_builder(self):
-        '''
-        define all algorithms required
-        '''
-        self._algos['testalgo'] = DummyAlgo1('dummy',
-                                             myproperty='ptest',
-                                             loglevel='INFO')
-        self._algos['csvalgo'] = CsvParserAlgo('csvparser', loglevel='INFO')
-        self._algos['profileralgo'] = ProfilerAlgo('profiler', loglevel='INFO')
-
     def _seq_builder(self):
         # Define the sequences and node names
         self._seqs['seqX'] = Node(["initial"],
@@ -137,7 +123,6 @@ class ExampleMenu(MenuBuilder):
         self._seqs['seqY'] = Node(["seqX"],
                                   ('profiler',),
                                   "seqY")
-        
 
     def _chain_builder(self):
         # Add the sequences to a chain
