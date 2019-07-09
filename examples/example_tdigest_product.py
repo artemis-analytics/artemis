@@ -9,6 +9,7 @@
 # Example for building a complete Artemis job
 import uuid
 import tempfile
+import os
 
 from artemis.artemis import Artemis
 from artemis.io.writer import BufferOutputWriter
@@ -17,6 +18,7 @@ from artemis.generators.simutablegen import SimuTableGen
 from artemis.io.filehandler import FileHandlerTool
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.tools.csvtool import CsvTool
+from artemis.tools.tdigesttool import TDigestTool
 
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.algorithms.csvparseralgo import CsvParserAlgo
@@ -98,22 +100,25 @@ def example_configuration(table_id, seed=42):
     sampler.ndatums = sample_ndatums
     sampler.nchunks = sample_nchunks
 
+    # Here we add the TDigest tool that we will call in the profiler algorithim
+    tdigesttool = TDigestTool('tdigesttool')
+    tdigesttoolmsg = config.tools.add()
+    tdigesttoolmsg.CopyFrom(tdigesttool.to_msg())
+
     return config
 
-
+'''
 class ExampleMenu(MenuBuilder):
     def __init__(self, name='test'):
         super().__init__(name)
 
     def _algo_builder(self):
-        '''
-        define all algorithms required
-        '''
         self._algos['testalgo'] = DummyAlgo1('dummy',
                                              myproperty='ptest',
                                              loglevel='INFO')
         self._algos['csvalgo'] = CsvParserAlgo('csvparser', loglevel='INFO')
         self._algos['profileralgo'] = ProfilerAlgo('profiler', loglevel='INFO')
+'''
 
 class ExampleMenu(MenuBuilder):
     def __init__(self, name='test'):
@@ -162,58 +167,16 @@ def example_table():
     field1.info.length = 10
 
     field2 = schema.fields.add()
-    field2.name = 'Name'
-    field2.info.type = 'String'
+    field2.name = 'normal'
+    field2.info.type = 'Float'
     field2.info.length = 10
-    field2.info.aux.generator.name = 'name'
+    field2.info.aux.generator.name = 'normal'
 
     field3 = schema.fields.add()
-    field3.name = 'SIN'
-    field3.info.type = 'String'
+    field3.name = 'lognormal'
+    field3.info.type = 'Float'
     field3.info.length = 10
-    field3.info.aux.generator.name = 'ssn'
-
-    field4 = schema.fields.add()
-    field4.name = 'StreetNumber'
-    field4.info.type = 'String'
-    field4.info.length = 40
-    field4.info.aux.generator.name = 'building_number'
-
-    field5 = schema.fields.add()
-    field5.name = 'Street'
-    field5.info.type = 'String'
-    field5.info.length = 40
-    field5.info.aux.generator.name = 'street_name'
-
-    field6 = schema.fields.add()
-    field6.name = 'City'
-    field6.info.type = 'String'
-    field6.info.length = 40
-    field6.info.aux.generator.name = 'city'
-
-    field7 = schema.fields.add()
-    field7.name = 'Province'
-    field7.info.type = 'String'
-    field7.info.length = 40
-    field7.info.aux.generator.name = 'province'
-
-    field8 = schema.fields.add()
-    field8.name = 'PostalCode'
-    field8.info.type = 'String'
-    field8.info.length = 40
-    field8.info.aux.generator.name = 'postcode'
-
-    field9 = schema.fields.add()
-    field9.name = 'DOB'
-    field9.info.type = 'DateTime'
-    field9.info.length = 40
-    field9.info.aux.generator.name = 'date'
-
-    field10 = schema.fields.add()
-    field10.name = 'PhoneNum'
-    field10.info.type = 'String'
-    field10.info.length = 11
-    field10.info.aux.generator.name = 'phone_number'
+    field3.info.aux.generator.name = 'lognormal'
 
     return table
 
@@ -240,10 +203,98 @@ def example_job():
     
     # Register all inputs in the Cronus object store
 
-    # Build the job
-    # To use the local directory:
-    # dirpath = os.getcwd()
-    with tempfile.TemporaryDirectory() as dirpath:
+    # This variable determines it writes the files to a temporary directory or uses a 'data' directory to store the log files and the csv files 
+
+    temp_directory = True
+
+    if temp_directory == True:
+        # Build the job
+        with tempfile.TemporaryDirectory() as dirpath:
+            # All jobs now require an object store
+            # All outputs are pesisted in the object store path
+            # See github.com/mbr/simplekv
+            #Factory class for simplekv provided by
+            # blueyonder/storefact
+            store = BaseObjectStore(dirpath, 'artemis')
+        
+            # Requires registering an parent dataset
+            # Generator data is written to disk with 
+            # The parent dataset uuid
+            # Register the 'generator' partition -- required
+        
+            g_dataset = store.register_dataset()
+            store.new_partition(g_dataset.uuid, 'generator')
+            job_id = store.new_job(g_dataset.uuid)
+        
+            # The table schema which defines the model for the generator
+            # Persisted first to the object store
+            # protobuf file
+            tinfo = TableObjectInfo()
+            table_id = store.register_content(table,
+                                              tinfo,
+                                              dataset_id=g_dataset.uuid,
+                                              job_id=job_id,
+                                             partition_key='generator').uuid
+
+            store.save_store()
+
+            # Now configure all tools and algorithms
+            # Includes IO tools
+            config = example_configuration(table_id)
+            # Algorithms need to added from the menu to the configuration
+            for key in mb._algos:
+                msg = config.algos.add()
+                msg.CopyFrom(mb._algos[key].to_msg())
+
+            configinfo = ConfigObjectInfo()
+            configinfo.created.GetCurrentTime()
+
+            # Store the menu and configuration protobufs
+            menu_uuid = store.register_content(msgmenu, menuinfo).uuid
+            config_uuid = store.register_content(config, configinfo).uuid
+
+            # Register an output dataset
+            dataset = store.register_dataset(menu_id=menu_uuid,
+                                            config_id=config_uuid)
+            store.save_store()
+
+            # Now define the actual Artemis job
+            # Again the input is a protobuf
+            # All other information read in from the
+            # object store
+            job = JobInfo_pb()
+            job.name = 'arrowproto'
+            job.store_id = store.store_uuid
+            job.store_name = store.store_name
+            job.store_path = dirpath
+            job.menu_id = menu_uuid
+            job.config_id = config_uuid
+            job.dataset_id = dataset.uuid
+            job.parentset_id = g_dataset.uuid
+            job.job_id = str(job_id)
+            bow = Artemis(job, loglevel='INFO')
+            bow.control()
+            bow._jp.store.save_store()
+        
+            validate_job(dirpath, store.store_name, store.store_uuid, dataset.uuid)
+    else:
+        # Build the job
+        # To use the local directory:
+        dirpath = os.getcwd()
+
+        print(dirpath)
+
+        # Create a directory for all of the files created by the Artemis job
+        dirName = 'data'
+
+        try:
+            os.makedirs(dirName)    
+            print("Directory " , dirName ,  " Created ")
+            dirpath = dirpath + '/' + dirName
+            print(dirpath)
+        except FileExistsError:
+            print("Directory " , dirName ,  " already exists")
+
         # All jobs now require an object store
         # All outputs are pesisted in the object store path
         # See github.com/mbr/simplekv
@@ -265,10 +316,10 @@ def example_job():
         # protobuf file
         tinfo = TableObjectInfo()
         table_id = store.register_content(table,
-                                          tinfo,
-                                          dataset_id=g_dataset.uuid,
-                                          job_id=job_id,
-                                          partition_key='generator').uuid
+                                            tinfo,
+                                            dataset_id=g_dataset.uuid,
+                                            job_id=job_id,
+                                            partition_key='generator').uuid
 
         store.save_store()
 
@@ -289,7 +340,7 @@ def example_job():
 
         # Register an output dataset
         dataset = store.register_dataset(menu_id=menu_uuid,
-                                         config_id=config_uuid)
+                                        config_id=config_uuid)
         store.save_store()
 
         # Now define the actual Artemis job
@@ -309,9 +360,8 @@ def example_job():
         bow = Artemis(job, loglevel='INFO')
         bow.control()
         bow._jp.store.save_store()
-        
-        validate_job(dirpath, store.store_name, store.store_uuid, dataset.uuid)
 
+        validate_job(dirpath, store.store_name, store.store_uuid, dataset.uuid)
 
 def validate_job(dirpath, store_name, store_id, dataset_id):
     
