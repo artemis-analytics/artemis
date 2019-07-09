@@ -15,7 +15,7 @@ from artemis.configurables.configurable import Configurable
 from artemis.configurables.configurable import GlobalConfigOptions
 
 from artemis.tools.mftool import MfTool
-
+from artemis.tools.tdigesttool import TDigestTool
 
 @iterable
 class LegacyOptions:
@@ -69,6 +69,8 @@ class LegacyGenConfig(Configurable):
                                  encoding=self.encoding,
                                  schema=schema,
                                  seed=self.seed)
+
+        self._config_tdigest()
 
         # Ensure block_size for arrow parser greater than
         # file chunk size
@@ -127,6 +129,8 @@ class LegacyIOConfig(Configurable):
                                  schema=schema,
                                  encoding=self.encoding,
                                  seed=self.seed)
+        
+        self._config_tdigest()
 
         # Ensure block_size for arrow parser greater than
         # file chunk size
