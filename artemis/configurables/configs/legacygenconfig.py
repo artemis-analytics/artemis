@@ -55,7 +55,8 @@ class LegacyGenConfig(Configurable):
             schema.append(key)
 
         fwftool = FwfTool('fwftool', 
-                          block_size=(2 * blocksize), 
+                          block_size=(2 * blocksize),
+                          is_cobol=True,
                           skip_rows=self.skip_rows,
                           column_names=self.column_names,
                           field_widths=self.field_widths,
@@ -133,6 +134,7 @@ class LegacyIOConfig(Configurable):
         
         fwftool = FwfTool('fwftool', 
                           block_size=(2 * blocksize), 
+                          is_cobol=True,
                           skip_rows=self.skip_rows,
                           column_names=self.column_names,
                           field_widths=self.field_widths,
