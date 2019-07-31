@@ -1,0 +1,41 @@
+/*
+   Protocol buffer for tdigests
+*/
+
+syntax = "proto3";
+
+/*
+   This is the structure that holds the mapping
+   digest_name (data column name) -> the associated t digest
+*/
+
+message TDigest_store {
+  map<string, TDigest_instance> digest_map = 1;
+}
+
+/*
+   tidgest protobuf model
+   Describes the way that tdigests are stored and passed
+   This would take a protobuf from the to_dict or from_dict method
+   digest.update_from_dict({'K': 25, 'delta': 0.01, 'centroids': [{'c': 1.0, 'm': 1.0}, {'c': 1.0, 'm': 2.0}, {'c': 1.0, 'm': 3.0}]}
+*/
+
+message TDigest_instance {
+  string name = 1;
+  float K = 2;
+  float delta  = 3;
+  repeated Centroid_map centroids = 4;
+  float n = 5;
+}
+
+/*
+  The tdigest includes a list of single entry maps from:
+  c -> centroid position
+  and then from m -> centroid weight
+  This centroid_map is that encoding
+*/
+
+message Centroid_map {
+  float c = 1;
+  float m = 2;
+}

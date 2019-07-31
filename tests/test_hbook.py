@@ -4,7 +4,7 @@
 import numpy as np
 import unittest
 
-from artemis.core.book import BaseBook, ArtemisBook
+from artemis.core.book import BaseBook, ArtemisBook, TDigestBook
 from physt.histogram1d import Histogram1D
 from physt.histogram_base import HistogramBase
 
@@ -155,6 +155,31 @@ class HBookCase(unittest.TestCase):
         b.fill('book', 'two', data)
         self.assertEqual(b["book.one"].frequencies.tolist(), [3, 2])
         self.assertEqual(b["book.two"].frequencies.tolist(), [3, 2])
+
+    def test_tdigest(self):
+        MAX_ARRAY_SIZE = 1000
+        data = np.random.normal(0, 1, 10000)
+        num_arrays = int(len(data) / MAX_ARRAY_SIZE)
+        if len(data) % MAX_ARRAY_SIZE > 0: num_arrays += 1
+
+        split_data = np.array_split(data, num_arrays)
+        tbook = TDigestBook()
+        tbook.book('test','digest1')
+        tbook.book('test','digest2')
+
+        for array in split_data:
+            tbook['test.digest1'].batch_update(array)
+            tbook['test.digest1'].compress()
+            tbook['test.digest2'].batch_update(array)
+            tbook['test.digest2'].compress()
+
+        msg = tbook._to_message()
+        tbook2 = TDigestBook()
+        tbook2._from_message(msg)
+        print(tbook)
+        print(tbook2)
+
+
 
 
 if __name__ == '__main__':
