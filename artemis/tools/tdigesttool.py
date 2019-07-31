@@ -36,36 +36,8 @@ class TDigestToolOptions:
 class TDigestTool(ToolBase):
     
     def __init__(self, name, **kwargs):
-        # Retrieves the default options from arrow
-        # Updates with any user-defined options
-        # Create a final dictionary to store all properties
-        # This code was taken from the CsvTool code
-        # ropts = self._get_opts(ReadOptions(), **kwargs)
-        # popts = self._get_opts(ParseOptions(), **kwargs)
-        # copts = self._get_opts(ConvertOptions(), **kwargs)
-        # options = {**ropts, **popts, **copts, **dict(DistributionToolOptions())}
-        # options.update(kwargs)
 
         super().__init__(name, **kwargs)
-        # print("INIT TDIGEST TOOL")
-        # self.__logger.info(options)
-        # self._readopts = ReadOptions(**ropts)
-        # self._parseopts = ParseOptions(**popts)
-        # self._convertopts = ConvertOptions(**copts)
-        # self.__logger.info('%s: __init__ DistributionTool', self.name)
-        # self.__logger.info("Options %s", options)
-    
-        ''' 
-        def _get_opts(self, cls, **kwargs):
-        options = {}
-        for attr in dir(cls):
-            if attr[:2] != '__' and attr != "escape_char":
-                options[attr] = getattr(cls, attr)
-                if attr in kwargs:
-                    options[attr] = kwargs[attr]
-        return options '''
-
-        pass
         
     def initialize(self):
         self.__logger.info("%s properties: %s",

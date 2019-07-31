@@ -35,12 +35,10 @@ class ProfilerAlgo(AlgoBase):
         self.print_percentiles = True
 
     def initialize(self):
-        self.jobops = JobProperties()
         self.__logger.info('%s: Initialized ProfilerAlgo' % self.name)
 
     def book(self):
-        self.__logger.info("Book")
-        self.hbook = Physt_Wrapper()
+        pass
 
     def create_tdigests(self, record_batch):
         tool_digests = {}
@@ -100,6 +98,7 @@ class ProfilerAlgo(AlgoBase):
         self.__logger.info("Completed Profiling")
         print(self.digests)
         for key, value in self.digests.items():
+            self._jp.tbook[key] = value
             if len(value.centroids_to_list()) == 0:
                 print(key + " is not a numeric value and does not have a TDigest")
             else:

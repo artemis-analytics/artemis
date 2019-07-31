@@ -21,7 +21,7 @@ from cronus.io.protobuf.configuration_pb2 import Configuration
 from cronus.io.protobuf.menu_pb2 import Menu
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.utils.utils import bytes_to_mb
-from artemis.core.book import ArtemisBook
+from artemis.core.book import ArtemisBook, TDigestBook
 from cronus.core.cronus import BaseObjectStore
 from cronus.io.protobuf.cronus_pb2 import HistsObjectInfo, JobObjectInfo
 
@@ -111,6 +111,7 @@ class JobProperties(metaclass=Singleton):
     def __init__(self):
         self.meta = JobInfo_pb()
         self.hbook = ArtemisBook()
+        self.tbook = TDigestBook()
         self.menu = Menu()
         self.config = Configuration()
         self.store = None
@@ -240,6 +241,18 @@ class JobProperties(metaclass=Singleton):
         hmsg = self.hbook._to_message()
         try:
             self.store.register_content(hmsg,
+                                        hinfo,
+                                        dataset_id=self.meta.dataset_id,
+                                        job_id=self.meta.job_id).uuid
+        except Exception:
+            self.__logger.error("Unable to register hist")
+            raise
+        
+        tinfo = HistsObjectInfo()
+        tinfo.keys.extend(self.tbook.keys())
+        tmsg = self.tbook._to_message()
+        try:
+            self.store.register_content(tmsg,
                                         hinfo,
                                         dataset_id=self.meta.dataset_id,
                                         job_id=self.meta.job_id).uuid
