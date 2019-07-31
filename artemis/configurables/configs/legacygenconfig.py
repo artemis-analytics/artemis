@@ -15,6 +15,7 @@ from artemis.configurables.configurable import Configurable
 from artemis.configurables.configurable import GlobalConfigOptions
 
 from artemis.tools.mftool import MfTool
+from artemis.tools.fwftool import FwfTool
 from artemis.tools.tdigesttool import TDigestTool
 
 @iterable
@@ -28,6 +29,9 @@ class LegacyOptions:
     encoding = 'cp500'
     header = ''
     footer = ''
+    skip_rows = 0
+    column_names = []
+    field_widths = []
 
 
 @Logger.logged
@@ -50,6 +54,13 @@ class LegacyGenConfig(Configurable):
             rsize = rsize + columns[key]['length']
             schema.append(key)
 
+        fwftool = FwfTool('fwftool', 
+                          block_size=(2 * blocksize), 
+                          skip_rows=self.skip_rows,
+                          column_names=self.column_names,
+                          field_widths=self.field_widths,
+                          encoding=self.encoding+',swaplfnl')
+        
         self._config_generator(nbatches=self.nbatches,
                                num_rows=self.num_rows,
                                seed=self.seed,
@@ -79,6 +90,7 @@ class LegacyGenConfig(Configurable):
         self.__logger.info(mftoolmsg)
 
         self._tools.append(mftoolmsg)
+        self._tools.append(fwftool.to_msg())
         self._config_sampler()
         self._config_writer()
         self._add_tools()
@@ -95,6 +107,9 @@ class LegacyIOOptions:
     encoding = 'cp500'
     header = ''
     footer = ''
+    skip_rows = 0
+    column_names = []
+    field_widths = []
 
 
 @Logger.logged
@@ -115,6 +130,13 @@ class LegacyIOConfig(Configurable):
 
         mftool = MfTool('legacytool', codec=self.encoding, **columns)
         blocksize = mftool.record_size * self.nrecords_per_block
+        
+        fwftool = FwfTool('fwftool', 
+                          block_size=(2 * blocksize), 
+                          skip_rows=self.skip_rows,
+                          column_names=self.column_names,
+                          field_widths=self.field_widths,
+                          encoding=self.encoding+',swaplfnl')
         rsize = 0
         schema = []
         for key in columns:
@@ -135,6 +157,7 @@ class LegacyIOConfig(Configurable):
         # Ensure block_size for arrow parser greater than
         # file chunk size
         self._tools.append(mftool.to_msg())
+        self._tools.append(fwftool.to_msg())
         self._config_sampler()
         self._config_writer()
         self._add_tools()

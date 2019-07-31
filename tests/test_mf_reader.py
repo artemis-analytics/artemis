@@ -22,6 +22,7 @@ from artemis.core.timerstore import TimerSvc
 from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.properties import JobProperties
 from artemis.tools.mftool import MfTool
+from artemis.tools.fwftool import FwfTool
 from artemis.generators.legacygen import GenMF
 
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
@@ -248,7 +249,10 @@ class Test_MF_Reader(unittest.TestCase):
                                       nrecords_per_block=4095,
                                       max_file_size=1073741824,
                                       write_csv=True,
-                                      output_repo=dirpath
+                                      output_repo=dirpath,
+                                      skip_rows=0,
+                                      column_names=['column_a', 'column_b', 'column_c'],
+                                      field_widths=[10, 6, 4],
                                       )
             #  Passes the schema for new data layout
             config.configure(column_a=intconf0,
@@ -256,6 +260,7 @@ class Test_MF_Reader(unittest.TestCase):
                              column_c=strconf0)
 
             config.add_algos(mb.algos)
+
             configinfo = ConfigObjectInfo()
             configinfo.created.GetCurrentTime()
             
