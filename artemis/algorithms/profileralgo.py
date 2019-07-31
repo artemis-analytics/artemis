@@ -58,7 +58,7 @@ class ProfilerAlgo(AlgoBase):
         # Code for understanding the record batch that this algorithim has recived
         # We can break up the record batch into a bunch of columns each column can be passed to the profiler algorithim
 
-        self.__logger.info('Num cols: %s Num rows: %s',
+        self.__logger.debug('Num cols: %s Num rows: %s',
                             raw_.num_columns, raw_.num_rows)
 
         # Create the map column name -> TDigest from the record batch schema 

@@ -15,7 +15,6 @@ import tempfile
 from collections import OrderedDict
 
 from artemis.io.collector import Collector
-#from artemis.core.dag import Sequence, Menu, Chain
 from artemis.core.tree import Tree, Node, Element
 from artemis.core.datastore import ArrowSets
 from artemis.core.singleton import Singleton

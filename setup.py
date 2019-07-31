@@ -1,12 +1,11 @@
 from setuptools import setup, find_packages
 
 setup(name='artemis',
-      version='0.4.0',
+      version='0.5.0',
       author='Ryan White',
       author_email='ryan.white4@canada.ca',
       packages=find_packages(),
       install_requires=[
-            "toposort>=1.5",
             "numpy",
             "pandas>=0.23.*",
             "scipy",
@@ -18,7 +17,7 @@ setup(name='artemis',
             "protobuf",
             "matplotlib",
             "sas7bdat>=2.2.2",
-            "ebcdic",
+            "ebcdic==1.0.0",
             "faker",
             "tdigest"
             ],
