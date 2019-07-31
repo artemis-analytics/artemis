@@ -50,20 +50,43 @@ class LegacyDataAlgo(AlgoBase):
         except Exception:
             raise
         return batch
+    
+    @timethis
+    def pyarrow_fwfr(self, block):
+        try:
+            batch = self.__tools.get('fwftool').execute(block)
+        except Exception:
+            raise
+        return batch
 
     def execute(self, element):
 
-        raw_ = element.get_data().to_pybytes()
-
+        raw_ = element.get_data()
+        self.__logger.info("Processing block %s", type(raw_))
         try:
-            tbatch, time_ = self.pyarrow_parsing(raw_)
+            tbatch, time_ = self.pyarrow_parsing(raw_.to_pybytes())
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
+        
         self._jp.hbook.fill(self.name, 'time.legacydataparse', time_)
-
+        
+        try:
+            fbatch, time_ = self.pyarrow_fwfr(raw_)
+        except Exception:
+            self.__logger.error("PyArrow parsing fails")
+            raise
+        self._jp.hbook.fill(self.name, 'time.pyparse', time_)
+        
         self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
+        
+        self.__logger.info("First Batch")
+        self.__logger.info("Schema %s", tbatch.schema)
+        self.__logger.info("Rows %i Columns %i", tbatch.num_rows, tbatch.num_columns)
 
+        self.__logger.info("Second Batch")
+        self.__logger.info("Schema %s", fbatch.schema)
+        self.__logger.info("Rows %i Columns %i", fbatch.num_rows, fbatch.num_columns)
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
         self.__logger.debug("Element Data type %s", type(element.get_data()))

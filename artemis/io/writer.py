@@ -469,7 +469,7 @@ class BufferOutputWriter(ToolBase):
                                  cols=columns, header=header, index=index,
                                  index_label=index_label, mode=mode,
                                  chunksize=chunksize, quotechar=quotechar,
-                                 tupleize_cols=tupleize_cols,
+                                 #tupleize_cols=tupleize_cols,
                                  date_format=date_format,
                                  doublequote=doublequote,
                                  escapechar=escapechar, decimal=decimal)
