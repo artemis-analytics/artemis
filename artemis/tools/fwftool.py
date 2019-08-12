@@ -74,7 +74,7 @@ class FwfTool(ToolBase):
                                parse_options=self._parseopts,
                                convert_options=self._convertopts)
         except Exception:
-            self.__logger.error("Problem converting csv to table")
+            self.__logger.error("Problem converting fwf to table")
             raise
         # We actually want a batch
         # batch can be converted to table
