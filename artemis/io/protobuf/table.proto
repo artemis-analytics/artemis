@@ -1,0 +1,195 @@
+/**
+ * Table schema for Cronus
+ */
+syntax = "proto3";
+package cronus;
+
+/**
+ * Will be linked with the cronus object
+ */
+message Table {
+  string name = 1;
+  string uuid = 2;
+  TableInfo info = 3;
+}
+
+/**
+ * Stores table information
+ */
+message TableInfo {
+  TableAuxInfo aux = 1; // Additional information
+  Schema schema = 2; // Table schema
+  string partition = 3; // The corresponding partition
+}
+
+/**
+ * Stores table addtional information
+ */
+message TableAuxInfo {
+  Duplicate duplicate = 1; 
+  RecordModifier record_modifier = 2;
+}
+
+/**
+ * Table schema
+ */
+message Schema {
+  string name = 1;
+  string uuid = 2;
+  SchemaInfo info = 3;
+}
+
+/**
+ * Stores schema information
+ */
+message SchemaInfo {
+  SchemaAuxInfo aux = 1; // Additional information
+  repeated Field fields = 2; // List of table fields
+}
+
+/**
+ * The reception frequency of the data
+ */
+enum Frequency {
+    NONE = 0;
+    DAILY = 1;
+    WEEKLY = 2;
+    MONTHLY = 3;
+    QUARTERLY = 4;
+    ANNUALLY = 5;
+}
+
+/**
+ * Stores schema additional information
+ */
+message SchemaAuxInfo {
+  string description = 1; // Table description, used purpose, notes, etc.
+  bytes raw_header = 2;
+  bytes raw_footer = 3;
+  uint64 raw_header_size_bytes = 4;
+  uint64 raw_footer_size_bytes = 5;
+  Frequency frequency = 6; // Reception frequency of the data
+}
+
+/**
+ * Each column in the table
+ */
+message Field {
+  string name = 1; // Column name
+  string uuid = 2;
+  FieldInfo info = 3; // Column information
+}
+
+/**
+ * Stores column information
+ */
+message FieldInfo {
+  FieldAuxInfo aux = 1; // Additional information
+  string type = 2; // Type of the variable
+  bool nullable = 3; // Whether the field is allowed to contain null values
+  int32 length = 4; // The length of the variable (Is fixed or maximum length?)
+  // repeated Field children = 4;
+}
+
+/**
+ * Stores column additional information
+ */
+message FieldAuxInfo {
+  string description = 1; // Column description
+  map<string, Value> meta = 2; // Map for metadata
+  Codeset codeset = 7; // Codeset for variable
+  Generator generator = 3; // Synthetic data generator required information
+  string dependent = 6; 
+}
+
+/**
+ * Metadata value with corresponding name in string
+ */
+message Value {
+  string description = 1; // Value description
+  Null null_val = 2; // Constant
+  int32 int_val = 3; // If it's a integer value, then specify the value here
+  string string_val = 4; // If it's a string value, then specify the value here
+  bool bool_val = 5; // If it's a boolean value, then specify the value here
+  float dec_val = 6; //If it's a decimal value, then specify the value here
+}
+
+/**
+ * Codeset is a list of fixed values that a column can have
+ */
+message Codeset {
+  string name = 1; // The name of the codeset
+  string version = 2; // Version of the codeset
+  repeated Codevalue codevalues = 3; // List of code values
+}
+
+/**
+ * Each code has it's name and meaning
+ */
+message Codevalue {
+  string code = 1; // Code = variable value
+  string description = 2; // Meaning of the code
+  string lable = 3; // Lable of the code, not always required
+  repeated string others = 4; // Other additional information that user wish to add
+}
+
+/**
+ * Constant for Null
+ */
+enum Null {
+  NULL= 0;
+}
+
+/**
+ * Model for simutable generation
+ */
+message Generator {
+    string name = 1; // Name of the generator function
+    repeated Parameter parameters = 2; // List of function's required parameters
+}
+
+/**
+ * Generator function's parameter
+ */
+message Parameter {
+    string name = 1; // Name of parameter
+    float value = 2; // Value of parameter
+    string type = 3; // Parameter type
+    Field variable = 4; // Uses the table field schema
+}
+
+message Duplicate {
+    float probability = 1;
+    string distribution = 2;
+    int32 maximum = 3;
+}
+
+message RecordModifier {
+    int32 max_modifications_in_record = 1;
+    int32 max_field_modifiers = 2;
+    int32 max_record_modifiers = 3;
+    repeated Modifier fields = 4;
+}
+
+message Modifier {
+    string name = 1;
+    float selection = 2;
+    ModifierProbabilities probabilities = 3;
+}
+
+message ModifierProbabilities {
+    float insert = 1;
+    float delete = 2;
+    float substitute = 3;
+    float misspell = 4;
+    float transpose = 5;
+    float replace = 6;
+    float swap = 7;
+    float split = 8;
+    float merge = 9;
+    float nullify = 10;
+    float fill = 11;
+}
+
+
+

@@ -28,11 +28,11 @@ from artemis.generators.legacygen import GenMF
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
-from cronus.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
+from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
 
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.table_pb2 import Table
 
 logging.getLogger().setLevel(logging.INFO)
 

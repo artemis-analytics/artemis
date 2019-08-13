@@ -19,8 +19,8 @@ from artemis.configurables.factories import FileHandlerFactory
 
 from artemis.tools.tdigesttool import TDigestTool
 
-from cronus.io.protobuf.configuration_pb2 import Configuration
-from cronus.core.Directed_Graph import Menu
+from artemis.io.protobuf.configuration_pb2 import Configuration
+from artemis.meta.Directed_Graph import GraphMenu
 
 
 @iterable
@@ -195,7 +195,7 @@ class MenuBuilder():
         pass
 
     def build(self):
-        menu = Menu(self._name)
+        menu = GraphMenu(self._name)
         self._algo_builder()
         self._seq_builder()
         self._chain_builder()

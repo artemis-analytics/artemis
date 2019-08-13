@@ -17,7 +17,7 @@ from pprint import pformat
 
 from artemis.logger import Logger
 from artemis.core.properties import Properties, JobProperties
-from cronus.io.protobuf.configuration_pb2 import Module as Algo_pb
+from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
 
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework

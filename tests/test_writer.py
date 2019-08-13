@@ -24,9 +24,9 @@ import pyarrow as pa
 from artemis.io.writer import BufferOutputWriter 
 from artemis.core.tree import Element
 from artemis.core.properties import JobProperties
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.table_pb2 import Table
-from cronus.io.protobuf.cronus_pb2 import TableObjectInfo
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.cronus_pb2 import TableObjectInfo
 
 logging.getLogger().setLevel(logging.INFO)
 

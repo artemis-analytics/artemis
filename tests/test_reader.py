@@ -24,9 +24,9 @@ from pandas.util.testing import assert_frame_equal
 from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.generators.legacygen import GenMF
 from artemis.io.filehandler import FileHandlerTool
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.table_pb2 import Table
-from cronus.io.protobuf.cronus_pb2 import TableObjectInfo, FileObjectInfo
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.cronus_pb2 import TableObjectInfo, FileObjectInfo
 
 logging.getLogger().setLevel(logging.INFO)
 

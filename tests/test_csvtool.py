@@ -22,9 +22,9 @@ from google.protobuf import text_format
 from artemis.tools.csvtool import CsvTool
 from artemis.core.tool import ToolBase
 from artemis.generators.csvgen import GenCsvLikeArrow
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.table_pb2 import Table
-from cronus.io.protobuf.cronus_pb2 import TableObjectInfo
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.cronus_pb2 import TableObjectInfo
 
 logging.getLogger().setLevel(logging.INFO)
 class CsvToolTestCase(unittest.TestCase):

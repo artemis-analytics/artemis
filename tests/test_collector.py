@@ -21,9 +21,10 @@ from artemis.core.singleton import Singleton
 from artemis.core.tool import ToolStore
 from artemis.io.writer import BufferOutputWriter 
 from artemis.core.properties import JobProperties
-from cronus.core.cronus import BaseObjectStore
-from cronus.core.Directed_Graph import Directed_Graph, Menu
-from cronus.core.Directed_Graph import Node as Node_pb2
+from artemis.meta.cronus import BaseObjectStore
+from artemis.meta.Directed_Graph import Directed_Graph
+from artemis.meta.Directed_Graph import GraphMenu 
+from artemis.meta.Directed_Graph import Node as Node_pb2
 
 import pyarrow as pa
 from pyarrow.csv import read_csv
@@ -39,6 +40,8 @@ class CollectorTestCase(unittest.TestCase):
         Singleton.reset(ArrowSets)
         Singleton.reset(ToolStore)
         Singleton.reset(JobProperties)
+    
+    def getmenu(self):
         seq1 = Node_pb2(["initial"], ("alg1", "alg2"), "seq1")
         seq2 = Node_pb2(["initial"], ("alg1", "alg2"), "seq2")
         seq3 = Node_pb2(["seq1", "seq2"], ("alg3",), "seq3")
@@ -50,7 +53,7 @@ class CollectorTestCase(unittest.TestCase):
         dummyChain1.add(seq2)
         dummyChain1.build()
 
-        testmenu = Menu("test")
+        testmenu = GraphMenu("test")
         testmenu.add(dummyChain1)
         testmenu.build()
         msg = testmenu.to_msg()
@@ -81,6 +84,9 @@ class CollectorTestCase(unittest.TestCase):
     def tearDown(self):
         Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
+        Singleton.reset(ToolStore)
+        Singleton.reset(JobProperties)
+
         pass
     
     def test_initialize(self):
@@ -93,7 +99,7 @@ class CollectorTestCase(unittest.TestCase):
          
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
-            
+            self.getmenu()        
             jp = JobProperties()
             jp.store = store
             jp.meta.dataset_id = ds_id
@@ -134,7 +140,7 @@ class CollectorTestCase(unittest.TestCase):
         
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
-            
+            self.getmenu() 
             jp = JobProperties()
             jp.store = store
             jp.meta.dataset_id = ds_id
@@ -183,7 +189,7 @@ class CollectorTestCase(unittest.TestCase):
     def test_execute(self):
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
-            
+            self.getmenu()
             jp = JobProperties()
             jp.store = store
             jp.meta.dataset_id = ds_id

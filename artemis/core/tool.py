@@ -21,7 +21,7 @@ from pprint import pformat
 
 from artemis.logger import Logger
 from artemis.core.properties import Properties
-from cronus.io.protobuf.configuration_pb2 import Module as Tool_pb
+from artemis.io.protobuf.configuration_pb2 import Module as Tool_pb
 
 from artemis.core.algo import AbcAlgoBase
 

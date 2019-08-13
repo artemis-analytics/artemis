@@ -1,0 +1,19 @@
+syntax = "proto3";
+package cronus;
+
+message Menu {
+  string name = 1;
+  string uuid = 2;
+  repeated Graph graphs = 3;
+}
+
+message Graph {
+  string name = 1;
+  repeated Node nodes = 2;
+}
+
+message Node {
+  string name = 1;
+  repeated string parents = 2;
+  repeated string algos = 3;
+}

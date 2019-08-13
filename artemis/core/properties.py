@@ -16,14 +16,14 @@ from pprint import pformat
 
 from artemis.logger import Logger
 from artemis.core.singleton import Singleton
-from cronus.io.protobuf.configuration_pb2 import Properties as Properties_pb
-from cronus.io.protobuf.configuration_pb2 import Configuration
-from cronus.io.protobuf.menu_pb2 import Menu
+from artemis.io.protobuf.configuration_pb2 import Properties as Properties_pb
+from artemis.io.protobuf.configuration_pb2 import Configuration
+from artemis.io.protobuf.menu_pb2 import Menu
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.utils.utils import bytes_to_mb
 from artemis.core.book import ArtemisBook, TDigestBook
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.cronus_pb2 import HistsObjectInfo, JobObjectInfo
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.cronus_pb2 import HistsObjectInfo, TDigestObjectInfo, JobObjectInfo
 
 
 class Properties():
@@ -248,12 +248,12 @@ class JobProperties(metaclass=Singleton):
             self.__logger.error("Unable to register hist")
             raise
         
-        tinfo = HistsObjectInfo()
+        tinfo = TDigestObjectInfo()
         tinfo.keys.extend(self.tbook.keys())
         tmsg = self.tbook._to_message()
         try:
             self.store.register_content(tmsg,
-                                        hinfo,
+                                        tinfo,
                                         dataset_id=self.meta.dataset_id,
                                         job_id=self.meta.job_id).uuid
         except Exception:

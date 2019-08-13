@@ -27,9 +27,9 @@ from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow
 from artemis.generators.filegen import FileGenerator
 from artemis.generators.common import BuiltinsGenerator
 
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.cronus_pb2 import TableObjectInfo
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.cronus_pb2 import TableObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
 logging.getLogger().setLevel(logging.INFO)
 
 

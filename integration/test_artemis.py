@@ -49,9 +49,9 @@ try:
     from artemis.artemis import ArtemisFactory
 except ModuleNotFoundError:
     use_factories_test = False
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, FileObjectInfo, TableObjectInfo
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, FileObjectInfo, TableObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
 
 logging.getLogger().setLevel(logging.INFO)
 
