@@ -27,7 +27,7 @@ from collections import OrderedDict, deque, namedtuple
 from functools import reduce as _reduce
 
 from artemis.logger import Logger
-from cronus.io.protobuf.menu_pb2 import Menu as Menu_pb
+from artemis.io.protobuf.menu_pb2 import Menu as Menu_pb
 
 
 @Logger.logged

@@ -49,20 +49,6 @@ stages:
   - document
   - package
 
-#prepare:
-#    stage: prepare
-#    image: $IMAGE_NAME 
-#    script:
-#- git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
-#- cd cronus; python setup.py install; cd ..
-#        - python tests/test_artemis.py
-#- cp test.log valid.log
-#    only:
-#- branches
-#    allow_failure: true
-#    artifacts:
-#        paths: [valid.log]
-
 review:
   stage: review
   image: ryanmwhitephd/alpine-scipy:73bdef0
@@ -83,23 +69,11 @@ test:
   before_script:
       - source activate env
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
-    - cd cronus; python setup.py install; cd ..
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
     - cd fwfr; ./install.sh --source; cd ..
-    - pip install coverage
+    - conda install -y coverage simplekv dask pygraphviz
     - python setup.py build_ext --inplace \install
-    - coverage3 run --source=artemis/ -m unittest
-    - coverage html
-    - echo "Coverage report:"
-    - grep "pc_cov" htmlcov/index.html | grep -e "[0123456879]*%" -o
-    - ls
-      # - python artemis/utils/hcollections.py arrowproto-example_meta.dat arrowproto-example.hist.dat
-  artifacts:
-      paths:
-          - htmlcov/
-          - test.log
-      expire_in: 1 week
+    - python -m unittest
   only:
     - branches
 
@@ -129,6 +103,33 @@ package:
           - artemis_build/artemis.tar.gz
   only:
     - tags
+
+#####################################################################################################
+#- coverage3 run --source=artemis/ -m unittest
+#- coverage html
+#- echo "Coverage report:"
+#- grep "pc_cov" htmlcov/index.html | grep -e "[0123456879]*%" -o
+#- python tests/test_artemis.py
+#- ls
+# - python artemis/utils/hcollections.py arrowproto-example_meta.dat arrowproto-example.hist.dat
+#artifacts:
+#paths:
+#    - htmlcov/
+#    - test.log
+#expire_in: 1 week
+#prepare:
+#    stage: prepare
+#    image: $IMAGE_NAME 
+#    script:
+        #- git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/cronus.git
+        #- cd cronus; python setup.py install; cd ..
+        #        - python tests/test_artemis.py
+        #        - cp test.log valid.log
+        #    only:
+        #        - branches
+        #    allow_failure: true
+        #    artifacts:
+        #        paths: [valid.log]
 
 #build:
 #    stage: build
@@ -160,7 +161,7 @@ package:
 #    only:
 #        - branches
 # ---------------------------------------------------------------------------
-
+################################################################################################
 .auto_devops: &auto_devops |
   # Auto DevOps variables and functions
   [[ "$TRACE" ]] && set -x

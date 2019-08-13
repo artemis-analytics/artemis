@@ -215,14 +215,15 @@ class ArtemisTestCase(unittest.TestCase):
             print('Job finished')
     '''
 def suite():
-    suite = unittest.TestSuite()
+    pass
+    #suite = unittest.TestSuite()
     #suite.addTest(ArtemisTestCase('test_launch'))
     #suite.addTest(ArtemisTestCase('test_configure'))
     #suite.addTest(ArtemisTestCase('test_lock'))
     #suite.addTest(ArtemisTestCase('test_initialize'))
     #suite.addTest(ArtemisTestCase('test_book'))
     #suite.addTest(ArtemisTestCase('test_run'))
-    # suite.addTest(ArtemisTestCase('test_finalize'))
+    #suite.addTest(ArtemisTestCase('test_finalize'))
 
 if __name__ == '__main__':
     runner = unittest.ArtemisTestCase()

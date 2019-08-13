@@ -13,7 +13,7 @@ import tempfile
 
 from artemis.generators.legacygen import GenMF
 from artemis.core.algo import AlgoBase
-from cronus.core.cronus import BaseObjectStore
+from artemis.meta.cronus import BaseObjectStore
 
 logging.getLogger().setLevel(logging.INFO)
 

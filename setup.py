@@ -35,8 +35,10 @@ def main():
             "ebcdic==1.0.0",
             "faker",
             "tdigest",
-            "simplekv"
-        ],
+            "dask",
+            "pygraphviz",
+            "simplekv>=0.12"
+            ],
         description="Stateful processing framework for administrative data powered by Apache Arrow."
     )
 

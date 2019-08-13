@@ -27,8 +27,8 @@ from artemis.decorators import iterable
 from artemis.core.algo import AlgoBase
 from artemis.generators.common import BuiltinsGenerator
 from artemis.io.readers import ReaderFactory
-from cronus.io.protobuf.table_pb2 import Table
-from cronus.io.protobuf.cronus_pb2 import TableObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.cronus_pb2 import TableObjectInfo
 
 
 @iterable

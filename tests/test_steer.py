@@ -9,10 +9,10 @@ from artemis.core.singleton import Singleton
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.core.timerstore import TimerSvc
-from cronus.core.Directed_Graph import Directed_Graph, Menu
-from cronus.core.Directed_Graph import Node as Node_pb2
+from artemis.meta.Directed_Graph import Directed_Graph, GraphMenu
+from artemis.meta.Directed_Graph import Node as Node_pb2
 
-from cronus.io.protobuf.configuration_pb2 import Configuration
+from artemis.io.protobuf.configuration_pb2 import Configuration
 
 class SteeringTestCase(unittest.TestCase):
 
@@ -42,7 +42,7 @@ class SteeringTestCase(unittest.TestCase):
         dummyChain1 = Directed_Graph("dummy1")
         dummyChain1.add(seq1)
         dummyChain1.build()
-        testmenu = Menu("test")
+        testmenu = GraphMenu("test")
         testmenu.add(dummyChain1)
         testmenu.build()
        

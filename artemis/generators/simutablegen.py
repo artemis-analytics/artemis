@@ -16,8 +16,8 @@ import pyarrow as pa
 from artemis.logger import Logger
 from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
-from cronus.io.protobuf.cronus_pb2 import FileObjectInfo
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.cronus_pb2 import FileObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
 from artemis.generators.simutable.synthesizer import Synthesizer
 
 

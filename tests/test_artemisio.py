@@ -29,11 +29,11 @@ from artemis.core.timerstore import TimerSvc
 from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo 
-from cronus.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo, DatasetObjectInfo
-from cronus.io.protobuf.table_pb2 import Table
-from cronus.io.protobuf.configuration_pb2 import Configuration
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo 
+from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo, DatasetObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.configuration_pb2 import Configuration
 
 from artemis.distributed.job_builder import JobBuilder, runjob
 

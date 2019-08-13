@@ -13,7 +13,7 @@ from artemis.configurables.configurable import MenuBuilder
 from artemis.algorithms.dummyalgo import DummyAlgo1
 from artemis.algorithms.csvparseralgo import CsvParserAlgo
 from artemis.algorithms.profileralgo import ProfilerAlgo
-from cronus.core.Directed_Graph import Directed_Graph, Node
+from artemis.meta.Directed_Graph import Directed_Graph, Node
 
 
 class CsvGenMenu(MenuBuilder):

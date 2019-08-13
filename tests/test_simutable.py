@@ -17,13 +17,13 @@ import uuid
 import logging
 # from collections import OrderedDict
 from artemis.artemis import Artemis, ArtemisFactory
-from cronus.core.cronus import BaseObjectStore
-from cronus.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, FileObjectInfo, TableObjectInfo
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.meta.cronus import BaseObjectStore
+from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, FileObjectInfo, TableObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
 from artemis.generators.simutable.synthesizer import Synthesizer
 from artemis.io.protobuf.simutable_pb2 import SimuTable
 from artemis.generators.simutablegen import SimuTableGen
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.table_pb2 import Table
 
 from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree

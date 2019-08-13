@@ -11,7 +11,7 @@ Menu for generating and processing Legacy data
 """
 from artemis.configurables.configurable import MenuBuilder
 from artemis.algorithms.legacyalgo import LegacyDataAlgo
-from cronus.core.Directed_Graph import Directed_Graph, Node
+from artemis.meta.Directed_Graph import Directed_Graph, Node
 
 
 class LegacyGenMenu(MenuBuilder):

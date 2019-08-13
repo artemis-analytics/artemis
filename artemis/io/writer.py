@@ -11,8 +11,8 @@ from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
 from artemis.core.properties import JobProperties
 
-from cronus.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
-from cronus.io.protobuf.table_pb2 import Table
+from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
+from artemis.io.protobuf.table_pb2 import Table
 
 
 @iterable

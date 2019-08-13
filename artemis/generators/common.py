@@ -36,7 +36,7 @@ import pyarrow as pa
 from artemis.logger import Logger
 from artemis.core.algo import AbcAlgoBase
 from artemis.core.properties import JobProperties, Properties
-from cronus.io.protobuf.configuration_pb2 import Module as Algo_pb
+from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
 from artemis.errors import AbstractMethodError
 
 KILOBYTE = 1 << 10
