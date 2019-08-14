@@ -30,7 +30,7 @@ from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.meta.cronus import BaseObjectStore
-from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo 
+from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
 from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo, DatasetObjectInfo
 from artemis.io.protobuf.table_pb2 import Table
 from artemis.io.protobuf.configuration_pb2 import Configuration
@@ -95,13 +95,10 @@ class ArtemisTestCase(unittest.TestCase):
             menu_uuid = store.register_content(msgmenu, menuinfo).uuid
             config_uuid = store.register_content(config._msg, configinfo).uuid
             
-            #fileinfo = FileObjectInfo()
-            #fileinfo.type = 1
-            #fileinfo.aux.description = "Csv like data"
             g_dataset = store.register_dataset()
             store.new_partition(g_dataset.uuid, 'generator')
             job_id = store.new_job(g_dataset.uuid)
-            
+
             # define the schema for the data
             g_table = Table()
             g_table.name = 'generator'
@@ -109,24 +106,19 @@ class ArtemisTestCase(unittest.TestCase):
             g_table.info.schema.name = 'csv'
             g_table.info.schema.uuid = str(uuid.uuid4())
 
-            fields = list(itertools.islice(GenCsvLikeArrow.generate_col_names(),20))
+            fields = list(itertools.islice(
+                          GenCsvLikeArrow.generate_col_names(), 20))
             for f in fields:
                 field = g_table.info.schema.info.fields.add()
                 field.name = f
-            
+
             tinfo = TableObjectInfo()
             tinfo.fields.extend(fields)
-            store.register_content(g_table, 
-                                   tinfo, 
+            store.register_content(g_table,
+                                   tinfo,
                                    dataset_id=g_dataset.uuid,
                                    job_id=job_id,
                                    partition_key='generator')
-
-            #store.register_content(dirpath,
-            #                       fileinfo,
-            #                       dataset_id=g_dataset.uuid,
-            #                       partition_key='key',
-            #                       glob='*csv')
 
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
@@ -143,12 +135,10 @@ class ArtemisTestCase(unittest.TestCase):
             generator.initialize()
             generator.write()
 
-
             dataset = store.register_dataset(menu_uuid, config_uuid)
             job_id = store.new_job(dataset.uuid)
             store.save_store()
 
-            msg = config.job_config
             job = JobInfo_pb()
             job.name = 'arrowproto'
             job.job_id = 'example'
@@ -158,17 +148,13 @@ class ArtemisTestCase(unittest.TestCase):
             job.menu_id = menu_uuid
             job.config_id = config_uuid
             job.dataset_id = dataset.uuid
-            #job.config.CopyFrom(msg)
-            job.job_id = str(job_id) 
+            job.job_id = str(job_id)
             print(job)
             bow = Artemis(job, loglevel='INFO')
             bow.control()
-            #store = BaseObjectStore(dirpath, job.store_name, store_uuid=job.store_id)
-            
-            
+
             print(bow._jp.store[dataset.uuid])
             print(bow._jp.store[g_dataset.uuid])
-  
 
     def test_distributed(self):
         with tempfile.TemporaryDirectory() as dirpath:
@@ -176,11 +162,9 @@ class ArtemisTestCase(unittest.TestCase):
             msgmenu = mb.build()
             menuinfo = MenuObjectInfo()
             menuinfo.created.GetCurrentTime()
-            
+
             store = BaseObjectStore(dirpath, 'artemis')
-            
-            
-            
+
             config = JobConfigFactory('csvio', msgmenu,
                                       jobname='arrowproto',
                                       generator_type='file',
@@ -196,9 +180,7 @@ class ArtemisTestCase(unittest.TestCase):
             config.add_algos(mb.algos)
             configinfo = ConfigObjectInfo()
             configinfo.created.GetCurrentTime()
-            
-            #print(config.job_config.uuid)
-            
+
             menu_uuid = store.register_content(msgmenu, menuinfo).uuid
             config_obj = store.register_content(config._msg, configinfo)
             config_uuid = config_obj.uuid
@@ -206,7 +188,7 @@ class ArtemisTestCase(unittest.TestCase):
             g_dataset = store.register_dataset()
             store.new_partition(g_dataset.uuid, 'generator')
             job_id = store.new_job(g_dataset.uuid)
-            
+
             # define the schema for the data
             g_table = Table()
             g_table.name = 'generator'
@@ -214,15 +196,16 @@ class ArtemisTestCase(unittest.TestCase):
             g_table.info.schema.name = 'csv'
             g_table.info.schema.uuid = str(uuid.uuid4())
 
-            fields = list(itertools.islice(GenCsvLikeArrow.generate_col_names(),20))
+            fields = list(itertools.islice(
+                          GenCsvLikeArrow.generate_col_names(), 20))
             for f in fields:
                 field = g_table.info.schema.info.fields.add()
                 field.name = f
-            
+
             tinfo = TableObjectInfo()
             tinfo.fields.extend(fields)
-            store.register_content(g_table, 
-                                   tinfo, 
+            store.register_content(g_table,
+                                   tinfo,
                                    dataset_id=g_dataset.uuid,
                                    job_id=job_id,
                                    partition_key='generator')
@@ -242,14 +225,13 @@ class ArtemisTestCase(unittest.TestCase):
             generator.initialize()
             generator.write()
 
-
             dataset = store.register_dataset(menu_uuid, config_uuid)
             job_id = store.new_job(dataset.uuid)
             store.save_store()
-            
+
             #######################################
             inputs = store.list(prefix=g_dataset.uuid, suffix='csv')
-            
+
             store_name = store._name
             store_uuid = store.store_uuid
             dataset_uuid = dataset.uuid
@@ -264,20 +246,21 @@ class ArtemisTestCase(unittest.TestCase):
                 for p in config.input.generator.config.properties.property:
                     if p.name == 'glob':
                         p.value = dpath.split('.')[-2]+'.csv'
-                store._put_message(config_uuid,config)
+                store._put_message(config_uuid, config)
                 store.get(config_uuid, config)
                 print(config)
-                ds_results.append(runjob(dirpath, 
-                        store_name, 
-                        store_uuid,
-                        menu_uuid,
-                        config_uuid,
-                        dataset_uuid, 
-                        job_id))
-            
-            results = dask.compute(*ds_results,scheduler='single-threaded')
-            
-            # Update the dataset 
+                ds_results.append(runjob(dirpath,
+                                         store_name,
+                                         store_uuid,
+                                         menu_uuid,
+                                         config_uuid,
+                                         dataset_uuid,
+                                         g_dataset.uuid,
+                                         job_id))
+
+            results = dask.compute(*ds_results, scheduler='single-threaded')
+
+            # Update the dataset
             for buf in results:
                 ds = DatasetObjectInfo()
                 ds.ParseFromString(buf)
@@ -288,7 +271,6 @@ class ArtemisTestCase(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    #unittest.main()
     test = ArtemisTestCase()
-    #test.test_distributed()
+    test.test_distributed()
     test.test_fileio()

@@ -25,6 +25,7 @@ class JobBuilder():
                  menu_uuid,
                  config_uuid,
                  dataset_uuid,
+                 parentset_uuid,
                  job_id):
 
         self.job = JobInfo_pb()
@@ -36,6 +37,7 @@ class JobBuilder():
         self.job.menu_id = menu_uuid
         self.job.config_id = config_uuid
         self.job.dataset_id = dataset_uuid
+        self.job.parentset_id = parentset_uuid
         self.job.job_id = str(job_id)
 
     def execute(self):
@@ -52,6 +54,7 @@ def runjob(dirpath,
            menu_uuid,
            config_uuid,
            dataset_uuid,
+           parentset_uuid,
            job_id):
 
     runner = JobBuilder(dirpath,
@@ -60,6 +63,7 @@ def runjob(dirpath,
                         menu_uuid,
                         config_uuid,
                         dataset_uuid,
+                        parentset_uuid,
                         job_id)
     msg = runner.execute()
     return msg
