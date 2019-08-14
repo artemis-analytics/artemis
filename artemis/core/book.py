@@ -454,6 +454,7 @@ class TDigestBook(BaseBook):
             # Delicate the Centroid_map object which we will then populate with the values of the
             current_centroid = protobuf_instance.centroids.add()                 
             try:
+                current_centroid.c = centroids_and_weights_map[i]["c"]
                 current_centroid.m = centroids_and_weights_map[i]["m"]
             except:
                 self.__logger.error("Error: unable to add centroids")
@@ -491,19 +492,19 @@ class TDigestBook(BaseBook):
 
         content = collections.OrderedDict((n, self._digest_from_protobuf(v))
                                           for n, v in msg.digest_map.items())
-
         return self.__class__.load_from_dicts(content)
 
     def _to_message(self):
         store = TDigest_store()
         for n, x in self:
-            #store.digest_map[n] = TDigest_instance()
             store.digest_map[n].CopyFrom(self._digest_to_protobuf(x, n))
 
         return store 
-
-    def load(self, fname):
+    
+    @classmethod
+    def load(cls, fname):
         msg = TDigest_store() 
+        out = cls.__new__(cls)
         try:
             with open(fname, 'rb') as f:
                 msg.ParseFromString(f.read())
@@ -511,7 +512,11 @@ class TDigestBook(BaseBook):
             print("Cannot read collections")
         except Exception:
             raise
-        return self._from_message(msg)
+        try:
+            return out._from_message(msg)
+        except:
+            print("Fail to load from msg")
+            raise
 
     def finalize(self, fname):
         try:
