@@ -72,6 +72,7 @@ test:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
     - cd fwfr; ./install.sh --source; cd ..
     - conda install -y coverage simplekv dask pygraphviz
+    - pip install xlrd
     - python setup.py build_ext --inplace \install
     - python -m unittest
   only:

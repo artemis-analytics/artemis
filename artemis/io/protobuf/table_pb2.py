@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='cronus',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x0btable.proto\x12\x06\x63ronus\"D\n\x05Table\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\x12\x1f\n\x04info\x18\x03 \x01(\x0b\x32\x11.cronus.TableInfo\"a\n\tTableInfo\x12!\n\x03\x61ux\x18\x01 \x01(\x0b\x32\x14.cronus.TableAuxInfo\x12\x1e\n\x06schema\x18\x02 \x01(\x0b\x32\x0e.cronus.Schema\x12\x11\n\tpartition\x18\x03 \x01(\t\"e\n\x0cTableAuxInfo\x12$\n\tduplicate\x18\x01 \x01(\x0b\x32\x11.cronus.Duplicate\x12/\n\x0frecord_modifier\x18\x02 \x01(\x0b\x32\x16.cronus.RecordModifier\"F\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\x12 \n\x04info\x18\x03 \x01(\x0b\x32\x12.cronus.SchemaInfo\"O\n\nSchemaInfo\x12\"\n\x03\x61ux\x18\x01 \x01(\x0b\x32\x15.cronus.SchemaAuxInfo\x12\x1d\n\x06\x66ields\x18\x02 \x03(\x0b\x32\r.cronus.Field\"\xb0\x01\n\rSchemaAuxInfo\x12\x13\n\x0b\x64\x65scription\x18\x01 \x01(\t\x12\x12\n\nraw_header\x18\x02 \x01(\x0c\x12\x12\n\nraw_footer\x18\x03 \x01(\x0c\x12\x1d\n\x15raw_header_size_bytes\x18\x04 \x01(\x04\x12\x1d\n\x15raw_footer_size_bytes\x18\x05 \x01(\x04\x12$\n\tfrequency\x18\x06 \x01(\x0e\x32\x11.cronus.Frequency\"D\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\x12\x1f\n\x04info\x18\x03 \x01(\x0b\x32\x11.cronus.FieldInfo\"^\n\tFieldInfo\x12!\n\x03\x61ux\x18\x01 \x01(\x0b\x32\x14.cronus.FieldAuxInfo\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x10\n\x08nullable\x18\x03 \x01(\x08\x12\x0e\n\x06length\x18\x04 \x01(\x05\"\xe8\x01\n\x0c\x46ieldAuxInfo\x12\x13\n\x0b\x64\x65scription\x18\x01 \x01(\t\x12,\n\x04meta\x18\x02 \x03(\x0b\x32\x1e.cronus.FieldAuxInfo.MetaEntry\x12 \n\x07\x63odeset\x18\x07 \x01(\x0b\x32\x0f.cronus.Codeset\x12$\n\tgenerator\x18\x03 \x01(\x0b\x32\x11.cronus.Generator\x12\x11\n\tdependent\x18\x06 \x01(\t\x1a:\n\tMetaEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x1c\n\x05value\x18\x02 \x01(\x0b\x32\r.cronus.Value:\x02\x38\x01\"\x84\x01\n\x05Value\x12\x13\n\x0b\x64\x65scription\x18\x01 \x01(\t\x12\x1e\n\x08null_val\x18\x02 \x01(\x0e\x32\x0c.cronus.Null\x12\x0f\n\x07int_val\x18\x03 \x01(\x05\x12\x12\n\nstring_val\x18\x04 \x01(\t\x12\x10\n\x08\x62ool_val\x18\x05 \x01(\x08\x12\x0f\n\x07\x64\x65\x63_val\x18\x06 \x01(\x02\"O\n\x07\x43odeset\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12%\n\ncodevalues\x18\x03 \x03(\x0b\x32\x11.cronus.Codevalue\"M\n\tCodevalue\x12\x0c\n\x04\x63ode\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\r\n\x05lable\x18\x03 \x01(\t\x12\x0e\n\x06others\x18\x04 \x03(\t\"@\n\tGenerator\x12\x0c\n\x04name\x18\x01 \x01(\t\x12%\n\nparameters\x18\x02 \x03(\x0b\x32\x11.cronus.Parameter\"W\n\tParameter\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x1f\n\x08variable\x18\x04 \x01(\x0b\x32\r.cronus.Field\"G\n\tDuplicate\x12\x13\n\x0bprobability\x18\x01 \x01(\x02\x12\x14\n\x0c\x64istribution\x18\x02 \x01(\t\x12\x0f\n\x07maximum\x18\x03 \x01(\x05\"\x92\x01\n\x0eRecordModifier\x12#\n\x1bmax_modifications_in_record\x18\x01 \x01(\x05\x12\x1b\n\x13max_field_modifiers\x18\x02 \x01(\x05\x12\x1c\n\x14max_record_modifiers\x18\x03 \x01(\x05\x12 \n\x06\x66ields\x18\x04 \x03(\x0b\x32\x10.cronus.Modifier\"a\n\x08Modifier\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x11\n\tselection\x18\x02 \x01(\x02\x12\x34\n\rprobabilities\x18\x03 \x01(\x0b\x32\x1d.cronus.ModifierProbabilities\"\xcc\x01\n\x15ModifierProbabilities\x12\x0e\n\x06insert\x18\x01 \x01(\x02\x12\x0e\n\x06\x64\x65lete\x18\x02 \x01(\x02\x12\x12\n\nsubstitute\x18\x03 \x01(\x02\x12\x10\n\x08misspell\x18\x04 \x01(\x02\x12\x11\n\ttranspose\x18\x05 \x01(\x02\x12\x0f\n\x07replace\x18\x06 \x01(\x02\x12\x0c\n\x04swap\x18\x07 \x01(\x02\x12\r\n\x05split\x18\x08 \x01(\x02\x12\r\n\x05merge\x18\t \x01(\x02\x12\x0f\n\x07nullify\x18\n \x01(\x02\x12\x0c\n\x04\x66ill\x18\x0b \x01(\x02*V\n\tFrequency\x12\x08\n\x04NONE\x10\x00\x12\t\n\x05\x44\x41ILY\x10\x01\x12\n\n\x06WEEKLY\x10\x02\x12\x0b\n\x07MONTHLY\x10\x03\x12\r\n\tQUARTERLY\x10\x04\x12\x0c\n\x08\x41NNUALLY\x10\x05*\x10\n\x04Null\x12\x08\n\x04NULL\x10\x00\x62\x06proto3')
+  serialized_pb=_b('\n\x0btable.proto\x12\x06\x63ronus\"D\n\x05Table\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\x12\x1f\n\x04info\x18\x03 \x01(\x0b\x32\x11.cronus.TableInfo\"a\n\tTableInfo\x12!\n\x03\x61ux\x18\x01 \x01(\x0b\x32\x14.cronus.TableAuxInfo\x12\x1e\n\x06schema\x18\x02 \x01(\x0b\x32\x0e.cronus.Schema\x12\x11\n\tpartition\x18\x03 \x01(\t\"e\n\x0cTableAuxInfo\x12$\n\tduplicate\x18\x01 \x01(\x0b\x32\x11.cronus.Duplicate\x12/\n\x0frecord_modifier\x18\x02 \x01(\x0b\x32\x16.cronus.RecordModifier\"F\n\x06Schema\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\x12 \n\x04info\x18\x03 \x01(\x0b\x32\x12.cronus.SchemaInfo\"O\n\nSchemaInfo\x12\"\n\x03\x61ux\x18\x01 \x01(\x0b\x32\x15.cronus.SchemaAuxInfo\x12\x1d\n\x06\x66ields\x18\x02 \x03(\x0b\x32\r.cronus.Field\"\xb0\x01\n\rSchemaAuxInfo\x12\x13\n\x0b\x64\x65scription\x18\x01 \x01(\t\x12\x12\n\nraw_header\x18\x02 \x01(\x0c\x12\x12\n\nraw_footer\x18\x03 \x01(\x0c\x12\x1d\n\x15raw_header_size_bytes\x18\x04 \x01(\x04\x12\x1d\n\x15raw_footer_size_bytes\x18\x05 \x01(\x04\x12$\n\tfrequency\x18\x06 \x01(\x0e\x32\x11.cronus.Frequency\"D\n\x05\x46ield\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0c\n\x04uuid\x18\x02 \x01(\t\x12\x1f\n\x04info\x18\x03 \x01(\x0b\x32\x11.cronus.FieldInfo\"^\n\tFieldInfo\x12!\n\x03\x61ux\x18\x01 \x01(\x0b\x32\x14.cronus.FieldAuxInfo\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x10\n\x08nullable\x18\x03 \x01(\x08\x12\x0e\n\x06length\x18\x04 \x01(\x05\"\xe8\x01\n\x0c\x46ieldAuxInfo\x12\x13\n\x0b\x64\x65scription\x18\x01 \x01(\t\x12,\n\x04meta\x18\x02 \x03(\x0b\x32\x1e.cronus.FieldAuxInfo.MetaEntry\x12 \n\x07\x63odeset\x18\x07 \x01(\x0b\x32\x0f.cronus.Codeset\x12$\n\tgenerator\x18\x03 \x01(\x0b\x32\x11.cronus.Generator\x12\x11\n\tdependent\x18\x06 \x01(\t\x1a:\n\tMetaEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x1c\n\x05value\x18\x02 \x01(\x0b\x32\r.cronus.Value:\x02\x38\x01\"\x84\x01\n\x05Value\x12\x13\n\x0b\x64\x65scription\x18\x01 \x01(\t\x12\x1e\n\x08null_val\x18\x02 \x01(\x0e\x32\x0c.cronus.Null\x12\x0f\n\x07int_val\x18\x03 \x01(\x05\x12\x12\n\nstring_val\x18\x04 \x01(\t\x12\x10\n\x08\x62ool_val\x18\x05 \x01(\x08\x12\x0f\n\x07\x64\x65\x63_val\x18\x06 \x01(\x02\"O\n\x07\x43odeset\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x0f\n\x07version\x18\x02 \x01(\t\x12%\n\ncodevalues\x18\x03 \x03(\x0b\x32\x11.cronus.Codevalue\"\xaa\x01\n\tCodevalue\x12\x0c\n\x04\x63ode\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\r\n\x05lable\x18\x03 \x01(\t\x12-\n\x06others\x18\x04 \x03(\x0b\x32\x1d.cronus.Codevalue.OthersEntry\x1a<\n\x0bOthersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x1c\n\x05value\x18\x02 \x01(\x0b\x32\r.cronus.Value:\x02\x38\x01\"@\n\tGenerator\x12\x0c\n\x04name\x18\x01 \x01(\t\x12%\n\nparameters\x18\x02 \x03(\x0b\x32\x11.cronus.Parameter\"W\n\tParameter\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x02\x12\x0c\n\x04type\x18\x03 \x01(\t\x12\x1f\n\x08variable\x18\x04 \x01(\x0b\x32\r.cronus.Field\"G\n\tDuplicate\x12\x13\n\x0bprobability\x18\x01 \x01(\x02\x12\x14\n\x0c\x64istribution\x18\x02 \x01(\t\x12\x0f\n\x07maximum\x18\x03 \x01(\x05\"\x92\x01\n\x0eRecordModifier\x12#\n\x1bmax_modifications_in_record\x18\x01 \x01(\x05\x12\x1b\n\x13max_field_modifiers\x18\x02 \x01(\x05\x12\x1c\n\x14max_record_modifiers\x18\x03 \x01(\x05\x12 \n\x06\x66ields\x18\x04 \x03(\x0b\x32\x10.cronus.Modifier\"a\n\x08Modifier\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x11\n\tselection\x18\x02 \x01(\x02\x12\x34\n\rprobabilities\x18\x03 \x01(\x0b\x32\x1d.cronus.ModifierProbabilities\"\xcc\x01\n\x15ModifierProbabilities\x12\x0e\n\x06insert\x18\x01 \x01(\x02\x12\x0e\n\x06\x64\x65lete\x18\x02 \x01(\x02\x12\x12\n\nsubstitute\x18\x03 \x01(\x02\x12\x10\n\x08misspell\x18\x04 \x01(\x02\x12\x11\n\ttranspose\x18\x05 \x01(\x02\x12\x0f\n\x07replace\x18\x06 \x01(\x02\x12\x0c\n\x04swap\x18\x07 \x01(\x02\x12\r\n\x05split\x18\x08 \x01(\x02\x12\r\n\x05merge\x18\t \x01(\x02\x12\x0f\n\x07nullify\x18\n \x01(\x02\x12\x0c\n\x04\x66ill\x18\x0b \x01(\x02*V\n\tFrequency\x12\x08\n\x04NONE\x10\x00\x12\t\n\x05\x44\x41ILY\x10\x01\x12\n\n\x06WEEKLY\x10\x02\x12\x0b\n\x07MONTHLY\x10\x03\x12\r\n\tQUARTERLY\x10\x04\x12\x0c\n\x08\x41NNUALLY\x10\x05*\x10\n\x04Null\x12\x08\n\x04NULL\x10\x00\x62\x06proto3')
 )
 
 _FREQUENCY = _descriptor.EnumDescriptor(
@@ -57,8 +57,8 @@ _FREQUENCY = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2006,
-  serialized_end=2092,
+  serialized_start=2100,
+  serialized_end=2186,
 )
 _sym_db.RegisterEnumDescriptor(_FREQUENCY)
 
@@ -76,8 +76,8 @@ _NULL = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=2094,
-  serialized_end=2110,
+  serialized_start=2188,
+  serialized_end=2204,
 )
 _sym_db.RegisterEnumDescriptor(_NULL)
 
@@ -673,6 +673,43 @@ _CODESET = _descriptor.Descriptor(
 )
 
 
+_CODEVALUE_OTHERSENTRY = _descriptor.Descriptor(
+  name='OthersEntry',
+  full_name='cronus.Codevalue.OthersEntry',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='key', full_name='cronus.Codevalue.OthersEntry.key', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='value', full_name='cronus.Codevalue.OthersEntry.value', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=_b('8\001'),
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=1355,
+  serialized_end=1415,
+)
+
 _CODEVALUE = _descriptor.Descriptor(
   name='Codevalue',
   full_name='cronus.Codevalue',
@@ -703,7 +740,7 @@ _CODEVALUE = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='others', full_name='cronus.Codevalue.others', index=3,
-      number=4, type=9, cpp_type=9, label=3,
+      number=4, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -711,7 +748,7 @@ _CODEVALUE = _descriptor.Descriptor(
   ],
   extensions=[
   ],
-  nested_types=[],
+  nested_types=[_CODEVALUE_OTHERSENTRY, ],
   enum_types=[
   ],
   serialized_options=None,
@@ -720,8 +757,8 @@ _CODEVALUE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1244,
-  serialized_end=1321,
+  serialized_start=1245,
+  serialized_end=1415,
 )
 
 
@@ -758,8 +795,8 @@ _GENERATOR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1323,
-  serialized_end=1387,
+  serialized_start=1417,
+  serialized_end=1481,
 )
 
 
@@ -810,8 +847,8 @@ _PARAMETER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1389,
-  serialized_end=1476,
+  serialized_start=1483,
+  serialized_end=1570,
 )
 
 
@@ -855,8 +892,8 @@ _DUPLICATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1478,
-  serialized_end=1549,
+  serialized_start=1572,
+  serialized_end=1643,
 )
 
 
@@ -907,8 +944,8 @@ _RECORDMODIFIER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1552,
-  serialized_end=1698,
+  serialized_start=1646,
+  serialized_end=1792,
 )
 
 
@@ -952,8 +989,8 @@ _MODIFIER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1700,
-  serialized_end=1797,
+  serialized_start=1794,
+  serialized_end=1891,
 )
 
 
@@ -1053,8 +1090,8 @@ _MODIFIERPROBABILITIES = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1800,
-  serialized_end=2004,
+  serialized_start=1894,
+  serialized_end=2098,
 )
 
 _TABLE.fields_by_name['info'].message_type = _TABLEINFO
@@ -1075,6 +1112,9 @@ _FIELDAUXINFO.fields_by_name['codeset'].message_type = _CODESET
 _FIELDAUXINFO.fields_by_name['generator'].message_type = _GENERATOR
 _VALUE.fields_by_name['null_val'].enum_type = _NULL
 _CODESET.fields_by_name['codevalues'].message_type = _CODEVALUE
+_CODEVALUE_OTHERSENTRY.fields_by_name['value'].message_type = _VALUE
+_CODEVALUE_OTHERSENTRY.containing_type = _CODEVALUE
+_CODEVALUE.fields_by_name['others'].message_type = _CODEVALUE_OTHERSENTRY
 _GENERATOR.fields_by_name['parameters'].message_type = _PARAMETER
 _PARAMETER.fields_by_name['variable'].message_type = _FIELD
 _RECORDMODIFIER.fields_by_name['fields'].message_type = _MODIFIER
@@ -1187,11 +1227,19 @@ Codeset = _reflection.GeneratedProtocolMessageType('Codeset', (_message.Message,
 _sym_db.RegisterMessage(Codeset)
 
 Codevalue = _reflection.GeneratedProtocolMessageType('Codevalue', (_message.Message,), dict(
+
+  OthersEntry = _reflection.GeneratedProtocolMessageType('OthersEntry', (_message.Message,), dict(
+    DESCRIPTOR = _CODEVALUE_OTHERSENTRY,
+    __module__ = 'table_pb2'
+    # @@protoc_insertion_point(class_scope:cronus.Codevalue.OthersEntry)
+    ))
+  ,
   DESCRIPTOR = _CODEVALUE,
   __module__ = 'table_pb2'
   # @@protoc_insertion_point(class_scope:cronus.Codevalue)
   ))
 _sym_db.RegisterMessage(Codevalue)
+_sym_db.RegisterMessage(Codevalue.OthersEntry)
 
 Generator = _reflection.GeneratedProtocolMessageType('Generator', (_message.Message,), dict(
   DESCRIPTOR = _GENERATOR,
@@ -1237,4 +1285,5 @@ _sym_db.RegisterMessage(ModifierProbabilities)
 
 
 _FIELDAUXINFO_METAENTRY._options = None
+_CODEVALUE_OTHERSENTRY._options = None
 # @@protoc_insertion_point(module_scope)

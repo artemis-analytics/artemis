@@ -130,7 +130,7 @@ message Codevalue {
   string code = 1; // Code = variable value
   string description = 2; // Meaning of the code
   string lable = 3; // Lable of the code, not always required
-  repeated string others = 4; // Other additional information that user wish to add
+  map<string, Value> others = 4; // Other additional information that user wish to add
 }
 
 /**
