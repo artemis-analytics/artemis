@@ -577,7 +577,32 @@ class GraphMenu():
         
         #self.__logger.debug(pformat(self._ordered_sequence))
 
+    def get_leaves(self) -> List:
+        '''
+        This fucntion returns a list of the leaf nodes of a Directed_Graph
+
+        Input: self object
+        Return: List of str, each bieng the id of a leaf node, in no specified order
+        '''
+
+        if not self._attempted_built: raise ValueError("Cannot get leaves from unbuilt graph")
+
+        leaves = []
         
+        # A set for each node that is a parent node
+        parents = set()
+
+        # Iterate over each of the nodes in the graph and populate the parent set
+        for key in self._ordered_sequence:
+            for parent in self._ordered_sequence[key].parents:
+                parents.add(parent)
+
+        for key in self._ordered_sequence:
+            if not key in parents:
+                leaves.append(key)
+
+        return leaves
+ 
             
     def to_graph(self) -> OrderedDict:
         '''
