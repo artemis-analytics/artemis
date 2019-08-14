@@ -96,11 +96,14 @@ class ProfilerAlgo(AlgoBase):
 
     def finalize(self):
         self.__logger.info("Completed Profiling")
-        print(self.digests)
+        #print(self.digests)
         for key, value in self.digests.items():
+            #print(key, value)
             self._jp.tbook[key] = value
+            #if key == 'Normal':
+                #print(value.centroids_to_list())
             if len(value.centroids_to_list()) == 0:
-                print(key + " is not a numeric value and does not have a TDigest")
+                self.__logger.warning(key + " is not a numeric value and does not have a TDigest")
             else:
                 '''
                 print("Column name: " + key)

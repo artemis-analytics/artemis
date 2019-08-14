@@ -427,6 +427,13 @@ class BaseObjectStore(BaseBook):
             self[_new.uuid] = _new
             objs.append(MetaObject(_new.name, _new.uuid,
                                    _new.parent_uuid, _new.address))
+        
+        for obj in _update.tdigests:
+            _new = self[dataset_id].dataset.tdigests.add()
+            _new.CopyFrom(obj)
+            self[_new.uuid] = _new
+            objs.append(MetaObject(_new.name, _new.uuid,
+                                   _new.parent_uuid, _new.address))
         for obj in _update.files:
             _new = self[dataset_id].dataset.files.add()
             _new.CopyFrom(obj)
@@ -575,6 +582,9 @@ class BaseObjectStore(BaseBook):
 
     def list_jobs(self, dataset_id):
         return self[dataset_id].dataset.jobs
+    
+    def list_tdigests(self, dataset_id):
+        return self[dataset_id].dataset.tdigests
 
     def _compute_hash(self, stream):
         hashobj = hashlib.new(self._algorithm)

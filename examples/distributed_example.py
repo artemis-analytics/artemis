@@ -23,6 +23,8 @@ from artemis.algorithms.profileralgo import ProfilerAlgo
 import dask.delayed
 import tempfile
 import uuid
+import urllib.parse
+import logging
 
 from artemis.configurables.configurable import MenuBuilder
 from artemis.distributed.job_builder import runjob
@@ -35,10 +37,10 @@ from artemis.io.filehandler import FileHandlerTool
 from artemis.io.writer import BufferOutputWriter
 from artemis.meta.cronus import BaseObjectStore
 from artemis.meta.Directed_Graph import Directed_Graph, Node
-
+from artemis.core.book import TDigestBook
 # ------------------------------------------
 
-
+logging.getLogger().setLevel(logging.INFO)
 def example_configuration(table_id, seed=42):
     # First define a data generator using SimuTable
 
@@ -103,6 +105,10 @@ def example_configuration(table_id, seed=42):
                                 write_csv=write_csv)
     writertoolmsg = config.tools.add()
     writertoolmsg.CopyFrom(writer.to_msg())
+    
+    tdigesttool = TDigestTool('tdigesttool')
+    tdigesttoolmsg = config.tools.add()
+    tdigesttoolmsg.CopyFrom(tdigesttool.to_msg())
 
     sampler = config.sampler
     sampler.ndatums = sample_ndatums
@@ -125,6 +131,8 @@ class ExampleMenu(MenuBuilder):
         self._algos['csvalgo'] = CsvParserAlgo('csvparser', loglevel='WARNING')
         self._algos['filteralgo'] = FilterAlgo('filter',
                                                loglevel='WARNING')
+        self._algos['profileralgo'] = ProfilerAlgo('profiler',
+                                               loglevel='WARNING')
 
     def _seq_builder(self):
         # Define the sequences and node names
@@ -135,7 +143,7 @@ class ExampleMenu(MenuBuilder):
                                   ('filter',),
                                   "seqY")
         self._seqs['seqA'] = Node(['seqX'],
-                                  ('dummy'),
+                                  ('profiler'),
                                   'seqA')
         self._seqs['seqB'] = Node(['seqY'],
                                   ('dummy'),
@@ -218,6 +226,12 @@ def example_table():
     field10.info.type = 'String'
     field10.info.length = 11
     field10.info.aux.generator.name = 'phone_number'
+    
+    field11 = schema.fields.add()
+    field11.name = 'Normal'
+    field11.info.type = 'String'
+    field11.info.length = 11
+    field11.info.aux.generator.name = 'normal'
 
     return table
 
@@ -304,7 +318,7 @@ def example_job():
         inputs = store.list(prefix=g_dataset.uuid)
 
         ds_results = []
-        for datum in inputs:
+        for _ in range(2):
             job_id = store.new_job(dataset.uuid)
             config = Configuration()
             store.get(config_uuid, config)
@@ -324,14 +338,24 @@ def example_job():
                                      str(job_id)))
 
         results = dask.compute(*ds_results, scheduler='single-threaded')
-
+        store.new_partition(dataset.uuid, 'seqA')
+        store.new_partition(dataset.uuid, 'seqB')
+        store.save_store()
         for buf in results:
             ds = DatasetObjectInfo()
             ds.ParseFromString(buf)
             store.update_dataset(dataset.uuid, buf)
 
         store.save_store()
-        print(store[dataset.uuid].dataset)
+        #print(store[dataset.uuid].dataset)
+        tds = store.list_tdigests(dataset.uuid)
+        for td in tds:
+            book = TDigestBook()
+            url_data = urllib.parse.urlparse(td.address)
+            location = urllib.parse.unquote(url_data.path)
+            book = TDigestBook.load(location)
+            print(book['Normal'].centroids_to_list())
+            
 
 if __name__ == '__main__':
     example_job()
