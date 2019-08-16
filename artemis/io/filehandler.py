@@ -100,7 +100,7 @@ class FileHandlerTool(AlgoBase):
         self.exec_dict['ipc'] = self.exec_ipc
 
         # JobProperties
-        # self._jp = None
+        # self.gate = None
 
     def initialize(self):
         self.__logger.info("%s properties: %s",
@@ -110,7 +110,7 @@ class FileHandlerTool(AlgoBase):
             self.__logger.error("Unknown filetype %s", self.filetype)
             raise ValueError
 
-        # self._jp = JobProperties()
+        # self.gate = JobProperties()
 
     @property
     def size_bytes(self):
@@ -263,7 +263,7 @@ class FileHandlerTool(AlgoBase):
     def prepare_ipc(self, filepath_or_buffer):
         try:
             # reader = pa.ipc.open_file(filepath_or_buffer)
-            reader = self._jp.store.open(filepath_or_buffer)
+            reader = self.gate.store.open(filepath_or_buffer)
         except Exception:
             raise
 
@@ -322,13 +322,13 @@ class FileHandlerTool(AlgoBase):
     def execute(self, filepath_or_buffer):
 
         self.__logger.info("Prepare input stream %s", filepath_or_buffer)
-        self._jp.current_file = filepath_or_buffer
+        self.gate.current_file = filepath_or_buffer
         if self.filetype == 'ipc':  # or self.filetype == 'sas':
             stream = filepath_or_buffer
-            # stream = self._jp.store.open(filepath_or_buffer)
+            # stream = self.gate.store.open(filepath_or_buffer)
         else:
             # stream = pa.input_stream(filepath_or_buffer)
-            stream = self._jp.store.open(filepath_or_buffer)
+            stream = self.gate.store.open(filepath_or_buffer)
             if stream.tell() != 0:
                 stream.seek(0)
 
@@ -363,14 +363,15 @@ class FileHandlerTool(AlgoBase):
                              self.num_rows)
 
     def _build_table_from_file(self, file_id):
-        ds_id = self._jp.store[file_id].parent_uuid
-        pkey = self._jp.store[file_id].file.partition
-        job_id = self._jp.meta.job_id
+        ds_id = self.gate.store[file_id].parent_uuid
+        pkey = self.gate.store[file_id].file.partition
+        job_id = self.gate.meta.job_id
 
         table = Table()
         table.uuid = str(uuid.uuid4())
         table.name = \
-            f"{ds_id}.job_{job_id}.part_{pkey}.file_{file_id}.{table.uuid}.table.pb"
+            f"{ds_id}.job_{job_id}.part_{pkey}."
+        "file_{file_id}.{table.uuid}.table.pb"
         tinfo = TableObjectInfo()
 
         table.info.schema.info.aux.raw_header_size_bytes = self.header_offset
@@ -385,27 +386,27 @@ class FileHandlerTool(AlgoBase):
                     a_col.name = col
                 tinfo.fields.append(a_col.name)
 
-        self._jp.store.register_content(table,
-                                        tinfo,
-                                        dataset_id=ds_id,
-                                        partition_key=pkey,
-                                        job_id=job_id)
+        self.gate.store.register_content(table,
+                                         tinfo,
+                                         dataset_id=ds_id,
+                                         partition_key=pkey,
+                                         job_id=job_id)
 
     def _update(self, filepath_or_buffer):
 
         self.__logger.info("Update input datum metadata id: %s",
-                           self._jp.store[filepath_or_buffer])
-        self._jp.store[filepath_or_buffer].file.size_bytes = self._size
-        
+                           self.gate.store[filepath_or_buffer])
+        self.gate.store[filepath_or_buffer].file.size_bytes = self._size
+
         # Update datum input count
-        self._jp.meta.summary.processed_ndatums += 1
+        self.gate.meta.summary.processed_ndatums += 1
 
         # Build the table schema from the input file
         self._build_table_from_file(filepath_or_buffer)
 
         # Record the blocks chunked from input datum
         for i, block in enumerate(self.blocks):
-            msg = self._jp.store[filepath_or_buffer].file.blocks.add()
+            msg = self.gate.store[filepath_or_buffer].file.blocks.add()
             msg.index = i
             msg.info.offset = block[0]
             msg.info.size_bytes = block[1]

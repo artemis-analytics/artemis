@@ -18,9 +18,8 @@ from artemis.io.collector import Collector
 from artemis.core.tree import Tree, Node, Element
 from artemis.core.datastore import ArrowSets
 from artemis.core.singleton import Singleton
-from artemis.core.tool import ToolStore
 from artemis.io.writer import BufferOutputWriter 
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.meta.cronus import BaseObjectStore
 from artemis.meta.Directed_Graph import Directed_Graph
 from artemis.meta.Directed_Graph import GraphMenu 
@@ -36,10 +35,8 @@ class CollectorTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        Singleton.reset(ToolStore)
-        Singleton.reset(JobProperties)
+        Singleton.reset(ArtemisGateSvc)
     
     def getmenu(self):
         seq1 = Node_pb2(["initial"], ("alg1", "alg2"), "seq1")
@@ -71,6 +68,8 @@ class CollectorTestCase(unittest.TestCase):
                     test_tree.add_node(Node(node.name, node.parents))
         test_tree.update_parents()
         test_tree.update_leaves()
+        jp = ArtemisGateSvc() 
+        jp.tree = test_tree
 
     def setupStore(self, dirpath):
         store = BaseObjectStore(dirpath, 'artemis')
@@ -82,10 +81,8 @@ class CollectorTestCase(unittest.TestCase):
 
 
     def tearDown(self):
-        Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
-        Singleton.reset(ToolStore)
-        Singleton.reset(JobProperties)
+        Singleton.reset(ArtemisGateSvc)
 
         pass
     
@@ -100,7 +97,7 @@ class CollectorTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
             self.getmenu()        
-            jp = JobProperties()
+            jp = ArtemisGateSvc() 
             jp.store = store
             jp.meta.dataset_id = ds_id
             
@@ -116,9 +113,9 @@ class CollectorTestCase(unittest.TestCase):
                 'c': [3, 6],
                 }
             batches = table.to_batches()
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
             
 
             collector = Collector('collect', job_id=job_id, path='')
@@ -126,12 +123,12 @@ class CollectorTestCase(unittest.TestCase):
                     collector.initialize()
 
             writer = BufferOutputWriter('bufferwriter')
-            msg = JobProperties().config.tools.add()
+            msg = jp.config.tools.add()
             msg.CopyFrom(writer.to_msg())
             collector.initialize()
 
-            for leaf in Tree().leaves:
-                name = ToolStore().get('writer_'+leaf).name
+            for leaf in jp.tree.leaves:
+                name = jp.tools.get('writer_'+leaf).name
                 self.assertEqual(name, 'writer_'+leaf)
 
             self.assertEqual(ArrowSets().is_empty(), True)
@@ -141,7 +138,7 @@ class CollectorTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
             self.getmenu() 
-            jp = JobProperties()
+            jp = ArtemisGateSvc() 
             jp.store = store
             jp.meta.dataset_id = ds_id
             rows = b"a,b,c\n1,2,3\n4,5,6\n"
@@ -156,22 +153,22 @@ class CollectorTestCase(unittest.TestCase):
                 'c': [3, 6],
                 }
             batches = table.to_batches()
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
 
             collector = Collector('collect', job_id='job', path='')
 
             writer = BufferOutputWriter('bufferwriter')
-            msg = JobProperties().config.tools.add()
+            msg = jp.config.tools.add()
             msg.CopyFrom(writer.to_msg())
             collector.initialize()
             with self.assertRaises(IndexError):
                 collector._collect()
             
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
             
             collector._collect()
             self.assertEqual(ArrowSets().is_empty(), True)
@@ -179,9 +176,9 @@ class CollectorTestCase(unittest.TestCase):
             rows = b"d,e,f\n1,2,3\n4,5,6\n"
             table = read_csv(pa.py_buffer(rows))
             batches = table.to_batches()
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
 
             with self.assertRaises(ValueError):
                 collector._collect()
@@ -190,7 +187,7 @@ class CollectorTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
             self.getmenu()
-            jp = JobProperties()
+            jp = ArtemisGateSvc() 
             jp.store = store
             jp.meta.dataset_id = ds_id
         
@@ -206,22 +203,22 @@ class CollectorTestCase(unittest.TestCase):
                 'c': [3, 6],
                 }
             batches = table.to_batches()
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
 
             collector = Collector('collect', job_id='job', path='', max_malloc=0)
 
             writer = BufferOutputWriter('bufferwriter')
-            msg = JobProperties().config.tools.add()
+            msg = jp.config.tools.add()
             msg.CopyFrom(writer.to_msg())
             collector.initialize()
             with self.assertRaises(IndexError):
                 collector.execute()
             
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
             
             collector._collect()
             self.assertEqual(ArrowSets().is_empty(), True)
@@ -229,9 +226,9 @@ class CollectorTestCase(unittest.TestCase):
             rows = b"d,e,f\n1,2,3\n4,5,6\n"
             table = read_csv(pa.py_buffer(rows))
             batches = table.to_batches()
-            for leaf in Tree().leaves:
-                Tree().nodes[leaf].payload.append(Element('test'))
-                Tree().nodes[leaf].payload[-1].add_data(batches[-1])
+            for leaf in jp.tree.leaves:
+                jp.tree.nodes[leaf].payload.append(Element('test'))
+                jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
 
             with self.assertRaises(ValueError):
                 collector.execute()

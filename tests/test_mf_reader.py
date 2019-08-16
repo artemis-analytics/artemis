@@ -14,13 +14,10 @@ import tempfile
 import os
 import uuid
 
-from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
-from artemis.core.physt_wrapper import Physt_Wrapper
-from artemis.core.timerstore import TimerSvc
 from artemis.artemis import Artemis, ArtemisFactory
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.tools.mftool import MfTool
 from artemis.tools.fwftool import FwfTool
 from artemis.generators.legacygen import GenMF
@@ -135,18 +132,12 @@ class Test_MF_Reader(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
     
     def tearDown(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
     
     def test_mf_reader(self):
         '''
@@ -299,7 +290,7 @@ class Test_MF_Reader(unittest.TestCase):
             job.job_id = str(job_id) 
             bow = Artemis(job, loglevel='INFO')
             bow.control()
-            bow._jp.store.save_store()
+            bow.gate.store.save_store()
             store = BaseObjectStore(dirpath, 
                                     store.store_name, 
                                     store_uuid=job.store_id)
@@ -366,7 +357,7 @@ class Test_MF_Reader(unittest.TestCase):
             bow.control()
             
             nrecords = 0
-            for table in bow._jp.meta.summary.tables:
+            for table in bow.gate.meta.summary.tables:
                 nrecords += table.num_rows
 
             assert(nrecords == 10000)
@@ -427,7 +418,7 @@ class Test_MF_Reader(unittest.TestCase):
             bow = ArtemisFactory(job, 'INFO')
             bow.control()
             nrecords = 0
-            for table in bow._jp.meta.summary.tables:
+            for table in bow.gate.meta.summary.tables:
                 nrecords += table.num_rows
 
             assert(nrecords == 10000)

@@ -15,13 +15,13 @@ from sas7bdat import SAS7BDAT
 
 from artemis.logger import Logger
 from artemis.errors import AbstractMethodError
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc
 
 
 class BaseReader():
 
     def __init__(self):
-        self._jp = JobProperties()
+        self.gate = ArtemisGateSvc()
 
     def sampler(self):
         pass
@@ -94,7 +94,7 @@ class ArrowReader(BaseReader):
                  ):
         super().__init__()
         # self.reader = pa.ipc.open_file(filepath_or_buffer)
-        self.reader = self._jp.store.open(filepath_or_buffer)
+        self.reader = self.gate.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.blocks = blocks
@@ -132,7 +132,7 @@ class CsvReader(BaseReader):
                  nsamples=4
                  ):
         super().__init__()
-        self.stream = self._jp.store.open(filepath_or_buffer)
+        self.stream = self.gate.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.blocks = blocks
@@ -194,7 +194,7 @@ class LegacyReader(BaseReader):
         # TODO
         # Switch between metastore and buffer ?
         # self.stream = pa.input_stream(filepath_or_buffer)
-        self.stream = self._jp.store.open(filepath_or_buffer)
+        self.stream = self.gate.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.blocks = blocks
@@ -249,7 +249,7 @@ class Sas7bdatReader(BaseReader):
         # Switch between metastore and buffer ?
         # self.stream = pa.input_stream(filepath_or_buffer)
         super().__init__()
-        self.stream = self._jp.store.open(filepath_or_buffer)
+        self.stream = self.gate.store.open(filepath_or_buffer)
         self.header = header
         self.header_offset = header_offset
         self.num_rows = num_rows

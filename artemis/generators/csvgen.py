@@ -210,7 +210,7 @@ class GenCsvLikeArrow(GeneratorBase):
     def initialize(self):
         self.__logger.info("Initialize CsvGenerator")
         table = Table()
-        self._jp.store.get(self.table_id, table)
+        self.gate.store.get(self.table_id, table)
         self.num_cols = len(table.info.schema.info.fields)
 
         for field in table.info.schema.info.fields:
@@ -300,15 +300,15 @@ class GenCsvLikeArrow(GeneratorBase):
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
             fileinfo.partition = self.name
-            job_id = f"{self._jp.meta.job_id}_sample_{self.nsamples}"
-            ds_id = self._jp.meta.parentset_id
-            id_ = self._jp.store.register_content(data,
-                                                  fileinfo,
-                                                  dataset_id=ds_id,
-                                                  partition_key=self.name,
-                                                  job_id=job_id).uuid
+            job_id = f"{self.gate.meta.job_id}_sample_{self.nsamples}"
+            ds_id = self.gate.meta.parentset_id
+            id_ = self.gate.store.register_content(data,
+                                                   fileinfo,
+                                                   dataset_id=ds_id,
+                                                   partition_key=self.name,
+                                                   job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            self._jp.store.put(id_, buf)
+            self.gate.store.put(id_, buf)
             yield id_
             self.nsamples -= 1
             self.__logger.debug("Batch %i", self.nsamples)
@@ -320,20 +320,20 @@ class GenCsvLikeArrow(GeneratorBase):
         data, col_names, batch = self.make_mixed_random_csv()
         self.__logger.debug('%s: type data: %s' %
                             (self.__class__.__name__, type(data)))
-        if self._jp is not None:
+        if self.gate is not None:
             self.__logger.info("Register in store")
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
             fileinfo.partition = self.name
-            job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
-            ds_id = self._jp.meta.parentset_id
-            id_ = self._jp.store.register_content(data,
-                                                  fileinfo,
-                                                  dataset_id=ds_id,
-                                                  partition_key=self.name,
-                                                  job_id=job_id).uuid
+            job_id = f"{self.gate.meta.job_id}_batch_{self._batchidx}"
+            ds_id = self.gate.meta.parentset_id
+            id_ = self.gate.store.register_content(data,
+                                                   fileinfo,
+                                                   dataset_id=ds_id,
+                                                   partition_key=self.name,
+                                                   job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            self._jp.store.put(id_, buf)
+            self.gate.store.put(id_, buf)
             self._batchidx += 1
             # return buf
             return id_
@@ -356,12 +356,12 @@ class GenCsvLikeArrow(GeneratorBase):
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
             fileinfo.partition = self.name
-            job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
-            ds_id = self._jp.meta.parentset_id
-            id_ = self._jp.store.register_content(buf,
-                                                  fileinfo,
-                                                  dataset_id=ds_id,
-                                                  partition_key=self.name,
-                                                  job_id=job_id).uuid
-            self._jp.store.put(id_, buf)
+            job_id = f"{self.gate.meta.job_id}_batch_{self._batchidx}"
+            ds_id = self.gate.meta.parentset_id
+            id_ = self.gate.store.register_content(buf,
+                                                   fileinfo,
+                                                   dataset_id=ds_id,
+                                                   partition_key=self.name,
+                                                   job_id=job_id).uuid
+            self.gate.store.put(id_, buf)
             self._batchidx += 1

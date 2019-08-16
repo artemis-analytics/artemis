@@ -23,25 +23,7 @@ from artemis.logger import Logger
 from artemis.core.properties import Properties
 from artemis.io.protobuf.configuration_pb2 import Module as Tool_pb
 
-from artemis.core.algo import AbcAlgoBase
-
-from .singleton import Singleton
-
-
-class ToolStore(metaclass=Singleton):
-    # TODO
-    # Check for existence of tool
-    # Use dict class functionality, i.e. derive from dict
-
-    def __init__(self):
-        self.tools = {}
-
-    def add(self, logger, toolcfg):
-        # add tool from a config
-        self.tools[toolcfg.name] = ToolBase.from_msg(logger, toolcfg)
-
-    def get(self, key):
-        return self.tools[key]
+from artemis.core.abcalgo import AbcAlgoBase
 
 
 class ToolBase(metaclass=AbcAlgoBase):

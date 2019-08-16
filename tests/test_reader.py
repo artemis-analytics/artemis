@@ -133,9 +133,9 @@ class ReaderTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             data, names, batch = generator.make_random_csv()
             handler = FileHandlerTool('tool', delimiter='\r\n',
@@ -147,13 +147,13 @@ class ReaderTestCase(unittest.TestCase):
             fileinfo.type = 1
             fileinfo.partition = 'generator'
             job_id = str(job_id) 
-            id_ = generator._jp.store.register_content(data,
+            id_ = generator.gate.store.register_content(data,
                                        fileinfo,
-                                       dataset_id=generator._jp.meta.parentset_id,
+                                       dataset_id=generator.gate.meta.parentset_id,
                                        partition_key='generator',
                                        job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            generator._jp.store.put(id_, buf)
+            generator.gate.store.put(id_, buf)
             reader = handler.execute(id_)
 
             # IO Buffer bytestream
@@ -175,9 +175,9 @@ class ReaderTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             data, names, batch = generator.make_random_csv()
             handler = FileHandlerTool('tool', linesep='\r\n', blocksize=10000)
@@ -188,13 +188,13 @@ class ReaderTestCase(unittest.TestCase):
             fileinfo.type = 1
             fileinfo.partition = 'generator'
             job_id = str(job_id) 
-            id_ = generator._jp.store.register_content(data,
+            id_ = generator.gate.store.register_content(data,
                                        fileinfo,
-                                       dataset_id=generator._jp.meta.parentset_id,
+                                       dataset_id=generator.gate.meta.parentset_id,
                                        partition_key='generator',
                                        job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            generator._jp.store.put(id_, buf)
+            generator.gate.store.put(id_, buf)
             reader = handler.execute(id_)
 
             self.assertEqual(len(data), handler.size_bytes)
@@ -222,9 +222,9 @@ class ReaderTestCase(unittest.TestCase):
                               num_rows=1000,
                               nbatches=1,
                               loglevel='INFO')
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             
             handler = FileHandlerTool('tool',
@@ -239,13 +239,13 @@ class ReaderTestCase(unittest.TestCase):
             fileinfo.type = 2
             fileinfo.partition = 'generator'
             job_id = str(job_id) 
-            id_ = generator._jp.store.register_content(data,
+            id_ = generator.gate.store.register_content(data,
                                        fileinfo,
-                                       dataset_id=generator._jp.meta.parentset_id,
+                                       dataset_id=generator.gate.meta.parentset_id,
                                        partition_key='generator',
                                        job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            generator._jp.store.put(id_, buf)
+            generator.gate.store.put(id_, buf)
        
        # data = next(generator.generate())
        # buf = pa.py_buffer(data)
@@ -269,9 +269,9 @@ class ReaderTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             data, names, batch = generator.make_random_csv()
             buf = pa.py_buffer(data)
@@ -313,9 +313,9 @@ class ReaderTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             data, names, batch = generator.make_random_csv()
             sink = pa.BufferOutputStream()
@@ -327,12 +327,12 @@ class ReaderTestCase(unittest.TestCase):
             fileinfo.type = 5
             fileinfo.partition = 'generator'
             job_id = str(job_id) 
-            id_ = generator._jp.store.register_content(buf,
+            id_ = generator.gate.store.register_content(buf,
                                        fileinfo,
-                                       dataset_id=generator._jp.meta.parentset_id,
+                                       dataset_id=generator.gate.meta.parentset_id,
                                        partition_key='generator',
                                        job_id=job_id).uuid
-            generator._jp.store.put(id_, buf)
+            generator.gate.store.put(id_, buf)
             handler = FileHandlerTool('tool', filetype='ipc')
             handler.initialize()
             reader = handler.execute(id_)
@@ -349,7 +349,7 @@ class ReaderTestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id, tbl_id, names = self.setupStore(dirpath)
             handler = FileHandlerTool('tool', filetype='sas7bdat')
-            handler._jp.store = store 
+            handler.gate.store = store 
             path = 'tests/data/accidents.sas7bdat'
             fileinfo = FileObjectInfo()
             fileinfo.type = 7

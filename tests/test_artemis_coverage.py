@@ -18,11 +18,8 @@ import tempfile
 from artemis.artemis import Artemis, ArtemisFactory
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.core.singleton import Singleton
-from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
-from artemis.core.physt_wrapper import Physt_Wrapper
-from artemis.core.timerstore import TimerSvc
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 logging.getLogger().setLevel(logging.INFO)
@@ -36,11 +33,8 @@ class ArtemisTestCase(unittest.TestCase):
         print("================================================")
 
     def tearDown(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
     
     ''' 
     def test_proto(self):

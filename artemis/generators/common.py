@@ -35,7 +35,8 @@ import pyarrow as pa
 
 from artemis.logger import Logger
 from artemis.core.algo import AbcAlgoBase
-from artemis.core.properties import JobProperties, Properties
+from artemis.core.properties import Properties
+from artemis.core.gate import ArtemisGateSvc
 from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
 from artemis.errors import AbstractMethodError
 
@@ -167,7 +168,7 @@ class GeneratorBase(metaclass=AbcAlgoBase):
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
 
-        self._jp = JobProperties()
+        self.gate = ArtemisGateSvc()
 
         if hasattr(self.properties, 'seed'):
             self._builtin_generator = \

@@ -21,7 +21,6 @@ class TreeDummyCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        Singleton.reset(Tree)
         Singleton.reset(ArrowSets)
         self.sequence = OrderedDict()
         Seq_prop = namedtuple('Seq_prop', 'algos parents')
@@ -40,7 +39,7 @@ class TreeDummyCase(unittest.TestCase):
         self.sequence['test12'] = (Seq_prop('algotest12', ['test11']))
 
     def tearDown(self):
-        Singleton.reset(Tree)
+        pass
 
     def test_create_element(self):
         my_element = Element('testElement0')
@@ -81,9 +80,7 @@ class TreeDummyCase(unittest.TestCase):
         self.assertEqual(len(my_node.payload), 1, msg='Payload should be 1.')
 
     def test_create_tree(self):
-        self.assertFalse(Singleton.exists(Tree))
         my_tree = Tree('tree0')
-        self.assertTrue(Singleton.exists(Tree))
 
     def test_get_node_by_key(self):
         my_tree = Tree('tree1')
@@ -141,10 +138,6 @@ class TreeDummyCase(unittest.TestCase):
         self.assertIsNone(self.test_tree.root, msg='Value present in root.')
         self.assertEqual(len(self.test_tree.leaves), 0, msg='Length of leaves is not zero.')
         self.assertEqual(len(self.test_tree.nodes), 0, msg='Length of nodes is not zero.')
-
-        # Test to assert Tree singleton.
-        self.test_tree2 = Tree('My_test_tree2')
-        self.assertIs(self.test_tree, self.test_tree2, msg='Trees are not singletons.')
 
         # Test to verify that test_node is empty.
         self.test_node = None
@@ -212,6 +205,6 @@ class TreeDummyCase(unittest.TestCase):
         self.assertEqual(len(self.test_tree.nodes['test0'].payload), 2, msg='Payload should be two.')
         print('Test payload length before flush.')
         print(len(self.test_tree.nodes['test0'].payload))
-        Tree().flush()
+        self.test_tree.flush()
         print('Test payload length after flush.')
         print(len(self.test_tree.nodes['test0'].payload))

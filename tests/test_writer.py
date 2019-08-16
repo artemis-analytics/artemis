@@ -13,9 +13,7 @@
 import unittest
 import logging
 import tempfile
-import tempfile
 import uuid
-import itertools
 
 import pandas as pd
 import numpy as np
@@ -23,7 +21,7 @@ import pyarrow as pa
 
 from artemis.io.writer import BufferOutputWriter 
 from artemis.core.tree import Element
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc
 from artemis.meta.cronus import BaseObjectStore
 from artemis.io.protobuf.table_pb2 import Table
 from artemis.io.protobuf.cronus_pb2 import TableObjectInfo
@@ -58,7 +56,7 @@ class WriterTestCase(unittest.TestCase):
     def test_writer(self):
         with tempfile.TemporaryDirectory() as dirpath:
             store, ds_id, job_id = self.setupStore(dirpath)
-            jp = JobProperties()
+            jp = ArtemisGateSvc()
             jp.store = store
             jp.meta.dataset_id = ds_id
             jp.meta.job_id = str(job_id)

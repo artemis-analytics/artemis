@@ -14,8 +14,8 @@ from collections import OrderedDict
 
 from artemis.utils.utils import range_positive
 from artemis.decorators import timethis
-from .algo import AlgoBase
-from .tree import Tree, Node, Element
+from artemis.core.algo import AlgoBase
+from artemis.core.tree import Node, Element
 
 
 class Steering(AlgoBase):
@@ -30,7 +30,6 @@ class Steering(AlgoBase):
 
     def initialize(self):
         self.__logger.info('Initialize Steering')
-        self._seq_tree = Tree(self._jp.meta.name)
         self.from_msg()
 
     def from_msg(self):
@@ -38,14 +37,14 @@ class Steering(AlgoBase):
         Configure steering from a protobuf msg
         '''
         self.__logger.info('Loading menu from protobuf')
-        # msg = self._jp.meta.config.menu
-        msg = self._jp.menu
+        # msg = self.gate.meta.config.menu
+        msg = self.gate.menu
         self.__logger.info('Initializing Tree and Algos')
 
         # Initialize algorithms
         # Look up instance to add to execution graph
         self._algo_instances = {}
-        for algo in self._jp.config.algos:
+        for algo in self.gate.config.algos:
             try:
                 self._algo_instances[algo.name] = \
                         AlgoBase.from_msg(self.__logger, algo)
@@ -62,10 +61,10 @@ class Steering(AlgoBase):
                 self.__logger.debug("graph node %s" % (node.name))
                 # Create the nodes for the tree
                 if node.name == 'initial':
-                    self._seq_tree.root = Node(node.name, [])
-                    self._seq_tree.add_node(self._seq_tree.root)
+                    self.gate.tree.root = Node(node.name, [])
+                    self.gate.tree.add_node(self.gate.tree.root)
                 else:
-                    self._seq_tree.add_node(Node(node.name, node.parents))
+                    self.gate.tree.add_node(Node(node.name, node.parents))
 
                 # Initialize the algorithms
                 # Create the execution graph
@@ -82,11 +81,11 @@ class Steering(AlgoBase):
                     algos.append(self._algo_instances[algo])
                 self._menu[node.name] = tuple(algos)
 
-        self._seq_tree.update_parents()
-        self._seq_tree.update_leaves()
+        self.gate.tree.update_parents()
+        self.gate.tree.update_leaves()
 
         self.__logger.info('Tree nodes are as follows: %s' %
-                           str(self._seq_tree.nodes))
+                           str(self.gate.tree.nodes))
         self.__logger.info('%s: Initialized Steering' % self.name)
 
     def lock(self):
@@ -111,8 +110,8 @@ class Steering(AlgoBase):
             self.__logger.info("Book %s", algo.name)
             bins = [x for x in range_positive(0., 100., 2.)]
             try:
-                self._jp.hbook.book(self.name, 'time.'+algo.name,
-                                    bins, 'ms', timer=True)
+                self.gate.hbook.book(self.name, 'time.'+algo.name,
+                                     bins, 'ms', timer=True)
             except Exception:
                 self.__logger.error('Cannot book steering')
                 raise
@@ -120,7 +119,7 @@ class Steering(AlgoBase):
                 algo.book()
             except Exception:
                 self.__logger.error('Cannot book %s' % algo.name)
-        self.__logger.info("HBook keys %s", self._jp.hbook.keys())
+        self.__logger.info("HBook keys %s", self.gate.hbook.keys())
 
     def rebook(self):
         '''
@@ -138,8 +137,8 @@ class Steering(AlgoBase):
                         self.__logger.error('Cannot book %s' % algo.name)
 
     def _element_name(self, key):
-        return self._seq_tree.name + \
-                '_' + self._seq_tree.nodes[key].key + \
+        return self.gate.tree.name + \
+                '_' + self.gate.tree.nodes[key].key + \
                 '_' + str(self._chunk_cntr)
 
     def execute(self, payload):
@@ -153,18 +152,18 @@ class Steering(AlgoBase):
             algos = self._menu[key]
             self.__logger.debug('Menu input element: %s' % key)
             # TODO -- Continue work regarding gettting parent data, etc.
-            self._seq_tree.nodes[key].payload.\
+            self.gate.tree.nodes[key].payload.\
                 append(Element(self._element_name(key)))
             self.__logger.debug('Element: %s' % self._element_name)
             if key == 'initial':
-                self._seq_tree.nodes[key].payload[-1].add_data(payload)
+                self.gate.tree.nodes[key].payload[-1].add_data(payload)
             else:
-                for parent in self._seq_tree.nodes[key].parents:
+                for parent in self.gate.tree.nodes[key].parents:
                     # When retrieving input data, we are duplicating data
                     # adding the input data as part of the new element
                     # with that element key
-                    self._seq_tree.nodes[key].payload[-1].\
-                        add_data(self._seq_tree.nodes[parent].payload[-1].
+                    self.gate.tree.nodes[key].payload[-1].\
+                        add_data(self.gate.tree.nodes[parent].payload[-1].
                                  get_data())
 
             for algo in algos:
@@ -176,10 +175,10 @@ class Steering(AlgoBase):
                     # Timing decorator / wrapper
                     _algexe = timethis(algo.execute)
                     try:
-                        time_ = _algexe(self._seq_tree.nodes[key].
+                        time_ = _algexe(self.gate.tree.nodes[key].
                                         payload[-1])[-1]
-                        self._jp.hbook.fill(self.name,
-                                            'time.' + algo.name, time_)
+                        self.gate.hbook.fill(self.name,
+                                             'time.' + algo.name, time_)
                     except Exception:
                         raise
 

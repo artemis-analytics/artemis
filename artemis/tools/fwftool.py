@@ -70,9 +70,9 @@ class FwfTool(ToolBase):
         '''
         try:
             table = pf.read_fwf(block,
-                               read_options=self._readopts,
-                               parse_options=self._parseopts,
-                               convert_options=self._convertopts)
+                                read_options=self._readopts,
+                                parse_options=self._parseopts,
+                                convert_options=self._convertopts)
         except Exception:
             self.__logger.error("Problem converting fwf to table")
             raise

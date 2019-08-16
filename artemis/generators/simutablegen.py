@@ -86,7 +86,7 @@ class SimuTableGen(GeneratorBase):
 
     def initialize(self):
         self.__logger.info("Initialize SimuTableGenerator")
-        self._jp.store.get(self.table_id, self.table)
+        self.gate.store.get(self.table_id, self.table)
         self.num_cols = len(self.table.info.schema.info.fields)
         names = []
         for field in self.table.info.schema.info.fields:
@@ -129,15 +129,15 @@ class SimuTableGen(GeneratorBase):
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
             fileinfo.partition = self.name
-            job_id = f"{self._jp.meta.job_id}_sample_{self.nsamples}"
-            ds_id = self._jp.meta.parentset_id
-            id_ = self._jp.store.register_content(data,
-                                                  fileinfo,
-                                                  dataset_id=ds_id,
-                                                  partition_key=self.name,
-                                                  job_id=job_id).uuid
+            job_id = f"{self.gate.meta.job_id}_sample_{self.nsamples}"
+            ds_id = self.gate.meta.parentset_id
+            id_ = self.gate.store.register_content(data,
+                                                   fileinfo,
+                                                   dataset_id=ds_id,
+                                                   partition_key=self.name,
+                                                   job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            self._jp.store.put(id_, buf)
+            self.gate.store.put(id_, buf)
             yield id_
             self.nsamples -= 1
             self.__logger.debug("Batch %i", self.nsamples)
@@ -280,15 +280,15 @@ class SimuTableGen(GeneratorBase):
         fileinfo = FileObjectInfo()
         fileinfo.type = 1
         fileinfo.partition = self.name
-        job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
-        ds_id = self._jp.meta.parentset_id
-        id_ = self._jp.store.register_content(data,
-                                              fileinfo,
-                                              dataset_id=ds_id,
-                                              partition_key=self.name,
-                                              job_id=job_id).uuid
+        job_id = f"{self.gate.meta.job_id}_batch_{self._batchidx}"
+        ds_id = self.gate.meta.parentset_id
+        id_ = self.gate.store.register_content(data,
+                                               fileinfo,
+                                               dataset_id=ds_id,
+                                               partition_key=self.name,
+                                               job_id=job_id).uuid
         try:
-            self._jp.store.put(id_, data)
+            self.gate.store.put(id_, data)
         except IOError:
             self.__logger.error("Unable to write batch to store")
             raise

@@ -15,7 +15,7 @@ from artemis.decorators import iterable
 from artemis.configurables.configurable import Configurable
 from artemis.configurables.configurable import GlobalConfigOptions
 from artemis.tools.csvtool import CsvTool
-from artemis.tools.tdigesttool import TDigestTool
+
 
 @iterable
 class CsvGenOptions:
@@ -61,6 +61,7 @@ class CsvGenConfig(Configurable):
         self._config_writer()
         self._add_tools()
         self.__logger.info(self._msg)
+
 
 @Logger.logged
 class CsvIOConfig(Configurable):

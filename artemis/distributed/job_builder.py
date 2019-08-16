@@ -43,7 +43,7 @@ class JobBuilder():
     def execute(self):
         bow = Artemis(self.job, loglevel='INFO')
         bow.control()
-        buf = bow._jp.store[self.job.dataset_id].dataset.SerializeToString()
+        buf = bow.gate.store[self.job.dataset_id].dataset.SerializeToString()
         return buf
 
 
