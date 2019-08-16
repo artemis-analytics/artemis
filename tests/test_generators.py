@@ -91,9 +91,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             for batch in range(1):
                 print(generator.make_random_csv())
@@ -107,9 +107,9 @@ class GeneratorTestCase(unittest.TestCase):
             store, ds_id, job_id, tbl_id = self.setupStore(dirpath)
             
             generator = GenCsvLikeArrow('test',table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             
             data, names, batch = generator.make_random_csv()
@@ -121,9 +121,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             # data is byte encoded
             data, names, batch = generator.make_random_csv()
@@ -142,9 +142,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             # csvlike is byte encoded
             data, names, batch = generator.make_random_csv()
@@ -163,9 +163,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             
             data, names, batch = generator.make_random_csv()
@@ -189,9 +189,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
         
             data, names, batch = generator.make_random_csv()
@@ -224,9 +224,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             data, names, batch = generator.make_mixed_random_csv()
             textio = io.TextIOWrapper(io.BytesIO(data))
@@ -258,9 +258,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=4,
                                         table_id=tbl_id, num_rwows=10000)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
 
 
@@ -310,9 +310,9 @@ class GeneratorTestCase(unittest.TestCase):
                                         nbatches=4,
                                         num_rows=10000,
                                         table_id=id_)
-            generator._jp.meta.parentset_id = g_dataset.uuid
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = g_dataset.uuid
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
 
             data, col_names, batch = generator.make_mixed_random_csv()
@@ -359,9 +359,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=4,
                                         table_id=tbl_id, num_rwows=10000)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
 
             data, col_names, batch = generator.make_mixed_random_csv()
@@ -419,9 +419,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             data, names, batch = generator.make_mixed_random_csv()
             assert(names == batch.schema.names)
@@ -443,9 +443,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             
             data, names, batch = generator.make_random_csv()
@@ -469,9 +469,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=4,
                                         table_id=tbl_id, num_rwows=10000)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             generator.write()
 
@@ -507,15 +507,15 @@ class GeneratorTestCase(unittest.TestCase):
                     file_type = 1,
                     table_id=id_)
             
-            generator._jp.meta.parentset_id = g_dataset.uuid
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = g_dataset.uuid
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             generator.write()
             generator = FileGenerator('test', path=dirpath, glob='.csv')
-            generator._jp.meta.parentset_id = g_dataset.uuid
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = g_dataset.uuid
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             batches = 0
             for item in generator:
@@ -544,9 +544,9 @@ class GeneratorTestCase(unittest.TestCase):
                                         nbatches=4,
                                         table_id=tbl_id,
                                         num_rows=10000)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
 
             nbatch = 0
@@ -569,9 +569,9 @@ class GeneratorTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('generator',
                                         nbatches=4,
                                         table_id=tbl_id, num_rwows=10000)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             nbatch = 0
             for batch in generator:

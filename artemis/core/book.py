@@ -35,6 +35,7 @@ from artemis.utils.utils import autobinning
 from tdigest import TDigest
 from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
 
+
 class BaseBook(collections.MutableMapping):
 
     def __init__(self, hists={}):
@@ -405,7 +406,7 @@ class TDigestBook(BaseBook):
             self.__logger.error("TDigest already exists %s", name_)
         else:
             try:
-                h = TDigest() 
+                h = TDigest()
             except Exception:
                 self.__logger.error("TDigest fails to book")
                 raise
@@ -413,50 +414,52 @@ class TDigestBook(BaseBook):
 
     def rebook(self, excludes=[]):
         '''
-        Force reset of all tdigests 
+        Force reset of all tdigests
         '''
 
         self._rebooked = True
         for n, x in self:
             if n in excludes:
                 continue
-            self._set(n, TDigest()) 
+            self._set(n, TDigest())
         pass
 
     def fill(self, algname, name, data):
-        name_ = algname + '.' + name
+        # name_ = algname + '.' + name
         pass
 
     def _digest_to_protobuf(self, digest, name):
 
         '''
-        Private function that converts a TDigest object to a google protocol buffer object
+        Private function that converts a TDigest object
+        to a google protocol buffer object
 
-        Input: TDigest object, the name of the TDigest objects name (this is the name of the column in the Artemis project)
+        Input: TDigest object, the name of the TDigest objects name
+        (this is the name of the column in the Artemis project)
         Returns: google protocol buffer object TDigest_instance
         '''
         # Convert the input TDigest object into dictionary format
         digest_dict = digest.to_dict()
-            
+
         # Declare the TDigest object that will be returned
         protobuf_instance = TDigest_instance()
-                        
+
         protobuf_instance.name = name
         protobuf_instance.K = digest_dict["K"]
         protobuf_instance.delta = digest_dict["delta"]
         protobuf_instance.n = digest_dict["n"]
-                                        
+
         # Extract the centroids and weights from the digest map
         centroids_and_weights_map = digest_dict["centroids"]
-                                                
+
         for i in range(len(centroids_and_weights_map)):
-                                                                
-            # Delicate the Centroid_map object which we will then populate with the values of the
-            current_centroid = protobuf_instance.centroids.add()                 
+            # Delicate the Centroid_map object
+            # which we will then populate with the values of the
+            current_centroid = protobuf_instance.centroids.add()
             try:
                 current_centroid.c = centroids_and_weights_map[i]["c"]
                 current_centroid.m = centroids_and_weights_map[i]["m"]
-            except:
+            except Exception:
                 self.__logger.error("Error: unable to add centroids")
                 raise
 
@@ -466,14 +469,14 @@ class TDigestBook(BaseBook):
 
         # Ensure that the input protobuf is indeed a protobuf object
         if not isinstance(protobuf, TDigest_instance):
-            raise TypeError("Error: tried to decode a non protobuf object into a TDigest")
+            raise TypeError("Error: tried to decode a "
+                            "non protobuf object into a TDigest")
 
         digest_dict = {}
 
         digest_dict['K'] = protobuf.K
         digest_dict['delta'] = protobuf.delta
-                        
-        centroid_dict = {}
+
         centroid_list = []
 
         for centroid in protobuf.centroids:
@@ -481,13 +484,13 @@ class TDigestBook(BaseBook):
             current_centroid['c'] = centroid.c
             current_centroid['m'] = centroid.m
             centroid_list.append(current_centroid)
-                                                                                        
+
         digest_dict['centroids'] = centroid_list
 
         digest = TDigest()
         digest.update_from_dict(digest_dict)
         return digest
-    
+
     def _from_message(self, msg):
 
         content = collections.OrderedDict((n, self._digest_from_protobuf(v))
@@ -498,12 +501,11 @@ class TDigestBook(BaseBook):
         store = TDigest_store()
         for n, x in self:
             store.digest_map[n].CopyFrom(self._digest_to_protobuf(x, n))
+        return store
 
-        return store 
-    
     @classmethod
     def load(cls, fname):
-        msg = TDigest_store() 
+        msg = TDigest_store()
         out = cls.__new__(cls)
         try:
             with open(fname, 'rb') as f:
@@ -514,7 +516,7 @@ class TDigestBook(BaseBook):
             raise
         try:
             return out._from_message(msg)
-        except:
+        except Exception:
             print("Fail to load from msg")
             raise
 

@@ -21,17 +21,15 @@ import dask.delayed
 
 from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.singleton import Singleton
-from artemis.core.properties import JobProperties
-from artemis.core.tree import Tree
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.core.datastore import ArrowSets
-from artemis.core.physt_wrapper import Physt_Wrapper
-from artemis.core.timerstore import TimerSvc
 from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis.meta.cronus import BaseObjectStore
 from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
-from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo, DatasetObjectInfo
+from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, \
+    TableObjectInfo, DatasetObjectInfo
 from artemis.io.protobuf.table_pb2 import Table
 from artemis.io.protobuf.configuration_pb2 import Configuration
 
@@ -51,11 +49,8 @@ class ArtemisTestCase(unittest.TestCase):
         print("================================================")
 
     def tearDown(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
     
     def test_fileio(self):
         '''
@@ -129,9 +124,9 @@ class ArtemisTestCase(unittest.TestCase):
                                         path=dirpath,
                                         table_id=g_table.uuid)
 
-            generator._jp.meta.parentset_id = g_dataset.uuid
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = g_dataset.uuid
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             generator.write()
 
@@ -153,8 +148,8 @@ class ArtemisTestCase(unittest.TestCase):
             bow = Artemis(job, loglevel='INFO')
             bow.control()
 
-            print(bow._jp.store[dataset.uuid])
-            print(bow._jp.store[g_dataset.uuid])
+            print(bow.gate.store[dataset.uuid])
+            print(bow.gate.store[g_dataset.uuid])
 
     def test_distributed(self):
         with tempfile.TemporaryDirectory() as dirpath:
@@ -219,9 +214,9 @@ class ArtemisTestCase(unittest.TestCase):
                                         path=dirpath,
                                         table_id=g_table.uuid)
 
-            generator._jp.meta.parentset_id = g_dataset.uuid
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = g_dataset.uuid
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             generator.write()
 

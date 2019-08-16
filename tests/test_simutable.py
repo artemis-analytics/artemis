@@ -18,7 +18,8 @@ import logging
 # from collections import OrderedDict
 from artemis.artemis import Artemis, ArtemisFactory
 from artemis.meta.cronus import BaseObjectStore
-from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, FileObjectInfo, TableObjectInfo
+from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo, \
+    FileObjectInfo, TableObjectInfo
 from artemis.io.protobuf.table_pb2 import Table
 from artemis.generators.simutable.synthesizer import Synthesizer
 from artemis.io.protobuf.simutable_pb2 import SimuTable
@@ -28,7 +29,7 @@ from artemis.io.protobuf.table_pb2 import Table
 from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
@@ -92,19 +93,18 @@ class SimuTableTestCase(unittest.TestCase):
             generator = SimuTableGen('generator',
                                      nbatches=1,
                                      num_rows=10000,
-                                     file_type = 1,
+                                     file_type=1,
                                      table_id=g_table.uuid)
 
-            generator._jp.meta.parentset_id = g_dataset.uuid
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = g_dataset.uuid
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             for batch in generator:
                 print(batch)
 
     def test_simutable_artemis(self): 
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
         with tempfile.TemporaryDirectory() as dirpath:
             mb = MenuFactory('csvgen')
@@ -232,7 +232,7 @@ class SimuTableTestCase(unittest.TestCase):
             job.job_id = str(job_id) 
             bow = Artemis(job, loglevel='INFO')
             bow.control()
-            bow._jp.store.save_store()
+            bow.gate.store.save_store()
             store = BaseObjectStore(dirpath, 
                                     store.store_name, 
                                     store_uuid=job.store_id)

@@ -14,17 +14,12 @@ import unittest
 import logging
 import tempfile
 import os, shutil
-import hashlib
-import datetime
 import dask.delayed
 from pathlib import Path
 import pyarrow as pa
-import numpy as np
 
-from artemis.core.timerstore import TimerSvc
-from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.core.singleton import Singleton
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from artemis.meta.cronus import BaseObjectStore, JobBuilder
@@ -41,11 +36,8 @@ logging.getLogger().setLevel(logging.INFO)
 class CronusTestCase(unittest.TestCase):
 
     def setUp(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
         pass
 
     def tearDown(self):

@@ -79,7 +79,7 @@ class Node:
         self.payload.append(element)
 
 
-class Tree(metaclass=Singleton):
+class Tree():
     """Structure of Nodes. Metadata/job organisation."""
     def __init__(self, name):
         self.name = name

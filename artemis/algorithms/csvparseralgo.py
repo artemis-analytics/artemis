@@ -14,7 +14,6 @@ given a bytes object
 from artemis.core.algo import AlgoBase
 from artemis.decorators import timethis
 from artemis.utils.utils import range_positive
-from artemis.core.tool import ToolStore
 
 
 class CsvParserAlgo(AlgoBase):
@@ -22,7 +21,6 @@ class CsvParserAlgo(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
-        self.__tools = ToolStore()
         # TODO
         # Add any required tools to list of algo properties
         # All tools must be loaded in the ToolStore
@@ -34,8 +32,8 @@ class CsvParserAlgo(AlgoBase):
     def book(self):
         self.__logger.info("Book")
         bins = [x for x in range_positive(0., 100., 2.)]
-        self._jp.hbook.book(self.name, 'time.pyarrowparse',
-                            bins, 'ms', timer=True)
+        self.gate.hbook.book(self.name, 'time.pyarrowparse',
+                             bins, 'ms', timer=True)
 
     def rebook(self):
         pass
@@ -43,7 +41,7 @@ class CsvParserAlgo(AlgoBase):
     @timethis
     def pyarrow_parsing(self, block):
         try:
-            batch = self.__tools.get('csvtool').execute(block)
+            batch = self.get_tool('csvtool').execute(block)
         except Exception:
             raise
         return batch
@@ -57,7 +55,7 @@ class CsvParserAlgo(AlgoBase):
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
-        self._jp.hbook.fill(self.name, 'time.pyarrowparse', time_)
+        self.gate.hbook.fill(self.name, 'time.pyarrowparse', time_)
 
         self.__logger.debug("Arrow schema: %s: ", tbatch.schema)
 

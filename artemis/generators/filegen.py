@@ -45,16 +45,16 @@ class FileGenerator(GeneratorBase):
 
     def initialize(self):
         ids = []
-        for obj in self._jp.store.list(prefix=self._jp.meta.parentset_id,
-                                       suffix=self._glob):
+        for obj in self.gate.store.list(prefix=self.gate.meta.parentset_id,
+                                        suffix=self._glob):
             ids.append(obj.uuid)
         self._batch_iter = iter(ids)
 
     def reset(self):
         # self._batch_iter = pathlib.Path(self._path).glob(self._glob)
         ids = []
-        for obj in self._jp.store.list(prefix=self._jp.meta.parentset_id,
-                                       suffix=self._glob):
+        for obj in self.gate.store.list(prefix=self.gate.meta.parentset_id,
+                                        suffix=self._glob):
             ids.append(obj.uuid)
         self._batch_iter = iter(ids)
 
@@ -78,8 +78,8 @@ class FileGenerator(GeneratorBase):
         self.__logger.debug("Generating the file paths")
         # _files = pathlib.Path(self._path).glob(self._glob)
         _files = []
-        glob_ = self._jp.store.list(prefix=self._jp.parentset_id,
-                                    suffix=self._glob)
+        glob_ = self.gate.store.list(prefix=self.gate.parentset_id,
+                                     suffix=self._glob)
         for obj in glob_:
             _files.append(obj.uuid)
         for f in _files:

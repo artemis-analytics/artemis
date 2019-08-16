@@ -78,9 +78,9 @@ class CsvToolTestCase(unittest.TestCase):
             generator = GenCsvLikeArrow('test',
                                         nbatches=1,
                                         table_id=tbl_id)
-            generator._jp.meta.parentset_id = ds_id
-            generator._jp.meta.job_id = str(job_id)
-            generator._jp.store = store
+            generator.gate.meta.parentset_id = ds_id
+            generator.gate.meta.job_id = str(job_id)
+            generator.gate.store = store
             generator.initialize()
             tool = CsvTool("tool", block_size=2**16)
             data, names, batch = generator.make_random_csv()

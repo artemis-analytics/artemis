@@ -16,7 +16,7 @@ from artemis.configurables.configurable import GlobalConfigOptions
 
 from artemis.tools.mftool import MfTool
 from artemis.tools.fwftool import FwfTool
-from artemis.tools.tdigesttool import TDigestTool
+
 
 @iterable
 class LegacyOptions:
@@ -54,14 +54,14 @@ class LegacyGenConfig(Configurable):
             rsize = rsize + columns[key]['length']
             schema.append(key)
 
-        fwftool = FwfTool('fwftool', 
+        fwftool = FwfTool('fwftool',
                           block_size=(2 * blocksize),
                           is_cobol=True,
                           skip_rows=self.skip_rows,
                           column_names=self.column_names,
                           field_widths=self.field_widths,
                           encoding=self.encoding+',swaplfnl')
-        
+
         self._config_generator(nbatches=self.nbatches,
                                num_rows=self.num_rows,
                                seed=self.seed,
@@ -131,9 +131,9 @@ class LegacyIOConfig(Configurable):
 
         mftool = MfTool('legacytool', codec=self.encoding, **columns)
         blocksize = mftool.record_size * self.nrecords_per_block
-        
-        fwftool = FwfTool('fwftool', 
-                          block_size=(2 * blocksize), 
+
+        fwftool = FwfTool('fwftool',
+                          block_size=(2 * blocksize),
                           is_cobol=True,
                           skip_rows=self.skip_rows,
                           column_names=self.column_names,
@@ -153,7 +153,6 @@ class LegacyIOConfig(Configurable):
                                  schema=schema,
                                  encoding=self.encoding,
                                  seed=self.seed)
-        
         self._config_tdigest()
 
         # Ensure block_size for arrow parser greater than

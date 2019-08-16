@@ -217,8 +217,8 @@ class BaseObjectStore(BaseBook):
         dataset_id = kwargs.get('dataset_id', None)
         partition_key = kwargs.get('partition_key', None)
         job_id = kwargs.get('job_id', None)
-        menu_id = kwargs.get('menu_id', None)
-        config_id = kwargs.get('config_id', None)
+        #  menu_id = kwargs.get('menu_id', None)
+        #  config_id = kwargs.get('config_id', None)
         glob = kwargs.get('glob', None)
 
         content_type = type(content)
@@ -301,9 +301,9 @@ class BaseObjectStore(BaseBook):
                 raise ValueError
             try:
                 metaobj = self._register_tdigests(content,
-                                               info,
-                                               dataset_id,
-                                               job_id)
+                                                  info,
+                                                  dataset_id,
+                                                  job_id)
             except Exception:
                 self.__logger.error("Error registering tdigest")
 
@@ -427,7 +427,7 @@ class BaseObjectStore(BaseBook):
             self[_new.uuid] = _new
             objs.append(MetaObject(_new.name, _new.uuid,
                                    _new.parent_uuid, _new.address))
-        
+
         for obj in _update.tdigests:
             _new = self[dataset_id].dataset.tdigests.add()
             _new.CopyFrom(obj)
@@ -582,7 +582,7 @@ class BaseObjectStore(BaseBook):
 
     def list_jobs(self, dataset_id):
         return self[dataset_id].dataset.jobs
-    
+
     def list_tdigests(self, dataset_id):
         return self[dataset_id].dataset.tdigests
 
@@ -646,7 +646,8 @@ class BaseObjectStore(BaseBook):
             extracted from an input file
             or an output RecordBatchFile
         '''
-        self.__logger.info("Registering table Dataset %s, Partition %s", dataset_id, partition_key)
+        self.__logger.info("Registering table Dataset %s, Partition %s",
+                           dataset_id, partition_key)
         if partition_key not in self[dataset_id].dataset.partitions:
             self.__logger.error("Partition %s not registered for dataset %s",
                                 dataset_id,
@@ -700,7 +701,8 @@ class BaseObjectStore(BaseBook):
                 self._dups[obj.uuid] = 0
             obj.uuid = obj.uuid + '_' + str(self._dups[obj.uuid])
 
-        obj.name = f"{dataset_id}.job_{job_id}.part_{partition_key}.{obj.uuid}.{key}"
+        obj.name = \
+            f"{dataset_id}.job_{job_id}.part_{partition_key}.{obj.uuid}.{key}"
         obj.parent_uuid = dataset_id
         obj.address = self._dstore.url_for(obj.name)
         self.__logger.info("Retrieving url %s", obj.address)
@@ -737,10 +739,10 @@ class BaseObjectStore(BaseBook):
         return MetaObject(obj.name, obj.uuid, obj.parent_uuid, obj.address)
 
     def _register_tdigests(self,
-                        tdigests,
-                        tdigestinfo,
-                        dataset_id,
-                        job_id):
+                           tdigests,
+                           tdigestinfo,
+                           dataset_id,
+                           job_id):
         '''
         Requires
         uuid of dataset
@@ -762,7 +764,7 @@ class BaseObjectStore(BaseBook):
         self._put_message(obj.uuid, tdigests)
 
         return MetaObject(obj.name, obj.uuid, obj.parent_uuid, obj.address)
-    
+
     def _register_job(self,
                       meta,
                       jobinfo,

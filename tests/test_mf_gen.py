@@ -102,9 +102,9 @@ class Test_MF_Gen(unittest.TestCase):
                              column=intconf0,
                              num_rows=10,
                              nbatches=10, loglevel='INFO')
-            test_gen._jp.meta.parentset_id = g_dataset.uuid
-            test_gen._jp.meta.job_id = str(job_id)
-            test_gen._jp.store = store
+            test_gen.gate.meta.parentset_id = g_dataset.uuid
+            test_gen.gate.meta.job_id = str(job_id)
+            test_gen.gate.store = store
             test_gen.initialize()
 
             for chunk in test_gen:
@@ -131,9 +131,9 @@ class Test_MF_Gen(unittest.TestCase):
                              footer='footer',
                              footer_size=10,
                              loglevel='INFO')
-            test_gen._jp.meta.parentset_id = g_dataset.uuid
-            test_gen._jp.meta.job_id = str(job_id)
-            test_gen._jp.store = store
+            test_gen.gate.meta.parentset_id = g_dataset.uuid
+            test_gen.gate.meta.job_id = str(job_id)
+            test_gen.gate.store = store
             test_gen.initialize()
 
             chunk = next(test_gen)

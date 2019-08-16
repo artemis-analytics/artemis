@@ -6,4 +6,3 @@
 # by the Minister of Statistics Canada, 2019.
 #
 # Distributed under terms of the license.
-

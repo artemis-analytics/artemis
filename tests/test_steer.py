@@ -3,20 +3,19 @@ from collections import OrderedDict
 from pprint import pformat
 import logging
 
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.core.steering import Steering
 from artemis.core.singleton import Singleton
 from artemis.algorithms.dummyalgo import DummyAlgo1
-from artemis.core.physt_wrapper import Physt_Wrapper
-from artemis.core.timerstore import TimerSvc
 from artemis.meta.Directed_Graph import Directed_Graph, GraphMenu
 from artemis.meta.Directed_Graph import Node as Node_pb2
-
+from artemis.core.tree import Tree
 from artemis.io.protobuf.configuration_pb2 import Configuration
+
 
 class SteeringTestCase(unittest.TestCase):
 
-    Singleton.reset(JobProperties)
+    Singleton.reset(ArtemisGateSvc)
 
     def setUp(self):
         logging.getLogger().setLevel(logging.INFO)
@@ -26,9 +25,7 @@ class SteeringTestCase(unittest.TestCase):
 
     def tearDown(self):
         # self.steer.finalize()
-        Singleton.reset(JobProperties)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
+        Singleton.reset(ArtemisGateSvc)
         logging.getLogger().setLevel(logging.INFO)
     
     def test_from_msg(self):
@@ -53,9 +50,10 @@ class SteeringTestCase(unittest.TestCase):
         algo =config.algos.add()
         algo.CopyFrom(testalgo.to_msg())
 
-        jobops = JobProperties()
+        jobops = ArtemisGateSvc() 
         jobops.menu.CopyFrom(msg)
         jobops.config.CopyFrom(config)
+        jobops.tree = Tree('dummy')
 
         a_steer = Steering('a_steer', loglevel="DEBUG")
         a_steer.initialize()

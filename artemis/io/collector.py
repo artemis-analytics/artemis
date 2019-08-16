@@ -19,9 +19,7 @@ from artemis.decorators import timethis, iterable
 from artemis.core.algo import AlgoBase
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
-from artemis.core.tool import ToolStore
 from google.protobuf import text_format
-from artemis.core.properties import JobProperties
 
 
 @iterable
@@ -46,15 +44,8 @@ class Collector(AlgoBase):
         self.max_malloc = self.properties.max_malloc
         self.job_id = self.properties.job_id
 
-        self.tools = None
-        self.tree = None
-        self.jp = None
-
     def initialize(self):
         self.__logger.info("initialize")
-        self.tools = ToolStore()
-        self.tree = Tree()
-        self.jp = JobProperties()
         # Configure the output data streams
         # Each stream associated with leaf in Tree
         # Store consistent Arrow Table for each process chain
@@ -63,7 +54,7 @@ class Collector(AlgoBase):
 
         # Buffer stream requires a fixed pyArrow schema!
         _wrtcfg = None
-        for toolcfg in self._jp.config.tools:
+        for toolcfg in self.gate.config.tools:
             if toolcfg.name == "bufferwriter":
                 _wrtcfg = toolcfg
 
@@ -71,9 +62,9 @@ class Collector(AlgoBase):
             self.__logger.error("BufferWriter not configured")
             raise KeyError
 
-        for leaf in self.tree.leaves:
+        for leaf in self.gate.tree.leaves:
             self.__logger.info("Leave node %s", leaf)
-            node = self.tree.get_node_by_key(leaf)
+            node = self.gate.tree.get_node_by_key(leaf)
             key = node.key
             try:
                 _last = node.payload[-1].get_data()
@@ -91,15 +82,15 @@ class Collector(AlgoBase):
                     self.__logger.error("BufferWriter misconfigured")
                     raise
                 self.__logger.info("Add Tool %s", _wrtcfg.name)
-                self.tools.add(self.__logger, _wrtcfg)
-                self.tools.get(_wrtcfg.name)._schema = _last.schema
-                self.tools.get(_wrtcfg.name)._fbasename = self.job_id
-                self.tools.get(_wrtcfg.name).initialize()
-                self.jp.store.new_partition(self.jp.meta.dataset_id, key)
+                self.gate.tools.add(self.__logger, _wrtcfg)
+                self.gate.tools.get(_wrtcfg.name)._schema = _last.schema
+                self.gate.tools.get(_wrtcfg.name)._fbasename = self.job_id
+                self.gate.tools.get(_wrtcfg.name).initialize()
+                self.gate.store.new_partition(self.gate.meta.dataset_id, key)
 
         # Batches serialized, clear the tree
         try:
-            Tree().flush()
+            self.gate.tree.flush()
         except Exception:
             self.__logger("Problem flushing")
             raise
@@ -148,10 +139,10 @@ class Collector(AlgoBase):
         self.__logger.debug("artemis: collect: pyarrow malloc %i",
                             pa.total_allocated_bytes())
 
-        self.__logger.debug("Leaves %s", self.tree.leaves)
-        for leaf in self.tree.leaves:
+        self.__logger.debug("Leaves %s", self.gate.tree.leaves)
+        for leaf in self.gate.tree.leaves:
             self.__logger.debug("Leaf node %s", leaf)
-            node = self.tree.get_node_by_key(leaf)
+            node = self.gate.tree.get_node_by_key(leaf)
             els = node.payload
             self.__logger.debug('Batches of leaf %s', len(els))
             _name = "writer_"+node.key
@@ -169,17 +160,17 @@ class Collector(AlgoBase):
                 self.__logger.debug("Allocated %i", pa.total_allocated_bytes())
                 _schema_batch = els[-1].get_data().schema
 
-                if self.tools.get(_name)._schema != _schema_batch:
+                if self.gate.tools.get(_name)._schema != _schema_batch:
                     self.__logger.error("Schema mismatch")
                     self.__logger.error("Writer schema %s",
-                                        self.tools.get(_name)._schema)
+                                        self.gate.tools.get(_name)._schema)
                     self.__logger.error("Batch schema %s", _schema_batch)
                     raise ValueError
                 try:
-                    self.tools.get("writer_"+node.key).write(els)
+                    self.gate.tools.get("writer_"+node.key).write(els)
                     self.__logger.debug("Records %i Batches %i",
-                                        self.tools.get(_name)._nrecords,
-                                        self.tools.get(_name)._nbatches)
+                                        self.gate.tools.get(_name)._nrecords,
+                                        self.gate.tools.get(_name)._nbatches)
                 except IOError:
                     self.__logger.error("IOError in buffer writer")
                     raise
@@ -191,7 +182,7 @@ class Collector(AlgoBase):
 
         # Batches serialized, clear the tree to flush memory
         try:
-            Tree().flush()
+            self.gate.tree.flush()
         except Exception:
             self.__logger("Problem flushing")
             raise
@@ -217,17 +208,17 @@ class Collector(AlgoBase):
             self.__logger.info("Allocated %i", pa.total_allocated_bytes())
         # Spill any remaining buffers to disk
         # Set the output file metadata
-        summary = self._jp.meta.summary
+        summary = self.gate.meta.summary
         _wnames = []
-        for leaf in Tree().leaves:
+        for leaf in self.gate.tree.leaves:
             self.__logger.debug("Leave node %s", leaf)
-            node = Tree().get_node_by_key(leaf)
+            node = self.gate.tree.get_node_by_key(leaf)
             key = node.key
             _wnames.append("writer_" + node.key)
 
         for key in _wnames:
             try:
-                writer = self.tools.get(key)
+                writer = self.gate.tools.get(key)
             except KeyError:
                 continue
             try:
@@ -259,7 +250,7 @@ class Collector(AlgoBase):
 
         for key in _wnames:
             try:
-                writer = self.tools.get(key)
+                writer = self.gate.tools.get(key)
             except KeyError:
                 continue
             try:

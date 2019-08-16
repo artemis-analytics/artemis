@@ -18,10 +18,9 @@ from artemis.artemis import Artemis, ArtemisFactory
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.configurables.configs.csvgenconfig import CsvGenConfig
 
-from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc 
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 logging.getLogger().setLevel(logging.INFO)
 class ConfigurableTestCase(unittest.TestCase):

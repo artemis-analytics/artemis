@@ -11,9 +11,9 @@ from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 
 '''
-Remove specified columns from record batch. 
-    Default mode: keep only columns matching given names.
-    If invert=True, remove only columns matching given names.
+Remove specified columns from record batch.
+Default mode: keep only columns matching given names.
+If invert=True, remove only columns matching given names.
 '''
 
 
@@ -35,20 +35,22 @@ class FilterColTool(ToolBase):
         self.__logger.info('Options: %s', self.options)
 
         if 'invert' not in self.options:
-            self.options['invert'] = False 
+            self.options['invert'] = False
         if 'columns' not in self.options:
             self.options['columns'] = None
-            self.__logger.warning('No columns option provided. Returning original record batches.')
+            self.__logger.warning('No columns option provided. '
+                                  'Returning original record batches.')
         else:
             # Set options and convert to C/C++ types only once
-            self.filter = Filter(self.options['columns'], self.options['invert'])
-    
+            self.filter = Filter(self.options['columns'],
+                                 self.options['invert'])
+
     def initialize(self):
         pass
-    
+
     def execute(self, record_batch):
         '''
-        Filter columns by column name 
+        Filter columns by column name
 
         Parameters
         ----------
@@ -57,19 +59,20 @@ class FilterColTool(ToolBase):
         columns : std::vector<std::string> (required)
             Keep only columns with these names.
         invert: bool, default=false
-            If true, changes meaning of columns: remove these columns and keep the others instead.
+            If true, changes meaning of columns:
+            remove these columns and keep the others instead.
 
         Returns
         -------
         arrow::RecordBatch
-            Record batch object stripped of specified columns.
-        ''' 
+        Record batch object stripped of specified columns.
+        '''
         # If no columns are specified, return original batch
         if self.options['columns'] is None:
             return record_batch
         try:
             return self.filter.filter_columns(record_batch)
-        except:
+        except Exception:
             raise Exception('Error filtering columns.')
 
     def finalize(self):

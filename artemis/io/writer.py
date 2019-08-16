@@ -9,7 +9,7 @@ import pyarrow as pa
 from artemis.core.tool import ToolBase
 from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc
 
 from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
 from artemis.io.protobuf.table_pb2 import Table
@@ -57,7 +57,7 @@ class BufferOutputWriter(ToolBase):
         self._fname = ''
         self._finfo = []  # Store list of metadata info objects
         self.__logger.info("Writer path %s", self._path)
-        self.jp = None
+        self.gate = None
 
     @property
     def total_records(self):
@@ -75,7 +75,7 @@ class BufferOutputWriter(ToolBase):
         self.__logger.info("Initialize writer")
         self.__logger.info(self.properties)
         self.__logger.info(self._path)
-        self.jp = JobProperties()
+        self.gate = ArtemisGateSvc()
         self._buffer = None
         self._sink = pa.BufferOutputStream()
         self._writer = pa.RecordBatchFileWriter(self._sink, self._schema)
@@ -204,9 +204,9 @@ class BufferOutputWriter(ToolBase):
 
     def _build_table_from_file(self, file_id):
 
-        ds_id = self.jp.store[file_id].parent_uuid
-        pkey = self.jp.store[file_id].file.partition
-        job_id = self.jp.meta.job_id
+        ds_id = self.gate.store[file_id].parent_uuid
+        pkey = self.gate.store[file_id].file.partition
+        job_id = self.gate.meta.job_id
         raw_schema = self._schema.serialize().to_pybytes()
         raw_schema_size = len(raw_schema)
         self.__logger.info("Writing Table to DS %s partition %s job %s",
@@ -217,7 +217,8 @@ class BufferOutputWriter(ToolBase):
         table = Table()
         table.uuid = str(uuid.uuid4())
         table.name = \
-            f"{ds_id}.job_{job_id}.part_{pkey}.file_{file_id}.{table.uuid}.table.pb"
+            f"{ds_id}.job_{job_id}.part_{pkey}."
+        "file_{file_id}.{table.uuid}.table.pb"
         tinfo = TableObjectInfo()
         for f in self._schema:
             field = table.info.schema.info.fields.add()
@@ -228,11 +229,11 @@ class BufferOutputWriter(ToolBase):
         table.info.schema.info.aux.raw_header_size_bytes = raw_schema_size
         table.info.schema.info.aux.raw_header = raw_schema
 
-        self.jp.store.register_content(table,
-                                       tinfo,
-                                       dataset_id=ds_id,
-                                       partition_key=pkey,
-                                       job_id=job_id)
+        self.gate.store.register_content(table,
+                                         tinfo,
+                                         dataset_id=ds_id,
+                                         partition_key=pkey,
+                                         job_id=job_id)
 
     def _write_file(self):
         fileinfo = FileObjectInfo()
@@ -241,27 +242,27 @@ class BufferOutputWriter(ToolBase):
         fileinfo.aux.num_columns = self._ncolumns
         fileinfo.aux.num_batches = self._nbatches
         p_key = self.name.split('_')[-1]
-        ds_id = self.jp.meta.dataset_id
-        job_id = self.jp.meta.job_id
+        ds_id = self.gate.meta.dataset_id
+        job_id = self.gate.meta.job_id
         self.logger.info("Partitions %s",
-                         self.jp.store.list_partitions(ds_id))
+                         self.gate.store.list_partitions(ds_id))
         self.__logger.info("Writing arrow to DS %s partition %s job %s",
                            ds_id,
                            p_key,
                            job_id)
         fileinfo.partition = p_key
         try:
-            obj = self.jp.store.register_content(self._buffer,
-                                                 fileinfo,
-                                                 dataset_id=ds_id,
-                                                 job_id=job_id,
-                                                 partition_key=p_key)
+            obj = self.gate.store.register_content(self._buffer,
+                                                   fileinfo,
+                                                   dataset_id=ds_id,
+                                                   job_id=job_id,
+                                                   partition_key=p_key)
             id_ = obj.uuid
         except Exception:
             self.__logger.error("Fail to register buffer to store")
             raise
         self.__logger.info("Writing to store id: %s", id_)
-        self.jp.store.put(id_, self._buffer)
+        self.gate.store.put(id_, self._buffer)
         self._build_table_from_file(id_)
 
         if self._write_csv is True:
@@ -276,11 +277,11 @@ class BufferOutputWriter(ToolBase):
                                partition_key,
                                job_id)
             try:
-                obj = self.jp.store.register_content(self._buffer,
-                                                     fileinfo,
-                                                     dataset_id=ds_id,
-                                                     job_id=job_id,
-                                                     partition_key=p_key)
+                obj = self.gate.store.register_content(self._buffer,
+                                                       fileinfo,
+                                                       dataset_id=ds_id,
+                                                       job_id=job_id,
+                                                       partition_key=p_key)
                 address = obj.address
             except Exception:
                 self.__logger.error("Cannot register csv file")
@@ -469,7 +470,7 @@ class BufferOutputWriter(ToolBase):
                                  cols=columns, header=header, index=index,
                                  index_label=index_label, mode=mode,
                                  chunksize=chunksize, quotechar=quotechar,
-                                 #tupleize_cols=tupleize_cols,
+                                 # tupleize_cols=tupleize_cols,
                                  date_format=date_format,
                                  doublequote=doublequote,
                                  escapechar=escapechar, decimal=decimal)

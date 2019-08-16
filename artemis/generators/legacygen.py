@@ -201,15 +201,15 @@ class GenMF(GeneratorBase):
             fileinfo = FileObjectInfo()
             fileinfo.type = 2
             fileinfo.partition = self.name
-            job_id = f"{self._jp.meta.job_id}_sample_{self.nsamples}"
-            ds_id = self._jp.meta.parentset_id
-            id_ = self._jp.store.register_content(data,
-                                                  fileinfo,
-                                                  dataset_id=ds_id,
-                                                  partition_key=self.name,
-                                                  job_id=job_id).uuid
+            job_id = f"{self.gate.meta.job_id}_sample_{self.nsamples}"
+            ds_id = self.gate.meta.parentset_id
+            id_ = self.gate.store.register_content(data,
+                                                   fileinfo,
+                                                   dataset_id=ds_id,
+                                                   partition_key=self.name,
+                                                   job_id=job_id).uuid
             buf = pa.py_buffer(data)
-            self._jp.store.put(id_, buf)
+            self.gate.store.put(id_, buf)
             yield id_
             self.nsamples -= 1
             self.__logger.debug("Batch %i", self.nsamples)
@@ -220,15 +220,15 @@ class GenMF(GeneratorBase):
         fileinfo = FileObjectInfo()
         fileinfo.type = 2
         fileinfo.partition = self.name
-        job_id = f"{self._jp.meta.job_id}_batch_{self._batchidx}"
-        ds_id = self._jp.meta.parentset_id
-        id_ = self._jp.store.register_content(data,
-                                              fileinfo,
-                                              dataset_id=ds_id,
-                                              partition_key=self.name,
-                                              job_id=job_id).uuid
+        job_id = f"{self.gate.meta.job_id}_batch_{self._batchidx}"
+        ds_id = self.gate.meta.parentset_id
+        id_ = self.gate.store.register_content(data,
+                                               fileinfo,
+                                               dataset_id=ds_id,
+                                               partition_key=self.name,
+                                               job_id=job_id).uuid
         buf = pa.py_buffer(data)
-        self._jp.store.put(id_, buf)
+        self.gate.store.put(id_, buf)
         self._batchidx += 1
         return id_
         # return self.gen_chunk()

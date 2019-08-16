@@ -15,12 +15,13 @@ from faker.providers import BaseProvider
 
 
 class Provider(BaseProvider):
-        def lognormal(self):
-            mu = 0
-            sigma = 1
+    def lognormal(self):
+        mu = 0
+        sigma = 1
 
-            return self.generator.random.lognormvariate(mu, sigma)
-    
+        return self.generator.random.lognormvariate(mu, sigma)
+
+
 class TestCase(unittest.TestCase):
     def test(self):
         fake = Faker()
@@ -28,7 +29,7 @@ class TestCase(unittest.TestCase):
         provider = Provider(fake)
         fake.add_provider(provider)
         print(fake.lognormal())
-    
-    
+
+
 if __name__ == '__main__':
-       unittest.main()
+    unittest.main()

@@ -77,6 +77,10 @@ class MfTool(ToolBase):
 
         self._nbatches = 0
 
+    def initialize(self):
+        self.__logger.info("Ignored codecs")
+        self.__logger.info(ebcdic.ignored_codec_names())
+
     @property
     def record_size(self):
         return self.rsize

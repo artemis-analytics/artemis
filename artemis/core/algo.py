@@ -10,15 +10,17 @@
 """
 Algorithms
 """
-import logging
 from collections import OrderedDict
 import importlib
 from pprint import pformat
 
 from artemis.logger import Logger
-from artemis.core.properties import Properties, JobProperties
+from artemis.core.abcalgo import AbcAlgoBase
+from artemis.core.properties import Properties
+from artemis.core.gate import ArtemisGateSvc
 from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
 
+from artemis.core.gate import ToolStoreMixin
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework
 # Interface IAlgoBase class to expose the methods to the framework
@@ -33,33 +35,7 @@ from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
 # Inherited classes for user-defined methods MyAlgo
 
 
-class AbcAlgoBase(type):
-    '''
-    https://stackoverflow.com/questions/29069655/python-logging-with-a-common-logger-class-mixin-and-class-inheritance
-
-    Logger for the Base class and each derived class.
-    Not for instances though
-    To identify logging from different configurations
-    pass the instance name (attribute)
-    '''
-    def __init__(cls, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Explicit name mangling
-        logger_attribute_name = '_' + cls.__name__ + '__logger'
-
-        # Logger name derived accounting for inheritance for the bonus marks
-        logger_name = '.'.join([c.__name__ for c in cls.mro()[-2::-1]])
-
-        def fget(cls): return getattr(cls, logger_attribute_name)
-
-        # add the getter property to cls
-        setattr(cls, 'logger', property(fget))
-        # add the logger to cls
-        setattr(cls, logger_attribute_name, logging.getLogger(logger_name))
-
-
-class AlgoBase(metaclass=AbcAlgoBase):
+class AlgoBase(ToolStoreMixin, metaclass=AbcAlgoBase):
 
     def __init__(self, name, **kwargs):
         '''
@@ -82,7 +58,7 @@ class AlgoBase(metaclass=AbcAlgoBase):
         for key in kwargs:
             self.properties.add_property(key, kwargs[key])
 
-        self._jp = JobProperties()
+        self.gate = ArtemisGateSvc()
 
     def __init_subclass__(cls, **kwargs):
         '''
