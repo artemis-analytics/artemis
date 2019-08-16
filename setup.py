@@ -9,6 +9,7 @@ import pyarrow as pa
 def main():
     # Define all Cython extensions here - by default, link to arrow and disable warnings
     make_ext('artemis.tools._filtercoltool', sources='./artemis/tools/_filtercoltool.pyx')
+    make_ext('artemis.externals.accumulation_tree.accumulation_tree', sources='./artemis/externals/accumulation_tree/accumulation_tree.pyx')
     # Any non-Cython extensions should be manually added to 'ext_modules'.
 
     setup(name='artemis',
@@ -34,7 +35,6 @@ def main():
             "sas7bdat>=2.2.2",
             "ebcdic==1.0.0",
             "faker",
-            "tdigest",
             "dask",
             "pygraphviz",
             "simplekv>=0.12"
