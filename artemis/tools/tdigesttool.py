@@ -13,7 +13,7 @@ distribution generator tool to the artemis toolset
 Used for validation purpose
 """
 
-from tdigest import TDigest
+from artemis.externals.tdigest.tdigest import TDigest
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 
