@@ -9,7 +9,7 @@ import pyarrow as pa
 from artemis.core.tool import ToolBase
 from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
-from artemis.core.gate import ArtemisGateSvc
+from artemis.core.gate import ArtemisGateSvc, StoreMixin
 
 from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
 from artemis.io.protobuf.table_pb2 import Table
@@ -23,7 +23,7 @@ class BufferOutputOptions:
 
 
 @Logger.logged
-class BufferOutputWriter(ToolBase):
+class BufferOutputWriter(StoreMixin, ToolBase):
     '''
     Manage output data with an in-memory buffer
     buffer is flushed to disk when a max buffer size
@@ -229,11 +229,11 @@ class BufferOutputWriter(ToolBase):
         table.info.schema.info.aux.raw_header_size_bytes = raw_schema_size
         table.info.schema.info.aux.raw_header = raw_schema
 
-        self.gate.store.register_content(table,
-                                         tinfo,
-                                         dataset_id=ds_id,
-                                         partition_key=pkey,
-                                         job_id=job_id)
+        self.register_content(table,
+                              tinfo,
+                              dataset_id=ds_id,
+                              partition_key=pkey,
+                              job_id=job_id)
 
     def _write_file(self):
         fileinfo = FileObjectInfo()
@@ -252,12 +252,11 @@ class BufferOutputWriter(ToolBase):
                            job_id)
         fileinfo.partition = p_key
         try:
-            obj = self.gate.store.register_content(self._buffer,
-                                                   fileinfo,
-                                                   dataset_id=ds_id,
-                                                   job_id=job_id,
-                                                   partition_key=p_key)
-            id_ = obj.uuid
+            id_ = self.register_content(self._buffer,
+                                        fileinfo,
+                                        dataset_id=ds_id,
+                                        job_id=job_id,
+                                        partition_key=p_key).uuid
         except Exception:
             self.__logger.error("Fail to register buffer to store")
             raise
@@ -277,11 +276,11 @@ class BufferOutputWriter(ToolBase):
                                partition_key,
                                job_id)
             try:
-                obj = self.gate.store.register_content(self._buffer,
-                                                       fileinfo,
-                                                       dataset_id=ds_id,
-                                                       job_id=job_id,
-                                                       partition_key=p_key)
+                obj = self.register_content(self._buffer,
+                                            fileinfo,
+                                            dataset_id=ds_id,
+                                            job_id=job_id,
+                                            partition_key=p_key)
                 address = obj.address
             except Exception:
                 self.__logger.error("Cannot register csv file")

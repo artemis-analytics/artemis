@@ -16,3 +16,5 @@ artemis.egg-info
 *pyc
 _*.cpp
 _*.so
+*.c
+*.so
