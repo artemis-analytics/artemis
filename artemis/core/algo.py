@@ -20,7 +20,7 @@ from artemis.core.properties import Properties
 from artemis.core.gate import ArtemisGateSvc
 from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
 
-from artemis.core.gate import ToolStoreMixin
+from artemis.core.gate import ToolStoreMixin, StoreMixin
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework
 # Interface IAlgoBase class to expose the methods to the framework
@@ -35,7 +35,7 @@ from artemis.core.gate import ToolStoreMixin
 # Inherited classes for user-defined methods MyAlgo
 
 
-class AlgoBase(ToolStoreMixin, metaclass=AbcAlgoBase):
+class AlgoBase(StoreMixin, ToolStoreMixin, metaclass=AbcAlgoBase):
 
     def __init__(self, name, **kwargs):
         '''

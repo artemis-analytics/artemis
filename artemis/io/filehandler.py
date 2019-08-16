@@ -386,11 +386,11 @@ class FileHandlerTool(AlgoBase):
                     a_col.name = col
                 tinfo.fields.append(a_col.name)
 
-        self.gate.store.register_content(table,
-                                         tinfo,
-                                         dataset_id=ds_id,
-                                         partition_key=pkey,
-                                         job_id=job_id)
+        self.register_content(table,
+                              tinfo,
+                              dataset_id=ds_id,
+                              partition_key=pkey,
+                              job_id=job_id)
 
     def _update(self, filepath_or_buffer):
 

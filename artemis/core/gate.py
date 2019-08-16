@@ -221,8 +221,14 @@ class StoreMixin():
     Methods for interacting with Cronus BaseObjectStore
     '''
 
-    def register_content():
-        pass
+    def register_content(self, buf,
+                         info, dataset_id,
+                         job_id, partition_key=None):
+
+        return self.gate.store.register_content(buf, info,
+                                                dataset_id=dataset_id,
+                                                job_id=job_id,
+                                                partition_key=partition_key)
 
 
 class MetaMixin():
