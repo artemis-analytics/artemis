@@ -41,7 +41,7 @@ message Sampler {
 message Configuration {
   string name = 1;
   string uuid = 2;
-  repeated Module tools = 3;
+  map<string, Module> tools = 3;
   repeated Module algos = 4;
   uint64 max_malloc_size_bytes = 5;
   Sampler sampler = 6;

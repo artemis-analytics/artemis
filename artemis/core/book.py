@@ -31,6 +31,7 @@ from physt.io.protobuf.histogram_pb2 import HistogramCollection
 
 from artemis.logger import Logger
 from artemis.utils.utils import autobinning
+from artemis.core.tool import ToolBase
 
 from tdigest import TDigest
 from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
@@ -528,4 +529,42 @@ class TDigestBook(BaseBook):
             self.__logger.error("Cannot write hbook")
             self.__logger.error(fname)
         except Exception:
+            raise
+
+
+@Logger.logged
+class ToolStore(BaseBook):
+    # TODO
+    # Check for existence of tool
+    # Use dict class functionality, i.e. derive from dict
+
+    def __init__(self, tools={}):
+        super().__init__(tools)
+        self._rebooked = False
+
+    def __setitem__(self, name, value):
+        '''
+        book[key] = value
+        '''
+
+        if not isinstance(name, str):
+            self.__logger.error("Name %s", type(name))
+            raise TypeError
+        # TODO
+        # Either ensure all tools are actually derived from ToolBase
+        # Or be able to check the AbsAlgoBase as the metaclass
+
+        self._set(name, value)
+
+    def add(self, logger, toolcfg):
+        # add tool from a config
+        try:
+            self[toolcfg.name] = ToolBase.from_msg(logger, toolcfg)
+        except TypeError:
+            raise
+
+    def get(self, key):
+        try:
+            return self[key]
+        except KeyError:
             raise

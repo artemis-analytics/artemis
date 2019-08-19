@@ -89,27 +89,23 @@ def example_configuration(table_id, seed=42):
                                   encoding=encoding,
                                   seed=seed)
     # Add to the tools
+    config.tools[filehandler.name].CopyFrom(filehandler.to_msg())
+
     csvtool = CsvTool('csvtool', block_size=(2 * blocksize))
-    csvtoolmsg = config.tools.add()
-    csvtoolmsg.CopyFrom(csvtool.to_msg())
+    config.tools[csvtool.name].CopyFrom(csvtool.to_msg())
 
     filtercoltool = FilterColTool('filtercoltool',
                                   columns=['record-id', 'SIN', 'DOB'])
-    filtercoltoolmsg = config.tools.add()
-    filtercoltoolmsg.CopyFrom(filtercoltool.to_msg())
-
-    fhtoolmsg = config.tools.add()
-    fhtoolmsg.CopyFrom(filehandler.to_msg())
+    config.tools[filtercoltool.name].CopyFrom(filtercoltool.to_msg())
+    
     writer = BufferOutputWriter('bufferwriter',
                                 BUFFER_MAX_SIZE=max_buffer_size,
                                 write_csv=write_csv)
-    writertoolmsg = config.tools.add()
-    writertoolmsg.CopyFrom(writer.to_msg())
+    config.tools[writer.name].CopyFrom(writer.to_msg())
     
     tdigesttool = TDigestTool('tdigesttool')
-    tdigesttoolmsg = config.tools.add()
-    tdigesttoolmsg.CopyFrom(tdigesttool.to_msg())
-
+    config.tools[tdigesttool.name].CopyFrom(tdigesttool.to_msg())
+    
     sampler = config.sampler
     sampler.ndatums = sample_ndatums
     sampler.nchunks = sample_nchunks

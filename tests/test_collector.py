@@ -116,15 +116,10 @@ class CollectorTestCase(unittest.TestCase):
             for leaf in jp.tree.leaves:
                 jp.tree.nodes[leaf].payload.append(Element('test'))
                 jp.tree.nodes[leaf].payload[-1].add_data(batches[-1])
-            
 
             collector = Collector('collect', job_id=job_id, path='')
-            with self.assertRaises(KeyError):
-                    collector.initialize()
-
             writer = BufferOutputWriter('bufferwriter')
-            msg = jp.config.tools.add()
-            msg.CopyFrom(writer.to_msg())
+            jp.config.tools[writer.name].CopyFrom(writer.to_msg())
             collector.initialize()
 
             for leaf in jp.tree.leaves:
@@ -160,8 +155,7 @@ class CollectorTestCase(unittest.TestCase):
             collector = Collector('collect', job_id='job', path='')
 
             writer = BufferOutputWriter('bufferwriter')
-            msg = jp.config.tools.add()
-            msg.CopyFrom(writer.to_msg())
+            jp.config.tools[writer.name].CopyFrom(writer.to_msg())
             collector.initialize()
             with self.assertRaises(IndexError):
                 collector._collect()
@@ -210,8 +204,7 @@ class CollectorTestCase(unittest.TestCase):
             collector = Collector('collect', job_id='job', path='', max_malloc=0)
 
             writer = BufferOutputWriter('bufferwriter')
-            msg = jp.config.tools.add()
-            msg.CopyFrom(writer.to_msg())
+            jp.config.tools[writer.name].CopyFrom(writer.to_msg())
             collector.initialize()
             with self.assertRaises(IndexError):
                 collector.execute()
