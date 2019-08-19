@@ -154,8 +154,7 @@ class Configurable():
 
     def _add_tools(self):
         for tool in self._tools:
-            msg = self._msg.tools.add()
-            msg.CopyFrom(tool)
+            self._msg.tools[tool.name].CopyFrom(tool)
 
     def add_algos(self, algos):
         '''

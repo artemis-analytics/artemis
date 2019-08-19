@@ -54,9 +54,11 @@ class Collector(AlgoBase):
 
         # Buffer stream requires a fixed pyArrow schema!
         _wrtcfg = None
-        for toolcfg in self.gate.config.tools:
-            if toolcfg.name == "bufferwriter":
-                _wrtcfg = toolcfg
+        try:
+            _wrtcfg = self.gate.config.tools['bufferwriter']
+        except KeyError:
+            self.__logger.error("BufferWriter configuration not found")
+            raise
 
         if _wrtcfg is None:
             self.__logger.error("BufferWriter not configured")
@@ -76,6 +78,8 @@ class Collector(AlgoBase):
             # Properly configure the properties in the job config
             # This is a workaround which overwrites any set properties
             if isinstance(_last, pa.lib.RecordBatch):
+                self.__logger.info("Writer config")
+                self.__logger.info(_wrtcfg)
                 try:
                     _wrtcfg.name = "writer_" + key
                 except AttributeError:

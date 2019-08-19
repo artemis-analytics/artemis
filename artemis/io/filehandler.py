@@ -396,21 +396,13 @@ class FileHandlerTool(AlgoBase):
 
         self.__logger.info("Update input datum metadata id: %s",
                            self.gate.store[filepath_or_buffer])
-        self.gate.store[filepath_or_buffer].file.size_bytes = self._size
 
-        # Update datum input count
-        self.gate.meta.summary.processed_ndatums += 1
+        self.set_file_size_bytes(filepath_or_buffer, self._size)
 
         # Build the table schema from the input file
         self._build_table_from_file(filepath_or_buffer)
 
-        # Record the blocks chunked from input datum
-        for i, block in enumerate(self.blocks):
-            msg = self.gate.store[filepath_or_buffer].file.blocks.add()
-            msg.index = i
-            msg.info.offset = block[0]
-            msg.info.size_bytes = block[1]
-            self.__logger.info(msg)
+        self.set_file_blocks(filepath_or_buffer, self.blocks)
 
     def _create_header(self, schema):
         csv = io.StringIO()

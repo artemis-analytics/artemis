@@ -15,25 +15,10 @@ from artemis.meta.cronus import BaseObjectStore
 from artemis.io.protobuf.cronus_pb2 import HistsObjectInfo, \
     TDigestObjectInfo, JobObjectInfo
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis.io.protobuf.artemis_pb2 import JOB_SUCCESS
 from artemis.io.protobuf.configuration_pb2 import Configuration
 from artemis.io.protobuf.menu_pb2 import Menu
-from artemis.core.tool import ToolBase
-
-
-class ToolStore():
-    # TODO
-    # Check for existence of tool
-    # Use dict class functionality, i.e. derive from dict
-
-    def __init__(self):
-        self.tools = {}
-
-    def add(self, logger, toolcfg):
-        # add tool from a config
-        self.tools[toolcfg.name] = ToolBase.from_msg(logger, toolcfg)
-
-    def get(self, key):
-        return self.tools[key]
+from artemis.core.book import ToolStore
 
 
 @Logger.logged
@@ -64,60 +49,6 @@ class ArtemisGateSvc(metaclass=Singleton):
         self.store = None
         self.tree = None
         self._current_file_id = None
-
-    @property
-    def job_id(self):
-        return self.meta.job_id
-
-    @property
-    def path(self):
-        return self.meta.store_path
-
-    @property
-    def store_name(self):
-        return self.meta.store_name
-
-    @property
-    def store_uuid(self):
-        return self.meta.store_id
-
-    @property
-    def menu_id(self):
-        return self.meta.menu_id
-
-    @property
-    def config_id(self):
-        return self.meta.config_id
-
-    @property
-    def input_id(self):
-        '''
-        Parent dataset uuid
-        '''
-        return self.meta.parentset_id
-
-    @property
-    def output_id(self):
-        '''
-        Output dataset uuid
-        '''
-        return self.meta.dataset_id
-
-    @property
-    def job_state(self):
-        return self.meta.state
-
-    @job_state.setter
-    def job_state(self, value):
-        self.meta.state = value
-
-    @property
-    def current_file(self):
-        return self._current_file_id
-
-    @current_file.setter
-    def current_file(self, value):
-        self._current_file_id = value
 
     def configure(self, jobinfo):
         try:
@@ -155,8 +86,36 @@ class ArtemisGateSvc(metaclass=Singleton):
 
         self.tree = Tree(self.meta.name)
 
-    def finalize(self):
+    def _finalize_jobstate(self):
+        self.meta.state = JOB_SUCCESS
+        self.meta.finished.GetCurrentTime()
+        duration = self.meta.summary.job_time
+        duration.seconds = self.meta.finished.seconds -\
+            self.meta.started.seconds
+        duration.nanos = self.meta.finished.nanos -\
+            self.meta.started.nanos
+        if duration.seconds < 0 and duration.nanos > 0:
+            duration.seconds += 1
+            duration.nanos -= 1000000000
+        elif duration.seconds > 0 and duration.nanos < 0:
+            duration.seconds -= 1
+            duration.nanos += 1000000000
 
+    def _finalize_timers(self):
+
+        for key in self.hbook.keys():
+            if 'time' not in key:
+                continue
+            mu = self.hbook[key].mean()
+            std = self.hbook[key].std()
+
+            # Add to the msg
+            msgtime = self.meta.summary.timers.add()
+            msgtime.name = key
+            msgtime.time = mu
+            msgtime.std = std
+
+    def _job_report(self):
         self.__logger.info("Job Summary")
         self.__logger.info("=================================")
         self.__logger.info("Job %s", self.meta.name)
@@ -174,16 +133,23 @@ class ArtemisGateSvc(metaclass=Singleton):
         for t in self.meta.summary.timers:
             self.__logger.debug("%s: %2.2f +/- %2.2f", t.name, t.time, t.std)
         self.__logger.info("This is a test of your greater survival")
+
+        self.__logger.info("Processed data summary")
+        self.__logger.info("Mean payload %2.2f MB",
+                           self.hbook['artemis.payload'].mean())
+        self.__logger.info("Mean blocksize %2.2f MB",
+                           self.hbook['artemis.blocksize'].mean())
+        self.__logger.info("Mean n block %2.2f ",
+                           self.hbook['artemis.nblocks'].mean())
+
         self.__logger.info("=================================")
 
-        jinfo = JobObjectInfo()
+    def finalize(self):
+
         try:
-            self.store.register_content(self.meta,
-                                        jinfo,
-                                        dataset_id=self.meta.dataset_id,
-                                        job_id=self.meta.job_id).uuid
+            self._finalize_timers()
         except Exception:
-            self.__logger.error("Unable to register hist")
+            self.__logger.error("Cannot finalize timers")
             raise
 
         hinfo = HistsObjectInfo()
@@ -207,8 +173,26 @@ class ArtemisGateSvc(metaclass=Singleton):
                                         dataset_id=self.meta.dataset_id,
                                         job_id=self.meta.job_id).uuid
         except Exception:
-            self.__logger.error("Unable to register hist")
+            self.__logger.error("Unable to register tdigest")
             raise
+
+        try:
+            self._finalize_jobstate()
+        except Exception:
+            self.__logger.error("Cannot finalize job state and timer")
+            raise
+
+        jinfo = JobObjectInfo()
+        try:
+            self.store.register_content(self.meta,
+                                        jinfo,
+                                        dataset_id=self.meta.dataset_id,
+                                        job_id=self.meta.job_id).uuid
+        except Exception:
+            self.__logger.error("Unable to register job meta data")
+            raise
+
+        self._job_report()
         # try:
         #    self.store.save_store()
         # except Exception:
@@ -221,6 +205,11 @@ class StoreMixin():
     Methods for interacting with Cronus BaseObjectStore
     '''
 
+    def register_log(self):
+        logobj = self.gate.store.register_log(self.gate.meta.dataset_id,
+                                              self.gate.meta.job_id)
+        return logobj
+
     def register_content(self, buf,
                          info, dataset_id,
                          job_id, partition_key=None):
@@ -230,12 +219,96 @@ class StoreMixin():
                                                 job_id=job_id,
                                                 partition_key=partition_key)
 
+    def set_file_size_bytes(self, filepath_or_buffer, size_):
+        self.gate.store[filepath_or_buffer].file.size_bytes = size_
+
+    def set_file_blocks(self, filepath_or_buffer, blocks):
+        # Record the blocks chunked from input datum
+        for i, block in enumerate(blocks):
+            msg = self.gate.store[filepath_or_buffer].file.blocks.add()
+            msg.index = i
+            msg.info.offset = block[0]
+            msg.info.size_bytes = block[1]
+
 
 class MetaMixin():
     '''
     Methods for setting / getting job attributes
+    Meta data required in ArtemisGate to track processing
     '''
-    pass
+    @property
+    def job_id(self):
+        return self.gate.meta.job_id
+
+    @property
+    def path(self):
+        return self.gate.meta.store_path
+
+    @property
+    def store_name(self):
+        return self.gate.meta.store_name
+
+    @property
+    def store_uuid(self):
+        return self.gate.meta.store_id
+
+    @property
+    def menu_id(self):
+        return self.gate.meta.menu_id
+
+    @property
+    def config_id(self):
+        return self.gate.meta.config_id
+
+    @property
+    def input_id(self):
+        '''
+        Parent dataset uuid
+        '''
+        return self.gate.meta.parentset_id
+
+    @property
+    def output_id(self):
+        '''
+        Output dataset uuid
+        '''
+        return self.gate.meta.dataset_id
+
+    @property
+    def job_state(self):
+        return self.gate.meta.state
+
+    @job_state.setter
+    def job_state(self, value):
+        self.gate.meta.state = value
+
+    @property
+    def current_file(self):
+        return self.gate._current_file_id
+
+    @current_file.setter
+    def current_file(self, value):
+        self.gate._current_file_id = value
+
+    @property
+    def processed_ndatums(self):
+        return self.gate.meta.summary.processed_ndatums
+
+    @processed_ndatums.setter
+    def processed_ndatums(self, value):
+        self.gate.meta.summary.processed_ndatums += value
+
+    @property
+    def processed_bytes(self):
+        return self.gate.meta.summary.processed_bytes
+
+    @processed_bytes.setter
+    def processed_bytes(self, value):
+        self.gate.meta.summary.processed_bytes += value
+
+    def reset_job_summary(self):
+        self.gate.meta.summary.processed_bytes = 0
+        self.gate.meta.summary.processed_ndatums = 0
 
 
 class ToolStoreMixin():
