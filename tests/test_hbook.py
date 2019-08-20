@@ -5,8 +5,8 @@ import numpy as np
 import unittest
 
 from artemis.core.book import BaseBook, ArtemisBook, TDigestBook
-from physt.histogram1d import Histogram1D
-from physt.histogram_base import HistogramBase
+from artemis.externals.physt.histogram1d import Histogram1D
+from artemis.externals.physt.histogram_base import HistogramBase
 
 
 class HBookCase(unittest.TestCase):

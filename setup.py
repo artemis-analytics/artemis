@@ -27,8 +27,6 @@ def main():
             "scipy",
             "cython",
             "pyarrow>=0.12.*",
-            "physt>=0.3.43",
-            "histbook>=1.2.3",
             "packaging",
             "protobuf",
             "matplotlib",
