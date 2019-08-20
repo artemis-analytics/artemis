@@ -23,11 +23,11 @@ import fnmatch
 
 import numpy as np
 
-from physt.histogram_base import HistogramBase
-from physt.histogram1d import Histogram1D
-from physt.io.protobuf import write_many as physt_write_many
-from physt.io.protobuf import read as physt_read
-from physt.io.protobuf.histogram_pb2 import HistogramCollection
+from artemis.externals.physt.histogram_base import HistogramBase
+from artemis.externals.physt.histogram1d import Histogram1D
+from artemis.io.protobuf import write_many as physt_write_many
+from artemis.io.protobuf import read as physt_read
+from artemis.io.protobuf.histogram_pb2 import HistogramCollection
 
 from artemis.logger import Logger
 from artemis.utils.utils import autobinning
