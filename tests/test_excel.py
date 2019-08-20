@@ -26,9 +26,9 @@ class Test_XLSReader(unittest.TestCase):
     def test_excel(self):
         # defines protobuf
         # read in excel and check if two instances are =
-
-        inst = XlsTool('tool')
-        ds = inst.execute('./tests/data/Dataset_metastore.xlsx')
+        location = './tests/data/Dataset_metastore.xlsx'
+        inst = XlsTool('tool', location = location)
+        ds = inst.execute(location)
 
         # Explicit definition
         d = Dataset()
@@ -114,6 +114,7 @@ class Test_XLSReader(unittest.TestCase):
         f2.info.aux.meta['Info 1'].description = 'this metadata is used for'
         f2.info.aux.meta['Info 1'].bool_val = False
         
+        ds.dataset.aux.data_asset.ClearField('creation_time') # Cannot compare current time
         print ("=======Dataset=======")
         print (ds.dataset)
         print ("=======Tables=======")

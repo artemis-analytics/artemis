@@ -8,8 +8,7 @@
 # Distributed under terms of the  license.
 
 from pathlib import Path
-# import click
-import sys
+import click
 import pandas as pd
 # from pandas import ExcelFile
 
@@ -36,10 +35,6 @@ class XlsToolOptions:
     '''
     pass
 
-# @click.command()
-# @click.option('--location', required = True,
-#                prompt = True, help = 'Path to .xlsx')
-
 
 class XlsTool(ToolBase):
     '''
@@ -47,16 +42,25 @@ class XlsTool(ToolBase):
     DatasetObjectInfo and a list of protobuf Table model
     '''
     def __init__(self, name, **kwargs):
-        '''
-        Generator parameters. Configured once per instantiation
-        '''
-        super().__init__(name, **kwargs)
 
+        self.options = dict(XlsToolOptions())
+        self.options.update(kwargs)
+        
+        super().__init__(name, **self.options)
+                
+        if 'location' not in self.options:
+            self.__logger.error("Missing required path to Excel file")
+            raise Exception
+        if not(str(self.options['location']).endswith('.xlsx')):
+            self.__logger.error("Specified file is not .xlsx file.")
+            raise Exception
+        if not(Path(self.options['location']).is_file()):
+            self.__logger.error("Specified file does not exist with given path")
+            raise Exception
+        
     def initialize(self):
-        self.__logger.info("%s properties: %s",
-                           self.__class__.__name__,
-                           self.properties)
-
+        pass
+    
     def execute(self, location):
         '''
         User input location of excel, calls read_excel
@@ -68,21 +72,8 @@ class XlsTool(ToolBase):
         Returns
         ----------
         Dataset instance, contains a DatasetObjectInfo and a Table
-        '''
-
-        if not(str(location).endswith('.xlsx')):
-            print("Specified file is not .xlsx file.")
-            sys.exit()
-        if not(Path(location).is_file()):
-            print("Specified file does not exist with given path")
-            sys.exit()
-
+        '''        
         ds = self.read_excel(location)
-        print("=============Loaded dataset================")
-        print("Dataset:")
-        print(ds.dataset)
-        print("Tables:")
-        print(ds.tables)
         return ds
 
     def read_excel(self, location):
@@ -235,6 +226,7 @@ class XlsTool(ToolBase):
                 str(self.mmap(ds, 'Granularity Type'))
             data_asset.state = \
                 str(self.mmap(ds, 'State'))
+            data_asset.creation_time.GetCurrentTime()
             data_asset.data_asset_category = \
                 str(self.mmap(ds, 'Data Asset Category'))
         except Exception:
@@ -298,12 +290,12 @@ class XlsTool(ToolBase):
         schema = table.info.schema
         field = schema.info.fields
 
-        schm = tb.iloc[2:5, 0:2]  # Isolate table level info
-        adin = tb.iloc[1:7, 10:]  # Isolate additional metadata
-        adin.fillna('', inplace=True)  # Fill with empty string
-        meta_name = tb.loc[6]  # Row for metadata names
-        tb = tb.iloc[7:, ]  # Isolate info based on each field
-
+        schm = tb.iloc[2:5, 0:2] # Isolate table level info
+        adin = tb.iloc[1:7, 10:] # Isolate additional metadata
+        tb.fillna('', inplace = True) # Fill with empty string
+        meta_name = tb.loc[6] # Row for metadata names
+        tb = tb.iloc[7:,] # Isolate info based on each field
+        
         if meta_name[0] == 'Variable Name':
             var_names = tb.iloc[0:, 0].drop_duplicates()
         else:
