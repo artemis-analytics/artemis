@@ -85,11 +85,9 @@ class ArtemisTestCase(unittest.TestCase):
             configinfo = ConfigObjectInfo()
             configinfo.created.GetCurrentTime()
             
-            print(config.job_config.uuid)
-            
             menu_uuid = store.register_content(msgmenu, menuinfo).uuid
             config_uuid = store.register_content(config._msg, configinfo).uuid
-            
+
             g_dataset = store.register_dataset()
             store.new_partition(g_dataset.uuid, 'generator')
             job_id = store.new_job(g_dataset.uuid)
@@ -144,12 +142,12 @@ class ArtemisTestCase(unittest.TestCase):
             job.config_id = config_uuid
             job.dataset_id = dataset.uuid
             job.job_id = str(job_id)
-            print(job)
+            #print(job)
             bow = Artemis(job, loglevel='INFO')
             bow.control()
 
-            print(bow.gate.store[dataset.uuid])
-            print(bow.gate.store[g_dataset.uuid])
+            #print(bow.gate.store[dataset.uuid])
+            #print(bow.gate.store[g_dataset.uuid])
 
     def test_distributed(self):
         with tempfile.TemporaryDirectory() as dirpath:
@@ -254,7 +252,8 @@ class ArtemisTestCase(unittest.TestCase):
                                          job_id))
 
             results = dask.compute(*ds_results, scheduler='single-threaded')
-
+            # Workaround to fix error in dataset merging
+            store.new_partition(dataset.uuid, 'seqY')
             # Update the dataset
             for buf in results:
                 ds = DatasetObjectInfo()
@@ -268,4 +267,4 @@ class ArtemisTestCase(unittest.TestCase):
 if __name__ == '__main__':
     test = ArtemisTestCase()
     test.test_distributed()
-    test.test_fileio()
+    #test.test_fileio()

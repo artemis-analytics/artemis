@@ -100,7 +100,7 @@ class ProfilerAlgo(AlgoBase):
             # if key == 'Normal':
             # print(value.centroids_to_list())
             if len(value.centroids_to_list()) == 0:
-                self.__logger.warning(key + " is not a numeric value "
-                                      "and does not have a TDigest")
+                self.__logger.debug(key + " is not a numeric value "
+                                    "and does not have a TDigest")
             else:
                 pass

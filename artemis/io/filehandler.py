@@ -394,8 +394,8 @@ class FileHandlerTool(AlgoBase):
 
     def _update(self, filepath_or_buffer):
 
-        self.__logger.info("Update input datum metadata id: %s",
-                           self.gate.store[filepath_or_buffer])
+        self.__logger.debug("Update input datum metadata id: %s",
+                            self.gate.store[filepath_or_buffer])
 
         self.set_file_size_bytes(filepath_or_buffer, self._size)
 
