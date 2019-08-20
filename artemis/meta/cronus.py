@@ -106,7 +106,7 @@ class BaseObjectStore(BaseBook):
         objects = dict()
 
         for item in self._info.objects:
-            self.__logger.info("Loading object %s", item.uuid)
+            self.__logger.debug("Loading object %s", item.uuid)
             objects[item.uuid] = item
             if item.WhichOneof('info') == 'dataset':
                 for child in item.dataset.files:
@@ -211,7 +211,7 @@ class BaseObjectStore(BaseBook):
         MetaObject dataclass
 
         '''
-        self.__logger.info("Registering content %s", kwargs)
+        
 
         metaobj = None
         dataset_id = kwargs.get('dataset_id', None)
@@ -222,8 +222,10 @@ class BaseObjectStore(BaseBook):
         glob = kwargs.get('glob', None)
 
         content_type = type(content)
-
-        self.__logger.info("%s %s %s", dataset_id, partition_key, job_id)
+        if kwargs is not None:
+            self.__logger.debug("Registering content %s", kwargs)
+        if dataset_id is not None:
+            self.__logger.debug("%s %s %s", dataset_id, partition_key, job_id)
         if isinstance(info, FileObjectInfo):
             if dataset_id is None:
                 self.__logger.error("Registering file requires dataset id")
@@ -268,10 +270,18 @@ class BaseObjectStore(BaseBook):
                     raise
 
         elif isinstance(info, MenuObjectInfo):
-            metaobj = self._register_menu(content, info)
+            try:
+                metaobj = self._register_menu(content, info)
+            except Exception:
+                self.__logger.error("Error registering menu")
+                raise
 
         elif isinstance(info, ConfigObjectInfo):
-            metaobj = self._register_config(content, info)
+            try:
+                metaobj = self._register_config(content, info)
+            except Exception:
+                self.__logger.error("Error registering config")
+                raise
 
         elif isinstance(info, DatasetObjectInfo):
             self.__logger.error("Use register_dataset")
@@ -362,7 +372,7 @@ class BaseObjectStore(BaseBook):
         -------
         MetaObject dataclass describing the dataset content object
         '''
-        self.__logger.info("Register new dataset")
+        self.__logger.debug("Register new dataset")
         obj = self._mstore.info.objects.add()
         obj.uuid = str(uuid.uuid4())  # Register new datsets with UUID4
         obj.parent_uuid = self._uuid
@@ -392,7 +402,7 @@ class BaseObjectStore(BaseBook):
         -------
         MetaObject dataclass describing the log content object
         '''
-        self.__logger.info("Register new log")
+        self.__logger.debug("Register new log")
         obj = self[dataset_id].dataset.logs.add()
         obj.uuid = str(uuid.uuid4())
         obj.name = f"{dataset_id}.job_{job_id}.{obj.uuid}.log"
@@ -570,7 +580,7 @@ class BaseObjectStore(BaseBook):
         for id_ in self.keys():
             if self[id_].name.startswith(prefix) \
                     and self[id_].name.endswith(suffix):
-                self.__logger.info(self[id_].name)
+                self.__logger.debug(self[id_].name)
                 objs.append(MetaObject(self[id_].name,
                                        self[id_].uuid,
                                        self[id_].parent_uuid,
@@ -592,7 +602,7 @@ class BaseObjectStore(BaseBook):
         return hashobj.hexdigest()
 
     def _register_menu(self, menu, menuinfo):
-        self.__logger.info("Registering menu object")
+        self.__logger.debug("Registering menu object")
 
         obj = self._mstore.info.objects.add()
 
@@ -602,7 +612,7 @@ class BaseObjectStore(BaseBook):
         obj.name = menu.name
         # New data, get a url from the datastore
         obj.address = self._dstore.url_for(obj.name)
-        self.__logger.info("Retrieving url %s", obj.address)
+        self.__logger.debug("Retrieving url %s", obj.address)
 
         # Copy the info object
         obj.menu.CopyFrom(menuinfo)
@@ -614,7 +624,7 @@ class BaseObjectStore(BaseBook):
         '''
         Takes a config protbuf bytestream
         '''
-        self.__logger.info("Registering config object")
+        self.__logger.debug("Registering config object")
 
         obj = self._mstore.info.objects.add()
 
@@ -623,7 +633,7 @@ class BaseObjectStore(BaseBook):
         obj.name = config.name
         # New data, get a url from the datastore
         obj.address = self._dstore.url_for(obj.name)
-        self.__logger.info("Retrieving url %s", obj.address)
+        self.__logger.debug("Retrieving url %s", obj.address)
 
         # Copy the info object
         obj.config.CopyFrom(configinfo)
@@ -646,7 +656,7 @@ class BaseObjectStore(BaseBook):
             extracted from an input file
             or an output RecordBatchFile
         '''
-        self.__logger.info("Registering table Dataset %s, Partition %s",
+        self.__logger.debug("Registering table Dataset %s, Partition %s",
                            dataset_id, partition_key)
         if partition_key not in self[dataset_id].dataset.partitions:
             self.__logger.error("Partition %s not registered for dataset %s",
@@ -660,7 +670,7 @@ class BaseObjectStore(BaseBook):
         obj.name = table.name
         obj.parent_uuid = dataset_id
         obj.address = self._dstore.url_for(obj.name)
-        self.__logger.info("Retrieving url %s", obj.address)
+        self.__logger.debug("Retrieving url %s", obj.address)
         obj.table.CopyFrom(tableinfo)
         self[obj.uuid] = obj
         self._put_message(obj.uuid, table)
@@ -679,8 +689,8 @@ class BaseObjectStore(BaseBook):
         job key
         file uuid
         '''
-        self.__logger.info("Registering file")
-        self.__logger.info("Dataset: %s, Partition: %s",
+        self.__logger.debug("Registering file")
+        self.__logger.debug("Dataset: %s, Partition: %s",
                            dataset_id,
                            partition_key)
         if partition_key not in self[dataset_id].dataset.partitions:
@@ -705,7 +715,7 @@ class BaseObjectStore(BaseBook):
             f"{dataset_id}.job_{job_id}.part_{partition_key}.{obj.uuid}.{key}"
         obj.parent_uuid = dataset_id
         obj.address = self._dstore.url_for(obj.name)
-        self.__logger.info("Retrieving url %s", obj.address)
+        self.__logger.debug("Retrieving url %s", obj.address)
         obj.file.CopyFrom(fileinfo)
 
         self[obj.uuid] = obj
@@ -726,7 +736,7 @@ class BaseObjectStore(BaseBook):
         extension hists.data
         dataset_id.job_name.hists_id.dat
         '''
-        self.__logger.info("Register histogram")
+        self.__logger.debug("Register histogram")
         obj = self[dataset_id].dataset.hists.add()
         # obj.uuid = self._compute_hash(pa.input_stream(buf))
         obj.uuid = str(uuid.uuid4())
@@ -752,7 +762,7 @@ class BaseObjectStore(BaseBook):
         extension hists.data
         dataset_id.job_name.hists_id.dat
         '''
-        self.__logger.info("Register histogram")
+        self.__logger.debug("Register histogram")
         obj = self[dataset_id].dataset.tdigests.add()
         # obj.uuid = self._compute_hash(pa.input_stream(buf))
         obj.uuid = str(uuid.uuid4())
@@ -779,7 +789,7 @@ class BaseObjectStore(BaseBook):
         extension hists.data
         dataset_id.job_name.hists_id.dat
         '''
-        self.__logger.info("Register job")
+        self.__logger.debug("Register job")
         obj = self[dataset_id].dataset.jobs.add()
         # obj.uuid = self._compute_hash(pa.input_stream(buf))
         obj.uuid = str(uuid.uuid4())
@@ -802,7 +812,7 @@ class BaseObjectStore(BaseBook):
         for a file that is already in a store
         Requires a stream as bytes
         '''
-        self.__logger.info("Registering on disk file %s", location)
+        self.__logger.debug("Registering on disk file %s", location)
         path = Path(location)
         if path.is_absolute() is False:
             path = path.resolve()
@@ -860,7 +870,7 @@ class BaseObjectStore(BaseBook):
 
     def _put_message(self, id_, msg):
         # proto message to persist
-        self.__logger.info("Putting message to datastore %s",
+        self.__logger.debug("Putting message to datastore %s",
                            self[id_].address)
         try:
             self._dstore.put(self[id_].name, msg.SerializeToString())
@@ -883,7 +893,7 @@ class BaseObjectStore(BaseBook):
 
     def _put_object(self, id_, buf):
         # bytestream to persist
-        self.__logger.info("Putting buf to datastore %s", self[id_].address)
+        self.__logger.debug("Putting buf to datastore %s", self[id_].address)
         try:
             self._dstore.put(self[id_].name, buf.to_pybytes())
         except IOError:
@@ -895,7 +905,7 @@ class BaseObjectStore(BaseBook):
 
     def _get_object(self, id_):
         # get object will read object into memory buffer
-        self.__logger.info(self[id_])
+        self.__logger.debug(self[id_])
         try:
             buf = self._dstore.get(self[id_].name)
         except KeyError:
