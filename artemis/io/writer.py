@@ -19,7 +19,6 @@ from artemis.io.protobuf.table_pb2 import Table
 class BufferOutputOptions:
     BUFFER_MAX_SIZE = 2147483648  # 2 GB
     write_csv = True
-    path = ''
 
 
 @Logger.logged
@@ -38,8 +37,6 @@ class BufferOutputWriter(StoreMixin, ToolBase):
 
         self.BUFFER_MAX_SIZE = self.properties.BUFFER_MAX_SIZE
         self._write_csv = self.properties.write_csv
-        self._path = self.properties.path  # absolute path for output
-        self.__logger.info("Writer path %s", self._path)
         self._cache = None  # cache for a pa.RecordBatch
         self._buffer = None  # in-memory buffer
         self._sink = None  # pa.BufferOutputStream
@@ -56,7 +53,6 @@ class BufferOutputWriter(StoreMixin, ToolBase):
         self._filecounter = 0  # total files
         self._fname = ''
         self._finfo = []  # Store list of metadata info objects
-        self.__logger.info("Writer path %s", self._path)
         self.gate = None
 
     @property
@@ -74,7 +70,6 @@ class BufferOutputWriter(StoreMixin, ToolBase):
     def initialize(self):
         self.__logger.info("Initialize writer")
         self.__logger.info(self.properties)
-        self.__logger.info(self._path)
         self.gate = ArtemisGateSvc()
         self._buffer = None
         self._sink = pa.BufferOutputStream()
