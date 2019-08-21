@@ -266,5 +266,5 @@ class ArtemisTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     test = ArtemisTestCase()
-    test.test_distributed()
-    #test.test_fileio()
+    #test.test_distributed()
+    test.test_fileio()
