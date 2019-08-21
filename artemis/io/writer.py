@@ -42,7 +42,6 @@ class BufferOutputWriter(StoreMixin, ToolBase):
         self._sink = None  # pa.BufferOutputStream
         self._writer = None  # pa.RecordBatchFileWriter
         self._schema = None  # pa.schema
-        self._fbasename = None  # file basename for dataset
 
         self._sizeof_batches = 0
         self._nbatches = 0  # batches per file

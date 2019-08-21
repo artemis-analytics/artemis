@@ -42,7 +42,6 @@ class Collector(AlgoBase):
         self.__logger.debug('__init__ Collector')
 
         self.max_malloc = self.properties.max_malloc
-        self.job_id = self.properties.job_id
 
     def initialize(self):
         self.__logger.info("initialize")
@@ -88,7 +87,6 @@ class Collector(AlgoBase):
                 self.__logger.info("Add Tool %s", _wrtcfg.name)
                 self.gate.tools.add(self.__logger, _wrtcfg)
                 self.gate.tools.get(_wrtcfg.name)._schema = _last.schema
-                self.gate.tools.get(_wrtcfg.name)._fbasename = self.job_id
                 self.gate.tools.get(_wrtcfg.name).initialize()
                 self.gate.store.new_partition(self.gate.meta.dataset_id, key)
 
