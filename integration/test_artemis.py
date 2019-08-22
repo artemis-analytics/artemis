@@ -32,7 +32,7 @@ from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from artemis.core.physt_wrapper import Physt_Wrapper
 from artemis.core.timerstore import TimerSvc
-from artemis.core.properties import JobProperties
+from artemis.core.gate import ArtemisGateSvc
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 try:
     from artemis.generators.csvgen import GenCsvLikeArrow
@@ -64,15 +64,11 @@ class ArtemisTestCase(unittest.TestCase):
         print("================================================")
 
     def tearDown(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-        Singleton.reset(Physt_Wrapper)
-        Singleton.reset(TimerSvc)
     
     def factory_example(self):
-        Singleton.reset(JobProperties)
-        Singleton.reset(Tree)
+        Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
         dirpath = os.getcwd()
         mb = MenuFactory('csvgen')
@@ -109,7 +105,7 @@ class ArtemisTestCase(unittest.TestCase):
                                   jobname='arrowproto',
                                   generator_type='csv',
                                   filehandler_type='csv',
-                                  nbatches=10,
+                                  nbatches=1,
                                   #num_cols=20,
                                   num_rows=10000,
                                   table_id=g_table.uuid,
@@ -151,9 +147,9 @@ class ArtemisTestCase(unittest.TestCase):
         print(job)
         bow = Artemis(job, loglevel='INFO')
         bow.control()
-        bow._jp.store.save_store()
+        bow.gate.store.save_store()
         store = BaseObjectStore(dirpath, job.store_name, store_uuid=job.store_id)
-        print(bow._jp.store[dataset.uuid].dataset)
+        print(bow.gate.store[dataset.uuid].dataset)
         logs = store.list(suffix='log') 
         print(logs)
         url_data = urllib.parse.urlparse(logs[-1].address)
@@ -167,7 +163,7 @@ class ArtemisTestCase(unittest.TestCase):
         if use_factories_test is True:
             self.factory_example()
         else:
-            Singleton.reset(JobProperties)
+            Singleton.reset(ArtemisGateSvc)
             self.prtcfg = 'arrowproto_proto.dat'
             try:
                 msgmenu = self.testmenu.to_msg()

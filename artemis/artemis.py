@@ -27,7 +27,7 @@ from artemis.logger import Logger
 # Core
 from artemis.core.properties import Properties
 from artemis.core.gate import ArtemisGateSvc
-from artemis.core.gate import StoreMixin, MetaMixin, ToolStoreMixin
+from artemis.core.gate import MetaMixin, IOMetaMixin
 from artemis.core.steering import Steering
 from artemis.core.algo import AlgoBase
 
@@ -79,7 +79,7 @@ class ArtemisFactory:
 
 
 @Logger.logged
-class Artemis(ToolStoreMixin, StoreMixin, MetaMixin):
+class Artemis(MetaMixin, IOMetaMixin):
 
     def __init__(self, jobinfo, **kwargs):
         self.properties = Properties()

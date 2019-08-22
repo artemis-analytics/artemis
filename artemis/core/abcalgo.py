@@ -25,8 +25,10 @@ class AbcAlgoBase(type):
         logger_attribute_name = '_' + cls.__name__ + '__logger'
 
         # Logger name derived accounting for inheritance for the bonus marks
-        # Combining the Mixins and base classes, the naming is convenient for the logging
+        # Combining the Mixins and base classes,
+        # the naming is convenient for the logging
         # logger_name = '.'.join([c.__name__ for c in cls.mro()[-2::-1]])
+
         logger_name = cls.__name__
         def fget(cls): return getattr(cls, logger_attribute_name)
 
