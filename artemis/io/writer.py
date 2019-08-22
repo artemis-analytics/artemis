@@ -6,10 +6,10 @@ import uuid
 
 import pyarrow as pa
 
-from artemis.core.tool import ToolBase
+from artemis.core.algo import IOAlgoBase
 from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
-from artemis.core.gate import ArtemisGateSvc, StoreMixin
+from artemis.core.gate import ArtemisGateSvc
 
 from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
 from artemis.io.protobuf.table_pb2 import Table
@@ -22,7 +22,7 @@ class BufferOutputOptions:
 
 
 @Logger.logged
-class BufferOutputWriter(StoreMixin, ToolBase):
+class BufferOutputWriter(IOAlgoBase):
     '''
     Manage output data with an in-memory buffer
     buffer is flushed to disk when a max buffer size
@@ -211,8 +211,8 @@ class BufferOutputWriter(StoreMixin, ToolBase):
         table = Table()
         table.uuid = str(uuid.uuid4())
         table.name = \
-            f"{ds_id}.job_{job_id}.part_{pkey}."
-        "file_{file_id}.{table.uuid}.table.pb"
+            f"{ds_id}.job_{job_id}.part_{pkey}.file_{file_id}.{table.uuid}.table.pb"
+
         tinfo = TableObjectInfo()
         for f in self._schema:
             field = table.info.schema.info.fields.add()

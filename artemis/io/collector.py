@@ -16,7 +16,7 @@ import pyarrow as pa
 
 from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
-from artemis.core.algo import AlgoBase
+from artemis.core.algo import IOAlgoBase
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
 from google.protobuf import text_format
@@ -27,7 +27,7 @@ class CollectorOptions:
     max_malloc = 2147483648  # Maximum memory allowed in Arrow memory pool
 
 
-class Collector(AlgoBase):
+class Collector(IOAlgoBase):
 
     def __init__(self, name, **kwargs):
         '''

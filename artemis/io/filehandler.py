@@ -24,7 +24,7 @@ import pyarrow as pa
 from sas7bdat import SAS7BDAT
 
 from artemis.decorators import iterable
-from artemis.core.algo import AlgoBase
+from artemis.core.algo import IOAlgoBase
 from artemis.generators.common import BuiltinsGenerator
 from artemis.io.readers import ReaderFactory
 from artemis.io.protobuf.table_pb2 import Table
@@ -49,7 +49,7 @@ class FileHandlerOptions:
     header_rows = 1
 
 
-class FileHandlerTool(AlgoBase):
+class FileHandlerTool(IOAlgoBase):
 
     def __init__(self, name, **kwargs):
         options = dict(FileHandlerOptions())
@@ -367,11 +367,15 @@ class FileHandlerTool(AlgoBase):
         pkey = self.gate.store[file_id].file.partition
         job_id = self.gate.meta.job_id
 
+        self.__logger.debug("Building table from file")
         table = Table()
         table.uuid = str(uuid.uuid4())
         table.name = \
-            f"{ds_id}.job_{job_id}.part_{pkey}."
-        "file_{file_id}.{table.uuid}.table.pb"
+            f"{ds_id}.job_{job_id}.part_{pkey}.file_{file_id}.{table.uuid}.table.pb"
+
+        self.__logger.debug("ds %s job_id %s part %s file_id %s table %s",
+                            ds_id, job_id, pkey, file_id, table.uuid)
+
         tinfo = TableObjectInfo()
 
         table.info.schema.info.aux.raw_header_size_bytes = self.header_offset

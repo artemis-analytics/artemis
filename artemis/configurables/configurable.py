@@ -175,7 +175,8 @@ class MenuBuilder():
     '''
 
     def __init__(self, name='test'):
-        self._name = name
+        self._uuid = str(uuid.uuid4())
+        self._name = f"{self._uuid}.menu.pb"
         self._algos = dict()
         self._seqs = dict()
         self._chains = dict()
@@ -202,5 +203,6 @@ class MenuBuilder():
             self._chains[chain].build()
             menu.add(self._chains[chain])
         menu.build()
-
-        return menu.to_msg()
+        msg = menu.to_msg()
+        msg.uuid = self._uuid
+        return msg

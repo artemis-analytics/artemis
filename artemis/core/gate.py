@@ -19,6 +19,7 @@ from artemis.io.protobuf.artemis_pb2 import JOB_SUCCESS
 from artemis.io.protobuf.configuration_pb2 import Configuration
 from artemis.io.protobuf.menu_pb2 import Menu
 from artemis.core.book import ToolStore
+from artemis.core.datastore import ArrowSets
 
 
 @Logger.logged
@@ -200,37 +201,6 @@ class ArtemisGateSvc(metaclass=Singleton):
         #    raise
 
 
-class StoreMixin():
-    '''
-    Methods for interacting with Cronus BaseObjectStore
-    '''
-
-    def register_log(self):
-        logobj = self.gate.store.register_log(self.gate.meta.dataset_id,
-                                              self.gate.meta.job_id)
-        return logobj
-
-    def register_content(self, buf,
-                         info, dataset_id,
-                         job_id, partition_key=None):
-
-        return self.gate.store.register_content(buf, info,
-                                                dataset_id=dataset_id,
-                                                job_id=job_id,
-                                                partition_key=partition_key)
-
-    def set_file_size_bytes(self, filepath_or_buffer, size_):
-        self.gate.store[filepath_or_buffer].file.size_bytes = size_
-
-    def set_file_blocks(self, filepath_or_buffer, blocks):
-        # Record the blocks chunked from input datum
-        for i, block in enumerate(blocks):
-            msg = self.gate.store[filepath_or_buffer].file.blocks.add()
-            msg.index = i
-            msg.info.offset = block[0]
-            msg.info.size_bytes = block[1]
-
-
 class MetaMixin():
     '''
     Methods for setting / getting job attributes
@@ -274,48 +244,87 @@ class MetaMixin():
         '''
         return self.gate.meta.dataset_id
 
+    def get_tool(self, name):
+        return self.gate.tools.get(name)
+
+
+class IOMetaMixin():
+
     @property
     def job_state(self):
         return self.gate.meta.state
-
-    @job_state.setter
-    def job_state(self, value):
-        self.gate.meta.state = value
 
     @property
     def current_file(self):
         return self.gate._current_file_id
 
-    @current_file.setter
-    def current_file(self, value):
-        self.gate._current_file_id = value
-
     @property
     def processed_ndatums(self):
         return self.gate.meta.summary.processed_ndatums
-
-    @processed_ndatums.setter
-    def processed_ndatums(self, value):
-        self.gate.meta.summary.processed_ndatums += value
 
     @property
     def processed_bytes(self):
         return self.gate.meta.summary.processed_bytes
 
+    @job_state.setter
+    def job_state(self, value):
+        self.gate.meta.state = value
+
+    @current_file.setter
+    def current_file(self, value):
+        self.gate._current_file_id = value
+
+    @processed_ndatums.setter
+    def processed_ndatums(self, value):
+        self.gate.meta.summary.processed_ndatums += value
+
     @processed_bytes.setter
     def processed_bytes(self, value):
         self.gate.meta.summary.processed_bytes += value
+
+    def register_log(self):
+        logobj = self.gate.store.register_log(self.gate.meta.dataset_id,
+                                              self.gate.meta.job_id)
+        return logobj
+
+    def register_content(self, buf,
+                         info, dataset_id,
+                         job_id, partition_key=None):
+
+        return self.gate.store.register_content(buf, info,
+                                                dataset_id=dataset_id,
+                                                job_id=job_id,
+                                                partition_key=partition_key)
+
+    def set_file_size_bytes(self, filepath_or_buffer, size_):
+        self.gate.store[filepath_or_buffer].file.size_bytes = size_
+
+    def set_file_blocks(self, filepath_or_buffer, blocks):
+        # Record the blocks chunked from input datum
+        for i, block in enumerate(blocks):
+            msg = self.gate.store[filepath_or_buffer].file.blocks.add()
+            msg.index = i
+            msg.info.offset = block[0]
+            msg.info.size_bytes = block[1]
+
+    def new_partition(self, key):
+        self.gate.store.new_partition(self.gate.meta.dataset_id, key)
 
     def reset_job_summary(self):
         self.gate.meta.summary.processed_bytes = 0
         self.gate.meta.summary.processed_ndatums = 0
 
+    def get_leaves(self):
+        return self.gate.tree.leaves
 
-class ToolStoreMixin():
-    '''
-    Mixin class for interacting with the ToolStore
-    via ArtemisGateSvc in framework algorithms
-    '''
+    def get_node(self, node_id):
+        return self.gate.tree.get_node_by_key(node_id)
 
-    def get_tool(self, name):
-        return self.gate.tools.get(name)
+    def persist_to_storage(self, obj_id, buf):
+        self.gate.store.put(obj_id, buf)
+
+    def datastore_flush(self):
+        self.gate.tree.flush()
+
+    def datastore_is_empty(self):
+        return ArrowSets().is_empty()

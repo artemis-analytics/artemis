@@ -211,8 +211,6 @@ class BaseObjectStore(BaseBook):
         MetaObject dataclass
 
         '''
-        
-
         metaobj = None
         dataset_id = kwargs.get('dataset_id', None)
         partition_key = kwargs.get('partition_key', None)
@@ -602,7 +600,7 @@ class BaseObjectStore(BaseBook):
         return hashobj.hexdigest()
 
     def _register_menu(self, menu, menuinfo):
-        self.__logger.debug("Registering menu object")
+        self.__logger.info("Registering menu object")
 
         obj = self._mstore.info.objects.add()
 
@@ -612,8 +610,8 @@ class BaseObjectStore(BaseBook):
         obj.name = menu.name
         # New data, get a url from the datastore
         obj.address = self._dstore.url_for(obj.name)
-        self.__logger.debug("Retrieving url %s", obj.address)
-
+        self.__logger.info("Retrieving url %s", obj.address)
+        self.__logger.info("obj name %s", obj.name)
         # Copy the info object
         obj.menu.CopyFrom(menuinfo)
         self[obj.uuid] = obj
@@ -624,7 +622,7 @@ class BaseObjectStore(BaseBook):
         '''
         Takes a config protbuf bytestream
         '''
-        self.__logger.debug("Registering config object")
+        self.__logger.info("Registering config object")
 
         obj = self._mstore.info.objects.add()
 
@@ -633,7 +631,8 @@ class BaseObjectStore(BaseBook):
         obj.name = config.name
         # New data, get a url from the datastore
         obj.address = self._dstore.url_for(obj.name)
-        self.__logger.debug("Retrieving url %s", obj.address)
+        self.__logger.info("Retrieving url %s", obj.address)
+        self.__logger.info("obj name %s", obj.name)
 
         # Copy the info object
         obj.config.CopyFrom(configinfo)
@@ -657,7 +656,7 @@ class BaseObjectStore(BaseBook):
             or an output RecordBatchFile
         '''
         self.__logger.debug("Registering table Dataset %s, Partition %s",
-                           dataset_id, partition_key)
+                            dataset_id, partition_key)
         if partition_key not in self[dataset_id].dataset.partitions:
             self.__logger.error("Partition %s not registered for dataset %s",
                                 dataset_id,
@@ -691,8 +690,8 @@ class BaseObjectStore(BaseBook):
         '''
         self.__logger.debug("Registering file")
         self.__logger.debug("Dataset: %s, Partition: %s",
-                           dataset_id,
-                           partition_key)
+                            dataset_id,
+                            partition_key)
         if partition_key not in self[dataset_id].dataset.partitions:
             self.__logger.error("Partition %s not registered for dataset %s",
                                 dataset_id,
@@ -871,7 +870,7 @@ class BaseObjectStore(BaseBook):
     def _put_message(self, id_, msg):
         # proto message to persist
         self.__logger.debug("Putting message to datastore %s",
-                           self[id_].address)
+                            self[id_].address)
         try:
             self._dstore.put(self[id_].name, msg.SerializeToString())
         except IOError:
