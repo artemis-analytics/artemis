@@ -1,0 +1,30 @@
+name: artemis-dev
+channels:
+    - conda-forge
+dependencies:
+    - gcc_linux-64
+    - gxx_linux-64
+    - cmake
+    - make  
+    - python=3.7
+    - pip  # keep conda happy  
+    - pkg-config
+    - numpy 
+    - scipy 
+    - pandas 
+    - matplotlib 
+    - cython 
+    - cloudpickle 
+    - hypothesis 
+    - packaging 
+    - sas7bdat 
+    - protobuf 
+    - dask>=1.2.2
+    - pygraphviz
+    - matplotlib
+    - mypy
+    - pyarrow>=0.14
+    - simplekv
+    - xlrd
+    - faker
+    - coverage
