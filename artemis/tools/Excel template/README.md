@@ -1,4 +1,6 @@
-# excel-schema-reader
+<<<<<<< HEAD
+# XlsTool
+=======
 Read user-defined dataset schema from a default excel template and returns a Object containing
 * *DatasetObjectInfo*
 * list of *Table*
@@ -23,6 +25,29 @@ There's an example spreadsheet in the test directory
 
 ### Code
 
+Add location as click decorator and parameter to your function
+Create instance of the tool, and execute the tool
+Print your dataset and tables
+
+```python
+import click
+
+@click.command()
+@click.option('--location', required = True, prompt = True, help = 'Path to .xlsx')
+def example_read(location):
+    xlstool = XlsTool('xlstool', location=location)
+    ds_schema = xlstool.execute(location)
+
+    print(ds_schema.dataset)
+    for table in ds_schema.tables:
+        print(table)
+```
+
+Run your module/function with the location option
+
+```bash
+python example.py --location 'path/to/excel.xlsx'
+=======
 ```bash
 python excel_reader.py --location <path-to-excel-file>
 ```
@@ -30,6 +55,5 @@ python excel_reader.py --location <path-to-excel-file>
 or
 
 ```bash
-python excel_reader.py
->>> Location: <path-to-excel-file>
+python excel_reader.py <path-to-excel-file>
 ```
