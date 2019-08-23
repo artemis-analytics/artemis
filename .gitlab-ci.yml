@@ -42,12 +42,14 @@ variables:
 
   PROJECT_NAME: stcdatascience/artemis
   IMAGE_NAME: registry.k8s.cloud.statcan.ca/stcdatascience/artemis/master:master
+  DOCKER_TLS_CERTDIR: ''
 
 stages:
   - review  
   - test
   - document
   - package
+  - conda-build
 
 review:
   stage: review
@@ -67,12 +69,10 @@ test:
   variables:
     DOCKER_DRIVER: overlay2
   before_script:
-      - source activate env
+      - source activate artemis-dev
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
     - cd fwfr; ./install.sh --source; cd ..
-    - conda install -y coverage simplekv dask pygraphviz
-    - pip install xlrd
     - python setup.py build_ext --inplace \install
     - python -m unittest
   only:
@@ -91,17 +91,35 @@ document:
         - master
         - cdr
 
-package:
-  stage: package
+conda-build:
+  stage: conda-build
   image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
   variables:
     DOCKER_DRIVER: overlay2
+  before_script:
+      - source activate artemis-dev
   script:
-    - python setup.py build \install
-    - bash package.sh -d artemis_build
-  artifacts:
-      paths:
-          - artemis_build/artemis.tar.gz
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
+    - cd fwfr; ./install.sh --source; cd ..
+    - conda-build  
+  only:
+    - tags
+
+package:
+  stage: package
+  dependencies:
+      - test
+  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
+  variables:
+    DOCKER_DRIVER: overlay2
+  before_script:
+      - source activate artemis-dev
+  script:
+    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/dominic.parent/portpro.git
+    - bash portpro/package.sh -e artemis-dev -n artemis-pack -p artemis
+  #artifacts:
+  #    paths:
+  #        - artemis_build/artemis.tar.gz
   only:
     - tags
 

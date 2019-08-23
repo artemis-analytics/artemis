@@ -11,7 +11,7 @@
 Placeholder algo to profile a RecordBatch
 """
 
-from tdigest import TDigest
+from artemis.externals.tdigest.tdigest import TDigest
 from artemis.core.algo import AlgoBase
 
 

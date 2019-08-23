@@ -11,7 +11,7 @@ import logging
 
 from pprint import pformat
 from faker import Faker
-from physt.histogram1d import Histogram1D
+from artemis.externals.physt.histogram1d import Histogram1D
 
 from artemis.logger import Logger
 from artemis.generators.simutable.loader import PROVIDERS

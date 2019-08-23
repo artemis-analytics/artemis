@@ -12,7 +12,7 @@ Tool that reads mainframe files encoded in the EBCDIC format.
 
 import pyarrow as pa
 import numpy as np
-import ebcdic
+from artemis.externals import ebcdic
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase

@@ -33,7 +33,7 @@ from artemis.logger import Logger
 from artemis.utils.utils import autobinning
 from artemis.core.tool import ToolBase
 
-from tdigest import TDigest
+from artemis.externals.tdigest.tdigest import TDigest
 from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
 
 

@@ -21,22 +21,7 @@ def main():
         cmdclass={'build_ext': build_ext_},
         package_data={
             '':['*.so', '*.pyx', '*.pxd', '*.h']},
-        install_requires=[
-            "numpy",
-            "pandas>=0.23.*",
-            "scipy",
-            "cython",
-            "pyarrow>=0.12.*",
-            "packaging",
-            "protobuf",
-            "matplotlib",
-            "sas7bdat>=2.2.2",
-            "ebcdic==1.0.0",
-            "faker",
-            "dask",
-            "pygraphviz",
-            "simplekv>=0.12"
-            ],
+        install_requires=[],
         description="Stateful processing framework for administrative data powered by Apache Arrow."
     )
 
