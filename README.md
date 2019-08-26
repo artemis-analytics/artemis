@@ -27,6 +27,26 @@ in memory
 * Provide an experimental learning environment for the development of data science systems 
 with Apache Arrow.
 
+# Getting Started
+Artemis project relies on conda as an environment manager and build tool. The project has one
+external dependency, the Fixed-width file reader (stcdatascience/fwfr.git) that needs to be built.
+
+## Development environment
+
+```bash
+mkdir <workspace>
+cd <workspace>
+git clone https://gitlab.k8s.cloud.statcan.ca/stcdatascience/artemis.git
+git clone https://gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
+conda env create -f artemis/environment.yaml
+conda activate artemis-dev
+cd fwfr
+./install.sh --source
+cd ../artemis
+python setup.py build_ext --inplace install
+python -m unittest
+```
+
 ## Framework components
 
 The Artemis primary objective is the production of datasets which utilize memory and cpu resources efficiently 
@@ -87,6 +107,7 @@ In order to run Artemis, a protocol buffer message must be defined and stored, c
 artemis.proto metadata model, defined in `artemis/io/protobuf/artemis.proto`. 
 
 # Build & Deploy
+To be updated with conda-recipe
 
 To build Artemis, simply call the shell script package.sh with the argument `-d` to create a directory to dump the resulting archive file to.
 
@@ -108,24 +129,6 @@ or correct small errors. When a new X or Y version is released, Z is returned to
 
 It is important to update the setup.py file with the new Artemis version.
 
-# Development environment
-Following uses pyenv for python version management.
-
-```bash
-cd <workdir>
-pyenv local <pyenv version>
-```
-To see the list of pyenv environments
-```
-pyenv version
-```
-```
-python -m venv <workdir>
-source bin/activate
-git clone https://gitlab.k8s.cloud.statcan.ca/stcdatascience/artemis.git
-cd artemis
-python setup.py install
-```
 
 # Building the protobuf
 Artemis metadata is defined in io/protobuf/artemis.proto. An important component
@@ -139,22 +142,3 @@ To build (from the io/protobuf directory)
 ```bash
 protoc -I=./ --python_out=./ ./artemis.proto
 ```
-
-After, modify the python code:
-
-```bash
-import histogram_pb2 as histogram_pb2
-```
-
-to
-
-```bash
-import physt.io.protobuf.histogram_pb2 as histogram_pb2
-```
-
-# Known Problems
-Offline use of Artemis requires downloading all dependencies.
-Release tags run the packaging stage, which fails due to listing artemis tag
-as a depenency in the requirements.txt file. Adding a hook to check if artemis
-is included in the requirements file, if so, remove.
-
