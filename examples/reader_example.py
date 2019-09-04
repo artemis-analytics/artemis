@@ -286,7 +286,6 @@ def example_job(location):
         dataset = store.register_dataset(menu_id=menu_uuid,
                                          config_id=config_uuid)
         #Copy metadata from xlstool
-        #TODO: get current time, added to dataset creation time
         store[dataset.uuid].dataset.aux.CopyFrom(ds_schema.dataset.aux)
         
         store.save_store()

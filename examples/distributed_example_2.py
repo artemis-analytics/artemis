@@ -12,6 +12,7 @@
 from artemis.tools.csvtool import CsvTool
 from artemis.tools.filtercoltool import FilterColTool
 from artemis.tools.tdigesttool import TDigestTool
+from artemis.tools.xlstool import XlsTool
 
 # Algorithms
 from artemis.algorithms.dummyalgo import DummyAlgo1
@@ -25,6 +26,7 @@ import tempfile
 import uuid
 import urllib.parse
 import logging
+import click
 
 from artemis.configurables.configurable import MenuBuilder
 from artemis.distributed.job_builder import runjob
@@ -45,7 +47,7 @@ import sys
 import time
 import matplotlib.pyplot as plt
 
-from tdigest import TDigest
+from artemis.externals.tdigest.tdigest import TDigest
 from scipy import interpolate
 from scipy.stats import norm
 # ------------------------------------------
@@ -163,86 +165,9 @@ class ExampleMenu(MenuBuilder):
         self._chains['csvchain'].add(self._seqs['seqA'])
         self._chains['csvchain'].add(self._seqs['seqB'])
 
-
-def example_table():
-    # define the schema for the data
-    table = Table()
-    table.name = 'EvolveModel'
-    table.uuid = str(uuid.uuid4())
-    # Tables and Files have a partition key
-    # This allows relating both to a partition
-    # And to relate a table to a file
-    schema = table.info.schema.info
-
-    field1 = schema.fields.add()
-    field1.name = 'record_id'
-    field1.info.type = 'String'
-    field1.info.length = 10
-
-    field2 = schema.fields.add()
-    field2.name = 'Name'
-    field2.info.type = 'String'
-    field2.info.length = 10
-    field2.info.aux.generator.name = 'name'
-
-    field3 = schema.fields.add()
-    field3.name = 'SIN'
-    field3.info.type = 'String'
-    field3.info.length = 10
-    field3.info.aux.generator.name = 'ssn'
-
-    field4 = schema.fields.add()
-    field4.name = 'StreetNumber'
-    field4.info.type = 'String'
-    field4.info.length = 40
-    field4.info.aux.generator.name = 'building_number'
-
-    field5 = schema.fields.add()
-    field5.name = 'Street'
-    field5.info.type = 'String'
-    field5.info.length = 40
-    field5.info.aux.generator.name = 'street_name'
-
-    field6 = schema.fields.add()
-    field6.name = 'City'
-    field6.info.type = 'String'
-    field6.info.length = 40
-    field6.info.aux.generator.name = 'city'
-
-    field7 = schema.fields.add()
-    field7.name = 'Province'
-    field7.info.type = 'String'
-    field7.info.length = 40
-    field7.info.aux.generator.name = 'province'
-
-    field8 = schema.fields.add()
-    field8.name = 'PostalCode'
-    field8.info.type = 'String'
-    field8.info.length = 40
-    field8.info.aux.generator.name = 'postcode'
-
-    field9 = schema.fields.add()
-    field9.name = 'DOB'
-    field9.info.type = 'DateTime'
-    field9.info.length = 40
-    field9.info.aux.generator.name = 'date'
-
-    field10 = schema.fields.add()
-    field10.name = 'PhoneNum'
-    field10.info.type = 'String'
-    field10.info.length = 11
-    field10.info.aux.generator.name = 'phone_number'
-    
-    field11 = schema.fields.add()
-    field11.name = 'Normal'
-    field11.info.type = 'String'
-    field11.info.length = 11
-    field11.info.aux.generator.name = 'normal'
-
-    return table
-
-
-def example_job():
+@click.command()
+@click.option('--location', required = True, prompt = True, help = 'Path to .xlsx')
+def example_job(location):
     # Artemis Job requirements
     # BaseObjectStore - name, path and id
     # Menu
@@ -257,7 +182,12 @@ def example_job():
     menuinfo = MenuObjectInfo()
     menuinfo.created.GetCurrentTime()
 
-    table = example_table()
+    # Read schema and generator names
+    xlstool = XlsTool('xlstool', location=location)
+    ds_schema = xlstool.execute(location)
+    # Example job only have one table
+    table = ds_schema.tables[0]
+    
     # Build the Configuration
 
     # Build the partition Table schemas
@@ -315,6 +245,8 @@ def example_job():
         # Register an output dataset
         dataset = store.register_dataset(menu_id=menu_uuid,
                                          config_id=config_uuid)
+        #Copy metadata from xlstool
+        store[dataset.uuid].dataset.aux.CopyFrom(ds_schema.dataset.aux)
         store.save_store()
 
         # Now define the actual Artemis job
@@ -353,7 +285,14 @@ def example_job():
             store.update_dataset(dataset.uuid, buf)
 
         store.save_store()
-        #print(store[dataset.uuid].dataset)
+        
+        print ("============Dataset============")
+        print (store[dataset.uuid].dataset)
+        print ("=============Table=============")
+        temp = Table()
+        temp.ParseFromString(store.get(table_id))
+        print (temp)
+
         tds = store.list_tdigests(dataset.uuid)
 
         evaluated = False

@@ -10,6 +10,7 @@
 from pathlib import Path
 import click
 import pandas as pd
+import uuid
 # from pandas import ExcelFile
 
 from artemis.io.protobuf.cronus_pb2 import DatasetObjectInfo as Dataset
@@ -17,7 +18,7 @@ from artemis.io.protobuf.table_pb2 import Table
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
-
+from artemis.utils.list_genfx import local_providers, faker_providers
 
 class DataSet():
     '''
@@ -88,7 +89,7 @@ class XlsTool(ToolBase):
         ---------
         class DataSet which contains a Dataset and a list of Table
         '''
-        print('Reading ' + str(location) + '...')
+        self.__logger.info('Reading ' + str(location) + '...')
         try:
             xls = pd.ExcelFile(location)
         except Exception:
@@ -287,7 +288,21 @@ class XlsTool(ToolBase):
         a Table instance
         '''
         table = Table()
+
+        if table.uuid == '':
+            table.uuid = str(uuid.uuid4())
+        else:
+            self.__logger_error("Error registering table uuid")
+            raise Exception
+
         schema = table.info.schema
+
+        if schema.uuid == '':
+            schema.uuid = str(uuid.uuid4())
+        else:
+            self.__logger_error("Error registering schema uuid")
+            raise Exception
+
         field = schema.info.fields
 
         schm = tb.iloc[2:5, 0:2] # Isolate table level info
@@ -296,6 +311,9 @@ class XlsTool(ToolBase):
         meta_name = tb.loc[6] # Row for metadata names
         tb = tb.iloc[7:,] # Isolate info based on each field
         
+        # generator function list
+        genfx = local_providers() + faker_providers()
+
         if meta_name[0] == 'Variable Name':
             var_names = tb.iloc[0:, 0].drop_duplicates()
         else:
@@ -314,7 +332,7 @@ class XlsTool(ToolBase):
                         str(schm.loc[schm[0] == 'Description', 1].item())
                 except Exception:
                     self.__logger.error("Error storing Table level metadata")
-                    raise Exception
+                    raise
             else:
                 self.__logger.error("%s is not part of Table schema, "
                                     "please follow the template",
@@ -323,6 +341,13 @@ class XlsTool(ToolBase):
 
         for i in var_names.index:  # All unique variable names in a series
             new = field.add()  # Add repeated message
+            
+            if new.uuid == '':
+                new.uuid = str(uuid.uuid4())
+            else:
+                self.__logger_error("Error registering field uuid, field: " + field.name)
+                raise Exception
+            
             # Chunk rows for each field
             temp = pd.DataFrame(tb.loc[tb[0] == tb.loc[i, 0]
                                        ].drop_duplicates())
@@ -345,11 +370,29 @@ class XlsTool(ToolBase):
                 new.info.aux.description = \
                     str(temp.loc[i, meta_name[meta_name == 'Description'].
                                  index].item())
-            except Exception:
+            except:
                 self.__logger.error("Error storing variable on row " + str(i))
                 raise Exception
+            
+            # Store generator name
+            try:
+                new.info.aux.generator.name = \
+                    str(temp.loc[i, meta_name[meta_name == 'Synthetic Data Generator Name'].
+                                index].item())
+            except:
+                self.__logger.error("Error storing Synthetic Data Generator Name for variable " + new.name)
+                raise Exception
 
-                # Codeset store:
+            if new.name != 'record_id':
+                if new.info.aux.generator.name == '':
+                    self.__logger.error("Variable " + new.name + " requires Synthetic Data Generator Name")
+                    raise Exception
+                if new.info.aux.generator.name.lower() not in genfx:
+                    self.__logger.error("Cannot find generator function " + 
+                                        new.info.aux.generator.name + ' for ' + new.name)
+                    raise Exception
+
+            # Codeset store:
             cs = new.info.aux.codeset
             cs.name = str(temp.loc[i,
                                    meta_name[meta_name == 'Codeset Name'].

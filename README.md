@@ -119,7 +119,7 @@ Example: `bash setup.sh -t unpack -v artemis-0.0.1`
 
 # Artemis Release and Tag Management
 
-During a new Artemis release, the commit that will be released needs to be 
+During a new Artemis release, the commit that will be released needs to be
 tagged with the new version tag, of the format X.Y.Z.
 - X is a major version, and should only be incremented when major features are added to Artemis.
 - Y is a minor version, it should be incremented when minor features are added to Artemis.
@@ -130,15 +130,27 @@ or correct small errors. When a new X or Y version is released, Z is returned to
 It is important to update the setup.py file with the new Artemis version.
 
 
-# Building the protobuf
+# Building the Protobuf
 Artemis metadata is defined in io/protobuf/artemis.proto. An important component
 of the metadata are histograms. Histograms are provided by the physt package
 which includes io functionality to/from protobuf. However, the proto file is
 not distributed with the package. This requires building the protobuf with
-a copy of the histogram.proto class. 
+a copy of the histogram.proto class.
 
 To build (from the io/protobuf directory)
 
 ```bash
 protoc -I=./ --python_out=./ ./artemis.proto
 ```
+
+# Artemis Job Example
+An example job is available in examples/distributed_example_2.py which involves extracting dataset
+schema from Excel, generating synthetic data, performing data analytics algorithms,and outputs distributions for data profiling.
+Ensure that Artemis is built, then, run the following command.
+
+```bash
+python examples/distribucted_example_2.py --location ./examples/data/example_product.xlsx
+```
+
+The example schema is located in examples/data/example_product.xlsx. To create new dataset schemas
+please see instructions in artemis/tools/Excel_template/README.md

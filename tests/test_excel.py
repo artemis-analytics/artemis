@@ -85,6 +85,7 @@ class Test_XLSReader(unittest.TestCase):
         f1.info.length = 10
         f1.info.nullable = False
         f1.info.aux.description = 'this is field 1'
+        f1.info.aux.generator.name = 'name'
         c1 = f1.info.aux.codeset
         c1.name = 'set 1'
         c1.version = '2016v1'
@@ -103,6 +104,7 @@ class Test_XLSReader(unittest.TestCase):
         f2.info.length = 3
         f2.info.nullable = True
         f2.info.aux.description = 'field 2 description'
+        f2.info.aux.generator.name = 'date'
         c2 = f2.info.aux.codeset
         c2.name = 'set 2'
         c2.version = 'version 2'
@@ -118,7 +120,12 @@ class Test_XLSReader(unittest.TestCase):
         print ("=======Dataset=======")
         print (ds.dataset)
         print ("=======Tables=======")
-        print (ds.tables)
+        print (ds.tables[0])
+        ds.tables[0].ClearField('uuid')
+        ds.tables[0].info.schema.ClearField('uuid')
+        for field in ds.tables[0].info.schema.info.fields:
+            field.ClearField('uuid')
+            
         self.assertEqual(ds.dataset, d)
         self.assertEqual(ds.tables[0], t1)
 
