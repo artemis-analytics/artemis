@@ -107,15 +107,25 @@ In order to run Artemis, a protocol buffer message must be defined and stored, c
 artemis.proto metadata model, defined in `artemis/io/protobuf/artemis.proto`. 
 
 # Build & Deploy
-To be updated with conda-recipe
 
-To build Artemis, simply call the shell script package.sh with the argument `-d` to create a directory to dump the resulting archive file to.
+To build Artemis, cd to the root of the artemis repository. Follow the instructions below.
+```
+conda env create -f environment.yml
+conda activate artemis-dev
+git clone "FWFR GIT REPO"
+conda install conda-build
+conda build conda-recipes
+mv "PATH TO CONDA"/envs/artemis-dev/conda-bld/broken/artemis-"VERSION".tar.bz2 ./
+conda deactivate
+bash release/package.sh -e artemis-dev -n artemis-pack -p artemis-"VERSION" -r "PATH TO ARTEMIS REPO"
+```
+This will result in a package called "artemis-pack.tar.gz". You can move this to anywhere you wish to
+ deploy.
 
-Example: `bash package.sh -d test_build`
-
-Artemis deployment is handled via setup.sh. You must supply the version (with the format artemis-x.y.z) and the type of installation, unpack or setup.
-
-Example: `bash setup.sh -t unpack -v artemis-0.0.1`
+You can install the created package file with the "deploy.sh" script. 
+```
+bash deploy.sh -e "NAME OF CONDA ENV TO CREATE" -n "NAME OF PACKAGE FILE" -p "NAME OF PACKAGE"
+```
 
 # Artemis Release and Tag Management
 

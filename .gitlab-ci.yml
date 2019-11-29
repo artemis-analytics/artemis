@@ -70,6 +70,7 @@ test:
     DOCKER_DRIVER: overlay2
   before_script:
       - source activate artemis-dev
+        #- source activate base
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
     - cd fwfr; ./install.sh --source; cd ..
@@ -98,6 +99,7 @@ conda-build:
     DOCKER_DRIVER: overlay2
   before_script:
       - source activate artemis-dev
+        #- source activate base
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
     - cd fwfr; ./install.sh --source; cd ..
@@ -114,14 +116,18 @@ package:
     DOCKER_DRIVER: overlay2
   before_script:
       - source activate artemis-dev
+        #- source activate base
   script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/dominic.parent/portpro.git
-    - bash portpro/package.sh -e artemis-dev -n artemis-pack -p artemis
-  #artifacts:
-  #    paths:
-  #        - artemis_build/artemis.tar.gz
+  #    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/dominic.parent/portpro.git
+  #    - bash portpro/package.sh -e artemis-dev -n artemis-pack -p artemis
+  #    -cd release/
+      - bash release/package.sh -e artemis-dev -n artemis-pack -p artemis -r ../../artemis
+  artifacts:
+      paths:
+          #- ./release/artemis-pack.tar.gz
+          - ./artemis-pack.tar.gz
   only:
-    - tags
+      - tags 
 
 #####################################################################################################
 #- coverage3 run --source=artemis/ -m unittest

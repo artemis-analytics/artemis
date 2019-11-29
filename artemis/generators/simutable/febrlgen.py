@@ -1,14 +1,20 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
-#
-# Copyright © 2018 Ryan Mackenzie White <ryan.white4@canada.ca>
-#
-# Distributed under terms of the  license.
+#    AUSTRALIAN NATIONAL UNIVERSITY OPEN SOURCE LICENSE (ANUOS LICENSE)
+#    VERSION 1.3
+
+#    The contents of this file are subject to the ANUOS License Version 1.3
+#    (the "License"); you may not use this file except in compliance with
+#    the License. You may obtain a copy of the License at:
+
+#      https://sourceforge.net/projects/febrl/
+
+#    Software distributed under the License is distributed on an "AS IS"
+#    basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+#    the License for the specific language governing rights and limitations
+#    under the License.
 
 """
-Record Linkage dataset generated
-Based on Febrl generator
+Modifier class to generate errors given a record. 
+This class is a wrapper of the FEBRL data generator modifier functions.
 
 Febrl (Freely Extensible Biomedical Record Linkage) is a freely available tool
 that enables record linkage through a GUI.
