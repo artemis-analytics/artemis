@@ -1,3 +1,17 @@
+# Copyright © Her Majesty the Queen in Right of Canada, as represented
+# by the Minister of Statistics Canada, 2019.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 package:
     name: artemis
     version: 0.5.0
@@ -10,14 +24,14 @@ build:
 
 requirements:
     build:
-        - gcc_linux-64
-        - gxx_linux-64
-        - cmake
+        - gcc_linux-64 >=5.1
+        - gxx_linux-64 >=5.1
+        - cmake >=3.2
         - make  
-        - python=3.7
+        - python=3.7.3
         - setuptools
     run:
-        - python=3.7
+        - python=3.7.3
         - pip  # keep conda happy  
         - pkg-config
         - numpy 
@@ -34,7 +48,7 @@ requirements:
         - pygraphviz
         - matplotlib
         - mypy
-        - pyarrow>=0.14
+        - pyarrow=0.14.1
         - simplekv
         - xlrd
         - faker
@@ -43,7 +57,7 @@ test:
     imports:
         - artemis
     commands:
-        - python -m unittest examples/test_artemis.py
+        - python -m unittest examples/example_product.py
 
 about:
     summary: 'Artemis Analytics Platform'
