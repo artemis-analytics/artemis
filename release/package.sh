@@ -55,7 +55,7 @@ then
     exit 0
 fi
 
-DIR=$NAME # Create work environment, to be tar'ed later.
+DIR=../$NAME # Create work environment, to be tar'ed later.
 mkdir $DIR
 mkdir $DIR/pypi
 mkdir $DIR/pypi/list
@@ -111,6 +111,7 @@ conda index $DIR/conda/pkgs/
 conda deactivate
 conda remove -y --name $TEMPCONENV --all # Clean up working environment.
 cp -r $REPO $DIR
+#rsync -avr --exclude=./$DIR "$REPO/" $DIR/artemis
 tar -cvf $NAME.tar $DIR
 gzip -c $NAME.tar > $NAME.tar.gz
 
