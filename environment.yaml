@@ -40,7 +40,7 @@ dependencies:
     - pyarrow=0.14.1
     - simplekv
     - xlrd
-    - faker
+    - faker<3.0.0
     - coverage
     - simplekv
     - dask
