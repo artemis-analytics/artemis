@@ -99,6 +99,7 @@ conda-build:
     DOCKER_DRIVER: overlay2
   before_script:
       - source activate artemis-dev
+      - conda install conda-build
         #- source activate base
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
