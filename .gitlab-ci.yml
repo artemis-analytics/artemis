@@ -103,7 +103,7 @@ conda-build:
   script:
     - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
     - cd fwfr; ./install.sh --source; cd ..
-    - conda-build  
+    - conda build conda-recipes
   only:
     - tags
 
