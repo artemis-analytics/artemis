@@ -48,8 +48,6 @@ stages:
   - review  
   - test
   - document
-  - package
-  - conda-build
 
 review:
   stage: review
@@ -92,43 +90,7 @@ document:
         - master
         - cdr
 
-conda-build:
-  stage: conda-build
-  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
-  variables:
-    DOCKER_DRIVER: overlay2
-  before_script:
-      - source activate artemis-dev
-      - conda install conda-build
-        #- source activate base
-  script:
-    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
-    - cd fwfr; ./install.sh --source; cd ..
-    - conda build conda-recipes
-  only:
-    - tags
 
-package:
-  stage: package
-  dependencies:
-      - test
-  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
-  variables:
-    DOCKER_DRIVER: overlay2
-  before_script:
-      - source activate artemis-dev
-        #- source activate base
-  script:
-  #    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/dominic.parent/portpro.git
-  #    - bash portpro/package.sh -e artemis-dev -n artemis-pack -p artemis
-  #    -cd release/
-      - bash release/package.sh -e artemis-dev -n artemis-pack -p artemis -r ../../artemis
-  artifacts:
-      paths:
-          #- ./release/artemis-pack.tar.gz
-          - ./artemis-pack.tar.gz
-  only:
-      - tags 
 
 #####################################################################################################
 #- coverage3 run --source=artemis/ -m unittest
@@ -186,6 +148,45 @@ package:
 #    allow_failure: true
 #    only:
 #        - branches
+
+#conda-build:
+#  stage: conda-build
+#  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
+#  variables:
+#    DOCKER_DRIVER: overlay2
+#  before_script:
+#      - source activate artemis-dev
+#        #- source activate base
+#  script:
+#    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
+#    - cd fwfr; ./install.sh --source; cd ..
+#    - python setup.py build_ext --inplace \install
+#    - python -m unittest
+#  only:
+#    - tags
+
+#package:
+#  stage: package
+#  dependencies:
+#      - test
+#  image: registry.k8s.cloud.statcan.ca/stcdatascience/dockers/miniconda-python3.7:latest
+#  variables:
+#    DOCKER_DRIVER: overlay2
+#  before_script:
+#      - source activate artemis-dev
+#        #- source activate base
+#  script:
+#  #    - git clone https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.k8s.cloud.statcan.ca/dominic.parent/portpro.git
+#  #    - bash portpro/package.sh -e artemis-dev -n artemis-pack -p artemis
+#  #    -cd release/
+#      - bash release/package.sh -e artemis-dev -n artemis-pack -p artemis -r ../../artemis
+#  artifacts:
+#      paths:
+#          #- ./release/artemis-pack.tar.gz
+#          - ./artemis-pack.tar.gz
+#  only:
+#      - tags 
+          
 # ---------------------------------------------------------------------------
 ################################################################################################
 .auto_devops: &auto_devops |
