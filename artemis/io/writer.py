@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 # This module contains code from the Pandas project
-# 
+#
 #    BSD 3-Clause License
 #
 #    Copyright (c) 2008-2012, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team

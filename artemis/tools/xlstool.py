@@ -18,7 +18,7 @@
 # limitations under the License.
 
 from pathlib import Path
-import click
+# import click
 import pandas as pd
 import uuid
 # from pandas import ExcelFile
@@ -29,6 +29,7 @@ from artemis.io.protobuf.table_pb2 import Table
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 from artemis.utils.list_genfx import local_providers, faker_providers
+
 
 class DataSet():
     '''
@@ -56,9 +57,9 @@ class XlsTool(ToolBase):
 
         self.options = dict(XlsToolOptions())
         self.options.update(kwargs)
-        
+
         super().__init__(name, **self.options)
-                
+
         if 'location' not in self.options:
             self.__logger.error("Missing required path to Excel file")
             raise Exception
@@ -66,12 +67,12 @@ class XlsTool(ToolBase):
             self.__logger.error("Specified file is not .xlsx file.")
             raise Exception
         if not(Path(self.options['location']).is_file()):
-            self.__logger.error("Specified file does not exist with given path")
+            self.__logger.error("Specified file does not exist in given path")
             raise Exception
-        
+
     def initialize(self):
         pass
-    
+
     def execute(self, location):
         '''
         User input location of excel, calls read_excel
@@ -83,7 +84,7 @@ class XlsTool(ToolBase):
         Returns
         ----------
         Dataset instance, contains a DatasetObjectInfo and a Table
-        '''        
+        '''
         ds = self.read_excel(location)
         return ds
 
@@ -315,12 +316,12 @@ class XlsTool(ToolBase):
 
         field = schema.info.fields
 
-        schm = tb.iloc[2:5, 0:2] # Isolate table level info
-        adin = tb.iloc[1:7, 10:] # Isolate additional metadata
-        tb.fillna('', inplace = True) # Fill with empty string
-        meta_name = tb.loc[6] # Row for metadata names
-        tb = tb.iloc[7:,] # Isolate info based on each field
-        
+        schm = tb.iloc[2:5, 0:2]  # Isolate table level info
+        adin = tb.iloc[1:7, 10:]  # Isolate additional metadata
+        tb.fillna('', inplace=True)  # Fill with empty string
+        meta_name = tb.loc[6]  # Row for metadata names
+        tb = tb.iloc[7:, ]  # Isolate info based on each field
+
         # generator function list
         genfx = local_providers() + faker_providers()
 
@@ -351,13 +352,14 @@ class XlsTool(ToolBase):
 
         for i in var_names.index:  # All unique variable names in a series
             new = field.add()  # Add repeated message
-            
+
             if new.uuid == '':
                 new.uuid = str(uuid.uuid4())
             else:
-                self.__logger_error("Error registering field uuid, field: " + field.name)
+                self.__logger_error("Error registering field uuid, field: "
+                                    + field.name)
                 raise Exception
-            
+
             # Chunk rows for each field
             temp = pd.DataFrame(tb.loc[tb[0] == tb.loc[i, 0]
                                        ].drop_duplicates())
@@ -383,23 +385,28 @@ class XlsTool(ToolBase):
             except:
                 self.__logger.error("Error storing variable on row " + str(i))
                 raise Exception
-            
+
             # Store generator name
             try:
                 new.info.aux.generator.name = \
-                    str(temp.loc[i, meta_name[meta_name == 'Synthetic Data Generator Name'].
-                                index].item())
+                    str(temp.loc[i, meta_name[meta_name ==
+                        'Synthetic Data Generator Name'].index].item())
             except:
-                self.__logger.error("Error storing Synthetic Data Generator Name for variable " + new.name)
+                self.__logger.error("Error storing Synthetic Data Generator "
+                                    + "Name for variable " + new.name)
                 raise Exception
 
             if new.name != 'record_id':
                 if new.info.aux.generator.name == '':
-                    self.__logger.error("Variable " + new.name + " requires Synthetic Data Generator Name")
+                    self.__logger.error("Variable "
+                                        + new.name
+                                        + " requires Synthetic Data"
+                                        + " Generator Name")
                     raise Exception
                 if new.info.aux.generator.name.lower() not in genfx:
-                    self.__logger.error("Cannot find generator function " + 
-                                        new.info.aux.generator.name + ' for ' + new.name)
+                    self.__logger.error("Cannot find generator function " +
+                                        new.info.aux.generator.name + ' for '
+                                        + new.name)
                     raise Exception
 
             # Codeset store:

@@ -13,7 +13,7 @@
 #    under the License.
 
 """
-Modifier class to generate errors given a record. 
+Modifier class to generate errors given a record.
 This class is a wrapper of the FEBRL data generator modifier functions.
 
 Febrl (Freely Extensible Biomedical Record Linkage) is a freely available tool

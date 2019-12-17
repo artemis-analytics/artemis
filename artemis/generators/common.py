@@ -22,7 +22,7 @@
 # limitations under the License.
 #
 # This module contains code from the Apache Arrow Project
-# See https://github.com/arrow/python/pyarrow/benchmarks/common.py 
+# See https://github.com/arrow/python/pyarrow/benchmarks/common.py
 #   Apache Arrow
 #   Copyright 2016-2019 The Apache Software Foundation
 
