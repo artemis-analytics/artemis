@@ -20,7 +20,7 @@
 # This module contains code from the Histbook project
 #    BSD 3-Clause License
 #
-#    Copyright (c) 2018, 
+#    Copyright (c) 2018,
 #    All rights reserved.
 
 """
