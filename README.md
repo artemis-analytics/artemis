@@ -37,7 +37,7 @@ external dependency, the Fixed-width file reader (stcdatascience/fwfr.git) that 
 mkdir <workspace>
 cd <workspace>
 git clone https://github.com/ryanmwhitephd/artemis.git
-git clone https://gitlab.k8s.cloud.statcan.ca/stcdatascience/fwfr.git
+git clone https://github.com/ke-noel/fwfr.git
 conda env create -f artemis/environment.yaml
 conda activate artemis-dev
 cd fwfr
