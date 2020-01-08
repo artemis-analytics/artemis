@@ -178,13 +178,22 @@ class Synthesizer(object):
 
         values = []
         is_msg = False
+        junk_chars_list = ["[", "]", "(", ")"]
         for parm in in_parms:
-            if parm.type == 'Field':
+            if lower(parm.type) == 'field':
                 is_msg = True
                 continue
-            _type = eval(parm.type)
-            value = _type(parm.value)
-            values.append(value)
+            if lower(param.type) != "list"
+                _type = eval(parm.type)
+                value = _type(parm.value)
+                values.append(value)
+            elif lower(param.type) == "list":
+                value_instance = param.value
+                for char in junk_chars_list:
+                    if char in value_instance:
+                        value_instance = value_instance.replace(char, "")
+                values = value_instance.split(", ")
+
         if is_msg is True:
             return in_parms
         elif len(values) == 1:
