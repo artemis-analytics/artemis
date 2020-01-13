@@ -18,3 +18,5 @@ _*.cpp
 _*.so
 *.c
 *.so
+.DS_Store
+_build
