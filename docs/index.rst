@@ -8,7 +8,8 @@ Welcome to pyartemis's documentation!
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   
+   contents
 
 
 
