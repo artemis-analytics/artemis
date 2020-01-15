@@ -10,8 +10,7 @@ Welcome to pyartemis's documentation!
    :maxdepth: 2
    :caption: Table of Contents
    
-   contents
-
+   gettingstarted
 
 
 Indices and tables
