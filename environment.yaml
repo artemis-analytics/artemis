@@ -44,3 +44,4 @@ dependencies:
     - coverage
     - simplekv
     - dask
+    - plotly
