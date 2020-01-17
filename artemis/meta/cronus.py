@@ -604,6 +604,9 @@ class BaseObjectStore(BaseBook):
 
     def list_tdigests(self, dataset_id):
         return self[dataset_id].dataset.tdigests
+    
+    def list_histograms(self, dataset_id):
+        return self[dataset_id].dataset.hists
 
     def _compute_hash(self, stream):
         hashobj = hashlib.new(self._algorithm)

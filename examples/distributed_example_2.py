@@ -306,7 +306,13 @@ def example_job(location):
         print (temp)
 
         tds = store.list_tdigests(dataset.uuid)
+        hists = store.list_histograms(dataset.uuid)
 
+        print ("==========TDigests===========")
+        print(tds)
+        print ("==========Hists===========")
+        print(hists)
+        print ("==========================")
         evaluated = False
 
         # Printing the dataset with the tdigests from the book
