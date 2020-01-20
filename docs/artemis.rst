@@ -1,16 +1,22 @@
-Documentation for Artemis 
+Artemis  
 *************************
+This is the documentation for the Artemis framework and classes.
+
+.. toctree::
+   :maxdepth: 2
+
+   core
+   io
+   meta
+   algorithms
+   tools
+   generators
+   externals
 
 .. automodule:: artemis
 
 .. automodule:: artemis.artemis
    :members:
 
-.. automodule:: artemis.core.steering
-   :members:
 
-.. automodule:: artemis.io.collector
-   :members:
 
-.. automodule:: artemis.core.gate
-   :members:

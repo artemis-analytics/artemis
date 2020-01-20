@@ -17,15 +17,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""
-.. module:: artemis.artemis
-
-Class for managing and running the job
-owns the stores needed by the user algorithms
-    histograms
-    timers
-    objects
-"""
 # Python libraries
 import traceback
 
@@ -247,10 +238,14 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     def configure(self):
         """
-        Configures all job dependencies
-        instantiate :class:`artemis.core.steering.Steering`
-        instantiate :class:`artemis.io.collector.Collector`
-        instantiate a datahandler
+        Configures all sub-job dependencies.
+
+        instantiate :class:`artemis.core.steering.Steering`.
+
+        instantiate :class:`artemis.io.collector.Collector`.
+        
+        instantiate a datahandler.
+
         retrieve tool metadata 
         add tools to metastore
         """
@@ -465,10 +460,10 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     def finalize(self):
         """
-        finalize Artemis sub-job
-        call :meth:`artemis.core.steering.Steering.finalize`
-        call :meth:`artemis.io.collector.Collector.finalize`
-        call :meth:`artemis.core.gate.ArtemisGateSvc.finalize`
+        finalize Artemis sub-job.
+        call :meth:`artemis.core.steering.Steering.finalize`.
+        call :meth:`artemis.io.collector.Collector.finalize`.
+        call :meth:`artemis.core.gate.ArtemisGateSvc.finalize`.
 
         Args:
 
@@ -503,13 +498,17 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     def abort(self, *args, **kwargs):
         """abort Artemis sub-job
-        catch Exception and pass to abort
-        flushes Arrow memory pool and attempts to output all data to disk
-        finalizes the metadata and dumps to disk
+        Unknown Exceptions or Exceptions which require aborting job are propagated. 
+        :meth:`artemis.io.collector.Collector.finalize`. 
+        :meth:`artemis.core.gate.ArtemisGateSvc.finalize`.
+        
         Args:
             abort(Exception) 
+        
         kwargs:
             bar (Exception)
+        
+        Raises: 
         """    
         self.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")
