@@ -274,21 +274,34 @@ The histogram store also works as proxy to different histogram representations. 
 
 Algorithms and Tools
 ^^^^^^^^^^^^^^^^^^^^
-Similar to the idea of numpy user-defined functions, Artemis supports user-defined algorithms and tools. Any algorithm or tool which works with Arrow data structures can be easily incorporated into an Artemis BPM and executed on a dataset. Algorithms support user-defined properties in order to easily re-use algorithmic code to perform the same task with different configurations. Developers implement the base class methods, define any defined properties, and access the Arrow buffers through the Element. Steering manages algorithm instantiation, scheduling and execution. For the end-user the most important part of the code is defined in the execute method. Code organization and re-use can be improved by delegating common tasks which return a value to tools. The scheduling of the tools is managed directly in the algorithm, in other words, it is up to the user to apply the tools in the appropiate order.
+Similar to the idea of numpy user-defined functions, Artemis supports user-defined algorithms and tools. 
+Any algorithm or tool which works with Arrow data structures can be easily incorporated into an 
+Artemis BPM and executed on a dataset. Algorithms support user-defined properties in order to easily 
+re-use algorithmic code to perform the same task with different configurations. 
+Developers implement the base class methods, define any defined properties, and access the Arrow buffers 
+through the Element. Steering manages algorithm instantiation, scheduling and execution. 
+For the end-user the most important part of the code is defined in the execute method. 
+Code organization and re-use can be improved by delegating common tasks which return a value to tools. 
+The scheduling of the tools is managed directly in the algorithm, in other words, it is up to the user to apply 
+the tools in the appropiate order.
 
-``class MyAlgo(AlgoBase):
-    def __init__(self, name, **kwargs):
-        super().__init__(name, **kwargs)
-        # kwargs are the user-defined properties
-        # defined at configuration 
-    def initialize(self):
-        pass
-    def book(self):
-        # define histograms and timers
-    def execute(self, element):
-        # Algorithmic code
-    def finalize(self):
-        # gather any user-defined summary information``
+An example user-defined algorithm
+
+.. code-block:: python
+
+    class MyAlgo(AlgoBase):
+        def __init__(self, name, **kwargs):
+            super().__init__(name, **kwargs)
+            # kwargs are the user-defined properties
+            # defined at configuration 
+        def initialize(self):
+            pass
+        def book(self):
+            # define histograms and timers
+        def execute(self, element):
+            # Algorithmic code
+        def finalize(self):
+            # gather any user-defined summary information
 
 Logging and exception handling
 ------------------------------
