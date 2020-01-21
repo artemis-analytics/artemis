@@ -261,11 +261,34 @@ In order to ensure flexibility, reproducibility and to separate the definition o
 Artemis metadata model is defined in a google protobuf messaging format. Protocol buffers are language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but smaller, faster, and simpler. Protocol buffers were developed by Google to support their infrastructure for service and application communication. Protobuf message format enables Artemis to define how to stucture metadata once, then special source code is generated to easily write and read the structured metadata to and from a variety of data streams and using a variety of languages. (Google developor pages). Protobuf messages can be read with reflection without a schema, making the format extremely flexible in terms of application development, use and persistency.
 The serialized protobuf is a bytestring, in other words a BLOB (binary large object), which is a flexible, lightweight storage mechanism for metadata. The language-neutral message format implies that any application can be built to interact with the data, while the BLOB simplifies storage. The messages can be persisted simply as files on a local filesystem, or for improved metadata management the messages can be cataloged in a simple key-value store. Applications can persist and retrieve configurations using a key.
 The idea of persisting the configuration as well as managing the state of Artemis derived from experimentation with the Pachyderm data science workflow tool and Kubernetes. Moreover, Arrow intends to develop secure, over the wire message transport layer in the Arrow Flight project using gRPC and protobuf. Artemis can leverage Arrow Flight along with gRPC to build scalable, secure, data processing architecture that can be flexible for cloud-native and HPC deployments.
+
 Histogram and Timer Store
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 Histograms and timers are centralled managed by the framework. The managed store allow Artemis to collect histograms and timing information into the metadata, serialize and persist this information at the job finalize stage. The stores support booking and filling histograms in any user-defined algorithms.
 The histogram store also works as proxy to different histogram representations. Artemis currrently support two libraries histbook (from diana-hep) and physt (janpipek). Use in Artemis is primarily with physt since conversion to and from protobuf is supported. Once the physt histogram is converted to a protobuf message, the collection is added to the job metastore.
 Algorithms and Tools
 Similar to the idea of numpy user-defined functions, Artemis supports user-defined algorithms and tools. Any algorithm or tool which works with Arrow data structures can be easily incorporated into an Artemis BPM and executed on a dataset. Algorithms support user-defined properties in order to easily re-use algorithmic code to perform the same task with different configurations. Developers implement the base class methods, define any defined properties, and access the Arrow buffers through the Element. Steering manages algorithm instantiation, scheduling and execution. For the end-user the most important part of the code is defined in the execute method. Code organization and re-use can be improved by delegating common tasks which return a value to tools. The scheduling of the tools is managed directly in the algorithm, in other words, it is up to the user to apply the tools in the appropiate order.
+Histogram and Timer Store
+Histograms and timers are centralled managed by the framework. The managed store allow Artemis to collect histograms and timing information into the metadata, serialize and persist this information at the job finalize stage. The stores support booking and filling histograms in any user-defined algorithms.
+The histogram store also works as proxy to different histogram representations. Artemis currrently support two libraries histbook (from diana-hep) and physt (janpipek). Use in Artemis is primarily with physt since conversion to and from protobuf is supported. Once the physt histogram is converted to a protobuf message, the collection is added to the job metastore.
+
+Algorithms and Tools
+^^^^^^^^^^^^^^^^^^^^
+Similar to the idea of numpy user-defined functions, Artemis supports user-defined algorithms and tools. Any algorithm or tool which works with Arrow data structures can be easily incorporated into an Artemis BPM and executed on a dataset. Algorithms support user-defined properties in order to easily re-use algorithmic code to perform the same task with different configurations. Developers implement the base class methods, define any defined properties, and access the Arrow buffers through the Element. Steering manages algorithm instantiation, scheduling and execution. For the end-user the most important part of the code is defined in the execute method. Code organization and re-use can be improved by delegating common tasks which return a value to tools. The scheduling of the tools is managed directly in the algorithm, in other words, it is up to the user to apply the tools in the appropiate order.
+
+``class MyAlgo(AlgoBase):
+    def __init__(self, name, **kwargs):
+        super().__init__(name, **kwargs)
+        # kwargs are the user-defined properties
+        # defined at configuration 
+    def initialize(self):
+        pass
+    def book(self):
+        # define histograms and timers
+    def execute(self, element):
+        # Algorithmic code
+    def finalize(self):
+        # gather any user-defined summary information``
 
 Logging and exception handling
 ------------------------------
