@@ -1,3 +1,19 @@
+
+.. Copyright © Her Majesty the Queen in Right of Canada, as represented
+.. by the Minister of Statistics Canada, 2019.
+..
+.. Licensed under the Apache License, Version 2.0 (the "License");
+.. you may not use this file except in compliance with the License.
+.. You may obtain a copy of the License at
+..
+..     http://www.apache.org/licenses/LICENSE-2.0
+..
+.. Unless required by applicable law or agreed to in writing, software
+.. distributed under the License is distributed on an "AS IS" BASIS,
+.. WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+.. See the License for the specific language governing permissions and
+.. limitations under the License.
+
 ###############
 Getting Started
 ###############
@@ -6,7 +22,7 @@ Artemis project relies on conda as an environment manager and build tool. The pr
 external dependency, the Fixed-width file reader (stcdatascience/fwfr.git) that needs to be built.
 
 
-Development environment
+Installation
 =======================
 
 .. code:: bash
@@ -61,7 +77,7 @@ Create a Business Process Model
 -------------------------------
 Artemis relies on modeling business processes and retaining this information in metadata. Artemis refers to a business
 process model as a *menu*. A *menu* describes all the transformations to be applied to the data, in which order, and the expected outputs.
-A helper class is provided to aid in the construction of a *menu*.
+A helper class is provided to aid in the construction of a *menu*. To learn more refer to :ref:`meta:Menu`.
 
 .. code:: python
     
@@ -186,8 +202,9 @@ storing. This information is retained as metadata and persisted.
 
 Create an object store
 ----------------------
-All persisted data objects have a persistent unique identifier that identifies them in a storage system. The storage system is 
-a metadata service and a physical storage location.
+All persisted data objects have a persistent unique identifier that identifies them in a storage system. The data is 
+managed in the storage system with metadata, and the metadata is managed with the :ref:`meta:Cronus Data Management System`. 
+Cronus is required to access, store, and process data in Artemis.
 
 .. code:: python
 
