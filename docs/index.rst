@@ -48,6 +48,7 @@ for continous data quality and fit-for-use assessement.
    pipeline
    synthesis
    externals
+   api
 
 Indices and tables
 ==================

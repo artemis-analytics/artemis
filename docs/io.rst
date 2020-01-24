@@ -42,23 +42,37 @@ and Artemis must be able to easily leverage these capabilities as they become av
 
 In-memory data store
 ====================
-The data access of Arrow buffers is facilitated by an in-memory data store. The Elements available in the user-defined algorithms provide references to the actual Arrow buffers. The data buffers reside in a backing data store (or sink) that can be changed, under the 
-hood, while the interaction of retrieving and attaching data to the Elements remains unchanged. The reference of the data that is retained in the Element is a unique key (UUID) that can be used to retrieve the data from any backing key-value store. The current implementation uses a python dictionary to manage the Arrow buffers. The Apache Ray project contributed the Plasma shared memory object store to the Arrow project. In the case of running Artemis on a multicore machine, multiple Artemis subprocesses could write to a single Plasma object store and faciliate asyncronous collections of Arrow record batches to write to disk. A shared object store may also faciliate shuffling of data across large data sets as well.
-The advantage of the abstraction of data access via the dependecy Tree from the underlying data store simplifies data access for user-defined algorithms; allows for the framework to manage the memory; provides control for spilling data to disk when needed and flushing the memory; enables the use of shared memory data stores for leveraging a multicore environment; aleviating the need for users to deal with data management, serialization and persistency. In other words, any algorithm that works with Arrow data types can be easily incorporated into the Artemis framework with general ease.
+The data access of Arrow buffers is facilitated by an in-memory data store. 
+The Elements available in the user-defined algorithms provide references to the actual Arrow buffers. 
+The data buffers reside in a backing data store (or sink) that can be changed, under the 
+hood, while the interaction of retrieving and attaching data to the Elements remains unchanged. 
+The reference of the data that is retained in the Element is a unique key (UUID) that can be used to 
+retrieve the data from any backing key-value store. The current implementation uses a python dictionary to manage the Arrow buffers. The Apache Ray project contributed the Plasma shared memory object store to the Arrow project. In the case of running Artemis on a multicore machine, multiple Artemis subprocesses could write to a single Plasma object store and faciliate asyncronous collections of Arrow record batches to write to disk. A shared object store may also faciliate shuffling of data across large data sets as well.
+Abstraction of data access via the dependecy *Tree* from the data store has several advantages: 
 
-.. automodule:: artemis.io.collector
-   :members:
+* Simplifies data access for user-defined algorithms.
+* Allows for the framework to manage the memory.
+* Provides control for spilling data to disk when needed and flushing the memory.
+* Enables the use of shared memory data stores for leveraging a multicore environment, via Plasma for example
+* Aleviates the need for users to deal with data management, serialization and persistency. 
+
+Any algorithm that works with Arrow data types can be easily incorporated into the Artemis framework with general ease.
+
+
 
 Data Ingestion
 --------------
 
+
 Data ingestion stage of Artemis comprises the opening of a buffer (a file path or byte buffer of in-memory raw data and the chunking of that buffer. 
 Artemis parallelization operates at the datum level, further discussion will be covered in the Data Pipeline section. 
 
+:class:`artemis.io.filehandler.FileHandler`
 
-1. Creation of an iterator of datums, referred to as the DataHandler. A datum is defined as a file path (on-disk storage location of raw data) or in-memory synthesized data (equivalent to raw data stored on disk).
+1. Creation of an iterator of datums, referred to as the *DataHandler*. 
+A datum is defined as a file path (on-disk storage location of raw data) or in-memory synthesized data (equivalent to raw data stored on disk).
 
-    a. Base DataHandler class (GeneratorBase): https://gitlab.k8s.cloud.statcan.ca/stcdatascience/artemis/blob/master/artemis/generators/common.py#L163
+    a. Base DataHandler class (:class:`artemis.generators.commmon.GeneratorBase`): https://gitlab.k8s.cloud.statcan.ca/stcdatascience/artemis/blob/master/artemis/generators/common.py#L163
 
 2. Loop over datums.
 3. Processing of a datum to return an iterator of record batches, referred to as a Reader. The creation of the Reader is managed by the FileHandler. A batch is defined as fixed size chunk of raw data that is managed in-memory one batch at a time. Artemis assumes that the raw data is structured tabular data, with a fixed column schema, organized as a records row wise. A batch must contain a complete record when split from the datum.
@@ -107,6 +121,8 @@ Refer to the Appendix for additional details of the CSV reader implemented in Ar
 
 Data Collection
 -----------------------
+
+:class:`artemis.io.collector.Collector`
 
 Data collection stage organizes collections of record batches into a file for on-disk storage. 
 Record batches collected for a file must conform to a fixed schema, referred to as a *partition*. The record batches are collected from each leave node of the execution graph, therefore, Artemis supports multiple data streams in a single processing. 
