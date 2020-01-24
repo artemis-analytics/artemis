@@ -19,12 +19,6 @@ Core modules
 
 This documentation describes the core modules required for processing data with Artemis.
 
-.. automodule:: artemis.core.steering
-   :members:
-
-.. automodule:: artemis.core.gate
-   :members:
-
 Data Processing
 ===============
 3. Arrow in-memory processing. Once data is converted to the standard in-memory Arrow format, any arbitrary data transformation can be applied.
@@ -37,7 +31,7 @@ Execution Engine and Inter-algorithm communication
 --------------------------------------------------
 Artemis provides access to data from different sources. The data is read into native Arrow buffers directly and all processing is performed on these buffers. The in-memory native Arrow buffers are collected and organized as collections of record batches in order to build new on-disk datasets given the stream of record batches. Once raw data is materialized as Arrow record batches, Artemis needs to provide the correct data inputs to the algorithms so that the final record batches have the defined BPM applied to the data.
 
-Artemis has a top-level algorithm, Steering, which serves as the execution engine for the user-defined algorithms. The Steering algorithm manages the data dependencies for the execution of the BPM by seeding the required data inputs to each Node in a Tree via an Element. The Tree data structure is the directed graph generated from the user-defined BPM Menu. Steering holds and manages the entire Tree data structure, consisting of the Elements of each Node, the relationships betweens Nodes, and all Arrow buffers attached to the Elements (a reference to the Arrow buffers). The Elements serve as a medium for inter-algorithm communication. The Arrow buffers (data tables) are attached to Elements and can be accessed by subsequent algorithms.
+Artemis has a top-level algorithm, *Steering*, which serves as the execution engine for the user-defined algorithms. The Steering algorithm manages the data dependencies for the execution of the BPM by seeding the required data inputs to each Node in a Tree via an Element. The Tree data structure is the directed graph generated from the user-defined BPM Menu. Steering holds and manages the entire Tree data structure, consisting of the Elements of each Node, the relationships betweens Nodes, and all Arrow buffers attached to the Elements (a reference to the Arrow buffers). The Elements serve as a medium for inter-algorithm communication. The Arrow buffers (data tables) are attached to Elements and can be accessed by subsequent algorithms.
 TODO
 Diagram Data Access via Elements
 
@@ -46,5 +40,8 @@ Planned developments in Arrow also extend to both algebra operators as well as a
 
 Metadata Access
 ---------------
+
+:class:`artemis.core.gate.ArtemisGateSvc`
+
 Access to framework-level resources in algorithms, such as metadata, histograms and timers is managed via a single class that is 
 available in any algorithm inheriting from the base class.
