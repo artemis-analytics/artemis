@@ -22,6 +22,14 @@ IO
     artemis.io.readers
     artemis.io.writer
 
+Metadata
+--------
+.. autosummary::
+    :toctree: generated/
+    
+    artemis.meta.cronus
+    artemis.meta.Directed_Graph
+
 Tools
 -----
 .. autosummary::
