@@ -214,6 +214,9 @@ class MenuBuilder():
             self._chains[chain].build()
             menu.add(self._chains[chain])
         menu.build()
+        menu.create_vis(prefix=f"{self._uuid}.menu")
         msg = menu.to_msg()
         msg.uuid = self._uuid
         return msg
+
+    
