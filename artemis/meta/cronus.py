@@ -65,7 +65,9 @@ class MetaObject:
 
 @Logger.logged
 class BaseObjectStore(BaseBook):
-
+    '''
+    Base Object Store derives from an OrderedDict-like class
+    '''
     def __init__(self,
                  root,
                  name,
@@ -184,22 +186,20 @@ class BaseObjectStore(BaseBook):
         info object can be used to call the correct
         register method and validate all the required inputs are received
 
-        Metadata model
-        --------------
-
-        Menu metadata
-            Menu protobuf
-        Configuration metadata
-            config protobuf
+        Metadata model includes:
+        Menu metadata (Menu protobuf)
+        Configuration metadata (config protobuf)
         Dataset metadata
-            Partition keys
-            Job Ids
-            Dataset protobuf
-            Log file
-            Hists protobuf
-            Job protobuf
-            Data files
-            Table (Schema) protobuf
+
+        Dataset metadata include:
+        Partition keys
+        Job Ids
+        Dataset protobuf
+        Log file
+        Hists protobuf
+        Job protobuf
+        Data files
+        Table (Schema) protobuf
 
         Parameters
         ----------
@@ -207,8 +207,8 @@ class BaseObjectStore(BaseBook):
         info : associated metadata object describing the content of buf
 
 
-        kwargs
-        --------
+        Other Parameters
+        ----------------
         dataset_id : required for logs, files, tables, hists
         partition_key : required for files and tables
         job_id : job index
@@ -504,8 +504,8 @@ class BaseObjectStore(BaseBook):
         '''
         Writes data to kv store
         Support for:
-            - data wrapped as a pyarrow Buffer
-            - protocol buffer message
+        data wrapped as a pyarrow Buffer
+        protocol buffer message
 
         Parameters
         ----------
@@ -530,9 +530,9 @@ class BaseObjectStore(BaseBook):
         '''
         Retrieves data from kv store
         Support for:
-            - pyarrow ipc file or stream
-            - pyarrow input_stream, e.g. csv, fwf, ...
-            - bytestream protobuf message
+        pyarrow ipc file or stream
+        pyarrow input_stream, e.g. csv, fwf, ...
+        bytestream protobuf message
 
         Parameters
         ----------

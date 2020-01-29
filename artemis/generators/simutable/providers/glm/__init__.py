@@ -46,9 +46,7 @@ class Provider(BaseProvider):
 
         y = np.random.uniform(ymin,ymax)
         throw = np.random.uniform(0,pdfmax)
-        if(throw < y):
-            accept!!!
-
+        if(throw < y): accept
         Should the scale go as 1/sqrt(sample size)?
         '''
         y = np.dot(np.asarray(X), beta) \

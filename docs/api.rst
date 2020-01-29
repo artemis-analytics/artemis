@@ -26,7 +26,7 @@ Metadata
 --------
 .. autosummary::
     :toctree: generated/
-    
+        
     artemis.meta.cronus
     artemis.meta.Directed_Graph
 
