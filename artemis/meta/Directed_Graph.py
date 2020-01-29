@@ -254,7 +254,7 @@ class Directed_Graph():
     We begin by using the unsorted graph and then adding
     all of the parent/child relationships this way
     '''
-    def create_vis(self, terminal_print=False) -> None:
+    def create_vis(self, terminal_print=False, prefix=None) -> None:
 
         output_graph = pgv.AGraph(strict=False, directed=True)
 
@@ -271,7 +271,10 @@ class Directed_Graph():
             print(output_graph.string())
 
         output_graph.layout(prog='dot')
-        output_graph.draw(str(hash(self)) + '.png')
+        if prefix is None:
+            output_graph.draw(str(hash(self)) + '.png')
+        else:
+            output_graph.draw(prefix + '.png')
         return
 
     def build(self) -> bool:
@@ -474,7 +477,6 @@ class GraphMenu():
         Creates a pygraphviz from the menu of buisness processes
         We may have to move the following code depending on what graph
         (either sorted or unsorted we want to visualize)
-
         We begin by using the unsorted graph and then
         adding all of the parent/child relationships this way
         '''
@@ -501,7 +503,10 @@ class GraphMenu():
             print(output_graph.string())
 
         output_graph.layout(prog='dot')
-        output_graph.draw(str(hash(self)) + '.png')
+        if prefix is None:
+            output_graph.draw(str(hash(self)) + '.png')
+        else:
+            output_graph.draw(prefix + '.png')
         return
 
     def build(self) -> None:
