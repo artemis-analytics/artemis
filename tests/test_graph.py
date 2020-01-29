@@ -190,7 +190,7 @@ class GraphTestCase(unittest.TestCase):
 
         test_menu2 = GraphMenu("test1")
         test_menu2.to_menu_from_msg(msg)
-        test_menu2.create_vis(terminal_print=True)
+        test_menu2.create_vis(terminal_print=True,prefix='test1')
 
         pass
 
@@ -261,7 +261,7 @@ class GraphTestCase(unittest.TestCase):
         graph2.add(node9)
         graph2.add(node10)
         graph2.build()
-        graph2.create_vis()
+        graph2.create_vis(prefix='test_graph_viz')
 
 if __name__ == '__main__':
     unittest.main()
