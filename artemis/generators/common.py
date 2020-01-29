@@ -74,7 +74,7 @@ def check_random_state(seed):
     https://scikit-learn.org/stable/developers/utilities.html#validation-tools
 
     Parameters
-    ----------
+    
     seed: None | int | instance of RandomState
 
     '''

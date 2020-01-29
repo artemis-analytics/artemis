@@ -264,8 +264,10 @@ class Modifier(object):
         random select field to modify
         random number of modifications in field
         random select field to modify
-            e.g. mod = random_select(field_dict['prob_list'])
-            selects modification according to pdf
+        
+        e.g. mod = random_select(field_dict['prob_list'])
+        
+        selects modification according to pdf
         apply modifications in field
         '''
         while (self.num_mods_in_record < self.max_record_modifiers):
