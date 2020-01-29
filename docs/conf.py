@@ -28,7 +28,12 @@ author = 'Ryan M. White, Dominic Parent, Russell Gill'
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.autodoc','sphinx.ext.autosectionlabel','sphinx.ext.autosummary','sphinx_rtd_theme']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosectionlabel',
+              'sphinx.ext.autosummary',
+              'sphinx_rtd_theme',
+              'sphinx.ext.napoleon']
+#              'numpydoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -58,4 +63,6 @@ autodoc_default_options={'members': True,
                          'member-order': True, 
                          'inherited-members': True,
                          'show-inheritance':True}
+#numpydoc_show_class_members = True
+#numpydoc_show_inherited_class_members = True
 autosummary_generate = True
