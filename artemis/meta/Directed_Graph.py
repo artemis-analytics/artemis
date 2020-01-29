@@ -254,7 +254,7 @@ class Directed_Graph():
     We begin by using the unsorted graph and then adding
     all of the parent/child relationships this way
     '''
-    def create_vis(self, terminal_print=False) -> None:
+    def create_vis(self, terminal_print=False, prefix=None) -> None:
 
         output_graph = pgv.AGraph(strict=False, directed=True)
 
@@ -271,7 +271,10 @@ class Directed_Graph():
             print(output_graph.string())
 
         output_graph.layout(prog='dot')
-        output_graph.draw(str(hash(self)) + '.png')
+        if prefix is None:
+            output_graph.draw(str(hash(self)) + '.png')
+        else:
+            output_graph.draw(prefix + '.png')
         return
 
     def build(self) -> bool:
@@ -477,7 +480,7 @@ class GraphMenu():
     We begin by using the unsorted graph and then
     adding all of the parent/child relationships this way
     '''
-    def create_vis(self, terminal_print: bool = False) -> None:
+    def create_vis(self, terminal_print: bool = False, prefix: str = None) -> None:
 
         output_graph = pgv.AGraph(strict=False, directed=True)
 
@@ -503,7 +506,10 @@ class GraphMenu():
             print(output_graph.string())
 
         output_graph.layout(prog='dot')
-        output_graph.draw(str(hash(self)) + '.png')
+        if prefix is None:
+            output_graph.draw(str(hash(self)) + '.png')
+        else:
+            output_graph.draw(prefix + '.png')
         return
 
     def build(self) -> None:
