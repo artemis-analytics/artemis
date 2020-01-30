@@ -22,14 +22,3 @@ class Provider(BaseProvider):
         return self.generator.random.lognormvariate(mu, sigma)
 
 
-class TestCase(unittest.TestCase):
-    def test(self):
-        fake = Faker()
-
-        provider = Provider(fake)
-        fake.add_provider(provider)
-        print(fake.lognormal())
-
-
-if __name__ == '__main__':
-    unittest.main()

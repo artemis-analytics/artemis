@@ -22,22 +22,56 @@ import tempfile
 from faker import Faker
 from artemis.generators.simutable.providers.chi import Provider as ChiSquare
 from artemis.generators.simutable.providers.binom import Provider as Binomial
+from artemis.generators.simutable.providers.gamma import Provider as Gamma
+from artemis.generators.simutable.providers.norm import Provider as Normal
+from artemis.generators.simutable.providers.lognormal import Provider as LogNormal
+from artemis.generators.simutable.providers.bernoulli import Provider as Bernoulli
+from artemis.generators.simutable.providers.poisson import Provider as Poisson
 
-class ChiSquare(unittest.TestCase):
+class DistCase(unittest.TestCase):
 
-    def test(self):
+    def test_chisq(self):
         fake = Faker()
         provider = ChiSquare(fake)
         fake.add_provider(provider)
         print(fake.chi_square_dist(1))
 
-class Binomial(unittest.TestCase):
-
-    def test(self):
+    def test_binom(self):
         fake = Faker()
         provider = Binomial(fake)
         fake.add_provider(provider)
-        print(fake.binom_dist(["1", "2"]))
+        print(fake.binom_dist(["5", "0.4"]))
+
+    def test_bernoulli(self):
+        fake = Faker()
+        provider = Bernoulli(fake)
+        fake.add_provider(provider)
+        print(fake.bernoulli_dist(1))
+
+    def test_gamma(self):
+        fake = Faker()
+        provider = Gamma(fake)
+        fake.add_provider(provider)
+        print(fake.gamma_dist(0.9))
+
+    def test_lognormal(self):
+        fake = Faker()
+
+        provider = LogNormal(fake)
+        fake.add_provider(provider)
+        print(fake.lognormal())
+
+    def test_poisson(self):
+        fake = Faker()
+        provider = Poisson(fake)
+        fake.add_provider(provider)
+        print(fake.poisson_dist(1))
+
+    def test_normal(self):
+        fake = Faker()
+        provider = Normal(fake)
+        fake.add_provider(provider)
+        print(fake.normal_dist(["1", "2"]))
 
 if __name__ == '__main__':
     print('Unit Test: Faker')
