@@ -40,14 +40,24 @@ class ArtemisGateSvc(metaclass=Singleton):
     Providing access to common data sinks required
     in artemis and algorithms
 
-    MetaData: JobInfo
-    Histograms: ArtemisBook
-    TDigests: TDigestBook
-    Job Menu: Menu
-    Job Configuration: Configuration
-    Tools: ToolStore
-    MetaData Store: Cronus
-    Steering Data Dependency Tree: Tree
+    Attributes
+    ----------
+    meta : JobInfo
+        JobInfo object holding uuids to configuration and menu metadata
+    hbook : ArtemisBook
+        OrderedDict of all histograms in framework
+    tbook : TDigestBook
+        OrderedDict of all tdigests in framework
+    menu : Menu
+        Business process graph
+    config : Configuration
+        All configuration meta, including properties of tools and algorithms
+    tools : ToolStore
+        OrderedDict of all tool objects in framework. Enables sharing of a tool across multiple algorithms.
+    store : BaseObjectStore
+        Metadata service and access to underlying data store
+    tree : Tree
+        Execution graph
 
     '''
     def __init__(self):
@@ -62,6 +72,9 @@ class ArtemisGateSvc(metaclass=Singleton):
         self._current_file_id = None
 
     def configure(self, jobinfo):
+        """Configure the gate with jobinfo passed to Artemis.
+        
+        """
         try:
             self.meta.CopyFrom(jobinfo)
         except Exception:
@@ -156,7 +169,9 @@ class ArtemisGateSvc(metaclass=Singleton):
         self.__logger.info("=================================")
 
     def finalize(self):
-
+        """Finalize job.
+        Collects timers and registers remaining content, such as histograms to the store.
+        """
         try:
             self._finalize_timers()
         except Exception:
@@ -218,43 +233,57 @@ class MetaMixin():
     '''
     @property
     def job_id(self):
+        """UUID of job
+        """
         return self.gate.meta.job_id
 
     @property
     def path(self):
+        """Absolute path to datastore, e.g. where things are written to
+        """
         return self.gate.meta.store_path
 
     @property
     def store_name(self):
+        """Name of metastore
+        """
         return self.gate.meta.store_name
 
     @property
     def store_uuid(self):
+        """UUID of store
+        """
         return self.gate.meta.store_id
 
     @property
     def menu_id(self):
+        """ UUID of menu metadata
+        """
         return self.gate.meta.menu_id
 
     @property
     def config_id(self):
+        """UUID of configuration metadata
+        """
         return self.gate.meta.config_id
 
     @property
     def input_id(self):
-        '''
-        Parent dataset uuid
-        '''
+        """Parent dataset uuid.
+        
+        """
         return self.gate.meta.parentset_id
 
     @property
     def output_id(self):
-        '''
-        Output dataset uuid
-        '''
+        """Output dataset uuid
+        
+        """
         return self.gate.meta.dataset_id
 
     def get_tool(self, name):
+        """Retrieve a tool via the name
+        """
         return self.gate.tools.get(name)
 
 

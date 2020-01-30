@@ -6,7 +6,8 @@ Core
 --------
 .. autosummary::
     :toctree: generated/
-    
+   
+    artemis.artemis
     artemis.core.steering
     artemis.core.gate
     artemis.core.book
