@@ -472,7 +472,7 @@ class GraphMenu():
             #        (self.__class__.__name__, directed_graph.item)
             pass
 
-    def create_vis(self, terminal_print: bool = False) -> None:
+    def create_vis(self, terminal_print: bool = False, prefix=None) -> None:
         '''
         Creates a pygraphviz from the menu of buisness processes
         We may have to move the following code depending on what graph
