@@ -124,7 +124,7 @@ def example_configuration(table_id, seed=42):
     config.tools[csvtool.name].CopyFrom(csvtool.to_msg())
 
     filtercoltool = FilterColTool('filtercoltool',
-                                  columns=['record-id', 'SIN', 'DOB'])
+                                  columns=['record_id', 'Product', 'Unit'])
     config.tools[filtercoltool.name].CopyFrom(filtercoltool.to_msg())
     
     writer = BufferOutputWriter('bufferwriter',
