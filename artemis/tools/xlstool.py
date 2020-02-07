@@ -391,6 +391,25 @@ class XlsTool(ToolBase):
                 new.info.aux.generator.name = \
                     str(temp.loc[i, meta_name[meta_name ==
                         'Synthetic Data Generator Name'].index].item())
+                new.info.aux.generator.name = \
+                    str(temp.loc[i, meta_name[meta_name ==
+                        'Synthetic Data Generator Name'].index].item())
+
+                new.info.aux.generator.parameters.name = \
+                    str(temp.loc[i, meta_name[meta_name == 
+                        'Parameter Name'].index].items())
+
+                new.info.aux.generator.parameters.value = \
+                    str(temp.loc[i, meta_name[meta_name == 
+                        'Value'].index].items())
+                
+                new.info.aux.generator.parameters.type = \
+                    str(temp.loc[i, meta_name[meta_name == 
+                        'Type'].index].items())
+                
+                new.info.aux.generator.parameters.value = \
+                    str(temp.loc[i, meta_name[meta_name == 
+                        'Value'].index].items())
             except:
                 self.__logger.error("Error storing Synthetic Data Generator "
                                     + "Name for variable " + new.name)

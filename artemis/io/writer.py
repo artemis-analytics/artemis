@@ -393,14 +393,14 @@ class BufferOutputWriter(IOAlgoBase):
                columns=None, header=True, index=False, index_label=None,
                mode='w', encoding=None, compression=None, quoting=None,
                quotechar='"', line_terminator='\n', chunksize=None,
-               tupleize_cols=None, date_format=None, doublequote=True,
+               date_format=None, doublequote=True,
                escapechar=None, decimal='.'):
-        r"""Write DataFrame to a comma-separated values (csv) file
-
-        Obtained from pandas.core.frame
+        """ Write DataFrame to a comma-separated values (csv) file. Obtained from pandas.core.frame.
+        
         Parameters
-        ----------
-        buf : arrow buffer of a RecordBatchFile
+        ---------- 
+        buf : pyarrow.buffer 
+            arrow buffer of a RecordBatchFile
         path_or_buf : string or file handle, default None
             File path or object, if None is provided the result is returned as
             a string.
@@ -447,14 +447,6 @@ class BufferOutputWriter(IOAlgoBase):
             character used to escape `sep` and `quotechar` when appropriate
         chunksize : int or None
             rows to write at a time
-        tupleize_cols : boolean, default False
-            .. deprecated:: 0.21.0
-               This argument will be removed and will always write each row
-               of the multi-index as a separate row in the CSV file.
-
-            Write MultiIndex columns as a list of tuples (if True) or in
-            the new, expanded format, where each MultiIndex column is a row
-            in the CSV (if False).
         date_format : string, default None
             Format string for datetime objects
         decimal: string, default '.'
@@ -462,18 +454,7 @@ class BufferOutputWriter(IOAlgoBase):
             European data
 
         """
-
-        '''
-        if tupleize_cols is not None:
-            warnings.warn("The 'tupleize_cols' parameter is deprecated and "
-                          "will be removed in a future version",
-                          FutureWarning, stacklevel=2)
-        else:
-            tupleize_cols = False
-        '''
-        # Convert table to dataframe
-        # use_threads can be enabled
-        # frame = table.to_pandas(use_threads=False)
+        
         frame = pa.ipc.open_file(buf).read_pandas()
 
         from pandas.io.formats.csvs import CSVFormatter

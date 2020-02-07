@@ -31,6 +31,9 @@ from artemis.core.tree import Node, Element
 class Steering(AlgoBase):
 
     def __init__(self, name, **kwargs):
+        '''
+        init method
+        '''
         super().__init__(name, **kwargs)
         self.__logger.info('%s: __init__ Steering' % self.name)
         self._chunk_cntr = 0
@@ -39,6 +42,9 @@ class Steering(AlgoBase):
         self._algo_instances = {}
 
     def initialize(self):
+        '''
+        initialize method
+        '''
         self.__logger.info('Initialize Steering')
         self.from_msg()
 
@@ -113,6 +119,9 @@ class Steering(AlgoBase):
                 algo.lock()
 
     def book(self):
+        '''
+        book method
+        '''
         self.__logger.info("Book")
 
         for key in self._algo_instances:
@@ -147,6 +156,9 @@ class Steering(AlgoBase):
                         self.__logger.error('Cannot book %s' % algo.name)
 
     def _element_name(self, key):
+        '''
+        retrieve datastore element name with key
+        '''
         return self.gate.tree.name + \
                 '_' + self.gate.tree.nodes[key].key + \
                 '_' + str(self._chunk_cntr)
@@ -195,6 +207,9 @@ class Steering(AlgoBase):
         self._chunk_cntr += 1
 
     def finalize(self):
+        '''
+        finalize method
+        '''
         self.__logger.info("Completed steering")
         for key in self._menu:
             for algo in self._menu[key]:

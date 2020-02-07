@@ -35,7 +35,7 @@ Tools
 .. autosummary::
     :toctree: generated/
 
-    artemis.tools.filtercoltool
+..    artemis.tools.filtercoltool
     artemis.tools.csvtool
     artemis.tools.fwftool
     artemis.tools.tdigesttool

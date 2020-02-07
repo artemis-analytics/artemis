@@ -472,6 +472,7 @@ class GraphMenu():
             #        (self.__class__.__name__, directed_graph.item)
             pass
 
+<<<<<<< HEAD
     '''
     Creates a pygraphviz from the menu of buisness processes
     We may have to move the following code depending on what graph
@@ -481,15 +482,24 @@ class GraphMenu():
     adding all of the parent/child relationships this way
     '''
     def create_vis(self, terminal_print: bool = False, prefix: str = None) -> None:
+=======
+    def create_vis(self, terminal_print: bool = False) -> None:
+        '''
+        Creates a pygraphviz from the menu of buisness processes
+        We may have to move the following code depending on what graph
+        (either sorted or unsorted we want to visualize)
+>>>>>>> switch to napaleon extension for autodoc
 
+        We begin by using the unsorted graph and then
+        adding all of the parent/child relationships this way
+        '''
         output_graph = pgv.AGraph(strict=False, directed=True)
 
-        '''
-        if self._from_msg != True or self._attempted_built != True:
-            print("Error: unable to create visualization")
+        
+        #if self._from_msg != True or self._attempted_built != True:
+        #    print("Error: unable to create visualization")
             #self.__logger.error("Error: unable to create visualization")
-            return
-        '''
+        #    return
 
         if self._from_msg is True:
             for key in self._ordered_sequence:
@@ -647,11 +657,9 @@ class GraphMenu():
 
     def to_graph(self) -> OrderedDict:
         '''
-        **********************************************************
         The name of this function is misleading, this function
         is used for steering and returns a
         dictionary of node -> algorithims used
-        **********************************************************
 
         Generates ordered dictionary of node and algorithms
         Execution graph for Steering
