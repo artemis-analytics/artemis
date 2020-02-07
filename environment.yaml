@@ -37,7 +37,7 @@ dependencies:
     - pygraphviz
     - matplotlib
     - mypy
-    - pyarrow=0.14.0
+    - pyarrow=0.14.1
     - simplekv
     - xlrd
     - faker<3.0.0
