@@ -280,7 +280,12 @@ def example_job():
         configinfo.created.GetCurrentTime()
 
         # Store the menu and configuration protobufs
-        menu_uuid = store.register_content(msgmenu, menuinf ig_uuid)
+        menu_uuid = store.register_content(msgmenu, menuinfo).uuid
+        config_uuid = store.register_content(config, configinfo).uuid
+
+        # Register an output dataset
+        dataset = store.register_dataset(menu_id=menu_uuid,
+                                         config_id=config_uuid)
         store.save_store()
 
         # Now define the actual Artemis job

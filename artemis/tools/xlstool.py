@@ -163,7 +163,6 @@ class XlsTool(ToolBase):
                               'Has Other Supporting Documentation? [y/n]',
                               'List of Expected Medium', 'List of Usage',
                               'Permission', 'Provider',
-                              'Parameter(s)', 'Type(s)',
                               'Provider Type [External/Internal/Custodian]',
                               'Reference Period', 'Granularity Type', 'State',
                               'Data Asset Category',
