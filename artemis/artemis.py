@@ -17,6 +17,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Artemis Core Application
+"""
+
 # Python libraries
 import traceback
 
@@ -95,7 +99,7 @@ class Artemis(MetaMixin, IOMetaMixin):
             Singleton for access to all framework level data, timers, histograms, metadata
         job_state : enum
             Enumerated job state
-        steer : Steer
+        steer : Steering
             steering instance to manage execution of process graph
         datahandler : generator
             generator for serving data to artemis
@@ -113,6 +117,12 @@ class Artemis(MetaMixin, IOMetaMixin):
     ----------------
         loglevel : str
             Optional level for logging `INFO`, `DEBUG`, `VERBOSE`
+
+    Returns
+    -------
+
+    Examples
+    --------
     """
 
     def __init__(self, jobinfo, **kwargs):

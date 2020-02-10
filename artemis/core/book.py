@@ -56,6 +56,16 @@ from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
 
 class BaseBook(collections.MutableMapping):
     """Base class for a collection of objects in a dictionary-like object.
+    
+    Attributes
+    ----------
+        _content : OrderedDict
+            dictionary of histograms
+    
+    Parameters
+    ----------
+        hists : dict
+            dictionary of histograms to initialize book
     """
     def __init__(self, hists={}):
 
@@ -240,9 +250,12 @@ class BaseBook(collections.MutableMapping):
 @Logger.logged
 class ArtemisBook(BaseBook):
     '''
-    Concrete implementation for histograms and timers.
-
-    Provides methods for serializing/deserializing protobuf.
+    Book for histograms and timers.
+    
+    Attributes
+    ----------
+        _timers : OrderedDict
+            dictionary of timer objects
     '''
     def __init__(self, hists={}):
         super().__init__(hists)
@@ -376,9 +389,9 @@ class ArtemisBook(BaseBook):
 @Logger.logged
 class TDigestBook(BaseBook):
     '''
-    Concrete implementation for TDigest objects and serialization.
+    Book of TDigest objects
 
-    Provides methods for serializing/deserializing protobug.
+    Provides methods for serializing/deserializing protobuf.
     Conversion to/from protobuf TDigest to TDigest python implementation.
 
     '''
