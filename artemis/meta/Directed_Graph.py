@@ -19,7 +19,10 @@
 
 '''
 
-Creation of Directed Acyclic Graph and Menu data types for Artemis and Cronos
+Computation graph data structure for persisting a business process model as a Directed Acyclic Graph. 
+
+Includes a topological sorting algorithm for generating Directed Acyclic Graphs 
+given a set of inputs and an output in Menu data types used in Artemis and Cronos.
 
 Defines all possible Sequences or Buisness processes as Nodes and each
 chain of sequences as a Directed_Graph datatype
@@ -238,10 +241,10 @@ class Directed_Graph():
     def add(self, node: Node) -> None:
         self._nodes.append(node)
 
-    '''
-    def internal_graph(self):
-        return self._internal_graph
-    '''
+    
+    # def internal_graph(self):
+    #     return self._internal_graph
+    
 
     def attempted_built(self) -> bool:
         return self._attempted_built
@@ -321,24 +324,23 @@ class Directed_Graph():
 
         self._leaf = list(all_nodes - have_children)
 
-        '''
+        
         # initialize the internal_graph dictionary
-        for node in self._nodes:
-            self._internal_graph[node.id] = []
+        # for node in self._nodes:
+        #    self._internal_graph[node.id] = []
 
         # populate the internal_graph dictionary
         # having "none" as the parent means that it is a root
         # having an empty list for the children means that the id is a leaf
-        for node in self._nodes:
-            for parent in node.parents:
-                if parent != "none":
-                    self._internal_graph[parent].append(node.id)
+        # for node in self._nodes:
+        #     for parent in node.parents:
+        #         if parent != "none":
+        #             self._internal_graph[parent].append(node.id)
 
         # check for the leaves of this graph
-        for node in self._nodes:
-            if self._internal_graph[node.id] == []:
-                self._leaf.append(node.id)
-        '''
+        # for node in self._nodes:
+        #     if self._internal_graph[node.id] == []:
+        #         self._leaf.append(node.id)
 
         # apply a topological sort to the tree
         # we use Kahn's algorithim for this
@@ -388,12 +390,12 @@ class Directed_Graph():
         is_valid = is_sortable
 
         # ensure that the graph is a valid directed, acyclic graph
-        '''
-        print("TOPOLOGICALSORT LIST")
-        for item in topological_sort_list:
-            print(item)
-        print("TOPOLOGICALSORT LIST")
-        '''
+        #
+        # print("TOPOLOGICALSORT LIST")
+        # for item in topological_sort_list:
+        #     print(item)
+        # print("TOPOLOGICALSORT LIST")
+        
 
         ordered_nodes = deque()
         for current_node in topological_sort_list:
@@ -769,7 +771,7 @@ class Directed_GraphDef():
         '''
         takes the menu item name and default list of inputs
         inputElement can be of type Chain:
-            inputElement = chain.leaf()
+        inputElement = chain.leaf()
         '''
         graph = Directed_Graph(item)
         # define sequences

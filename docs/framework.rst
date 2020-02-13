@@ -123,10 +123,4 @@ The output dataset does not assume to map directly back to the input dataset, as
 * :ref:`core:Data Processing`
 * :ref:`io:Data Collection`
 * :ref:`dq:Data Postprocessing`
-  
-
-.. automodule:: artemis
-
-.. automodule:: artemis.artemis
-   :members:
 

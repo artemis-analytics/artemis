@@ -18,8 +18,7 @@
 # limitations under the License.
 
 """
-Algorithm which configures a reader
-given a bytes object
+Algorithm that parsers and converts a bytes object of csv data to Arrow record batch format. Calls a tool that executes the pyarrow csv reader.
 """
 from artemis.core.algo import AlgoBase
 from artemis.decorators import timethis

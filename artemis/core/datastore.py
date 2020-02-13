@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-Arrow PoC code.
+Arrow object store for managing access to data associated with nodes in a process tree.
 """
 
 from .singleton import Singleton

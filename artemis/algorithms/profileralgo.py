@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-Placeholder algo to profile a RecordBatch
+Profiles record batch columns with TDigest
 """
 
 from artemis.externals.tdigest.tdigest import TDigest

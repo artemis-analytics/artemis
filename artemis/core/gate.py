@@ -16,7 +16,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""
+Framework-level services and helper mixin classes to provide access to metadata, histograms, timers, and stores
+"""
 from artemis.logger import Logger
 from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree
@@ -40,14 +42,24 @@ class ArtemisGateSvc(metaclass=Singleton):
     Providing access to common data sinks required
     in artemis and algorithms
 
-    MetaData: JobInfo
-    Histograms: ArtemisBook
-    TDigests: TDigestBook
-    Job Menu: Menu
-    Job Configuration: Configuration
-    Tools: ToolStore
-    MetaData Store: Cronus
-    Steering Data Dependency Tree: Tree
+    Attributes
+    ----------
+    meta : JobInfo
+        JobInfo object holding uuids to configuration and menu metadata
+    hbook : ArtemisBook
+        OrderedDict of all histograms in framework
+    tbook : TDigestBook
+        OrderedDict of all tdigests in framework
+    menu : Menu
+        Business process graph
+    config : Configuration
+        All configuration meta, including properties of tools and algorithms
+    tools : ToolStore
+        OrderedDict of all tool objects in framework. Enables sharing of a tool across multiple algorithms.
+    store : BaseObjectStore
+        Metadata service and access to underlying data store
+    tree : Tree
+        Execution graph
 
     '''
     def __init__(self):
@@ -62,6 +74,9 @@ class ArtemisGateSvc(metaclass=Singleton):
         self._current_file_id = None
 
     def configure(self, jobinfo):
+        """Configure the gate with jobinfo passed to Artemis.
+        
+        """
         try:
             self.meta.CopyFrom(jobinfo)
         except Exception:
@@ -156,7 +171,9 @@ class ArtemisGateSvc(metaclass=Singleton):
         self.__logger.info("=================================")
 
     def finalize(self):
-
+        """Finalize job.
+        Collects timers and registers remaining content, such as histograms to the store.
+        """
         try:
             self._finalize_timers()
         except Exception:
@@ -218,43 +235,57 @@ class MetaMixin():
     '''
     @property
     def job_id(self):
+        """UUID of job
+        """
         return self.gate.meta.job_id
 
     @property
     def path(self):
+        """Absolute path to datastore, e.g. where things are written to
+        """
         return self.gate.meta.store_path
 
     @property
     def store_name(self):
+        """Name of metastore
+        """
         return self.gate.meta.store_name
 
     @property
     def store_uuid(self):
+        """UUID of store
+        """
         return self.gate.meta.store_id
 
     @property
     def menu_id(self):
+        """ UUID of menu metadata
+        """
         return self.gate.meta.menu_id
 
     @property
     def config_id(self):
+        """UUID of configuration metadata
+        """
         return self.gate.meta.config_id
 
     @property
     def input_id(self):
-        '''
-        Parent dataset uuid
-        '''
+        """Parent dataset uuid.
+        
+        """
         return self.gate.meta.parentset_id
 
     @property
     def output_id(self):
-        '''
-        Output dataset uuid
-        '''
+        """Output dataset uuid
+        
+        """
         return self.gate.meta.dataset_id
 
     def get_tool(self, name):
+        """Retrieve a tool via the name
+        """
         return self.gate.tools.get(name)
 
 
@@ -262,18 +293,30 @@ class IOMetaMixin():
 
     @property
     def job_state(self):
+        """
+        Job state currently stored in protobuf
+        """
         return self.gate.meta.state
 
     @property
     def current_file(self):
+        """
+        current file UUID held in gate
+        """
         return self.gate._current_file_id
 
     @property
     def processed_ndatums(self):
+        '''
+        current number of datums processed
+        '''
         return self.gate.meta.summary.processed_ndatums
 
     @property
     def processed_bytes(self):
+        '''
+        current total bytes processed
+        '''
         return self.gate.meta.summary.processed_bytes
 
     @job_state.setter
@@ -293,6 +336,17 @@ class IOMetaMixin():
         self.gate.meta.summary.processed_bytes += value
 
     def register_log(self):
+        '''
+        register a log file in the store
+        
+        Parameters
+        ----------
+
+        Returns
+        -------
+            logobj : Context object
+        '''
+
         logobj = self.gate.store.register_log(self.gate.meta.dataset_id,
                                               self.gate.meta.job_id)
         return logobj
@@ -300,6 +354,22 @@ class IOMetaMixin():
     def register_content(self, buf,
                          info, dataset_id,
                          job_id, partition_key=None):
+        '''
+        register content in the store
+
+        Parameters
+        ----------
+            buf : protobuf or pyarrow.buffer
+                raw bytes
+            info : Context object
+                metadata associated to data object
+            dataset_id : UUID 
+                UUID of dataset to associate with content
+            job_id : UUID
+                UUID of current job that produced data object
+            partition_key : str
+                partition name in dataset
+        '''
 
         return self.gate.store.register_content(buf, info,
                                                 dataset_id=dataset_id,
@@ -307,9 +377,24 @@ class IOMetaMixin():
                                                 partition_key=partition_key)
 
     def set_file_size_bytes(self, filepath_or_buffer, size_):
+        '''
+        set the size in bytes of an object in the context object
+        '''
         self.gate.store[filepath_or_buffer].file.size_bytes = size_
 
     def set_file_blocks(self, filepath_or_buffer, blocks):
+        '''
+        set blocks, chunks or record batches in a file.
+        provides context of how a raw data object is split, read and processed.
+
+        Parameters
+        ----------
+        filepath_or_buffer : bytes
+            data object
+        blocks : List
+            offset is zeroth element
+            length is first element
+        '''
         # Record the blocks chunked from input datum
         for i, block in enumerate(blocks):
             msg = self.gate.store[filepath_or_buffer].file.blocks.add()
@@ -318,23 +403,62 @@ class IOMetaMixin():
             msg.info.size_bytes = block[1]
 
     def new_partition(self, key):
+        '''
+        add a partition to the current dataset
+
+        Parameters
+        ----------
+
+        key : str
+            name of partition. Typically a leaf name in the menu
+
+        '''
         self.gate.store.new_partition(self.gate.meta.dataset_id, key)
 
     def reset_job_summary(self):
+        '''
+        clears the summary information. Typically used when sampling data.
+        '''
         self.gate.meta.summary.processed_bytes = 0
         self.gate.meta.summary.processed_ndatums = 0
 
     def get_leaves(self):
+        '''
+        Return leaves from the execution tree
+        '''
         return self.gate.tree.leaves
 
     def get_node(self, node_id):
+        '''
+        Return node from execution tree
+
+        Parameters
+        ----------
+        node_id : str
+            unique name of node
+        '''
+        # Node name is constructed in Steering
+        # See steering._element_name 
         return self.gate.tree.get_node_by_key(node_id)
 
     def persist_to_storage(self, obj_id, buf):
+        '''
+        Writes data object to disk via the store
+        '''
         self.gate.store.put(obj_id, buf)
 
     def datastore_flush(self):
+        '''
+        Clears all nodes in the execution tree
+        '''
         self.gate.tree.flush()
 
     def datastore_is_empty(self):
+        '''
+        checks that the in-memory datastore is empty
+        
+        Returns
+        -------
+            bool
+        '''
         return ArrowSets().is_empty()

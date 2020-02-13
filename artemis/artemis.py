@@ -17,6 +17,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+Artemis Core Application
+"""
+
 # Python libraries
 import traceback
 
@@ -83,18 +87,45 @@ class ArtemisFactory:
 
 @Logger.logged
 class Artemis(MetaMixin, IOMetaMixin):
-    """Top-level Artemis framework class
-    Mixin classes used for managing metadata
+    """Top-level Artemis framework class.
+    Manages event loop, error handling and control flow
+    Mixin classes provide methods for managing metadata
+
+    Attributes
+    ----------
+        properties : Properties
+            Stored metadata properties for Artemis
+        gate : ArtemisGateSvc
+            Singleton for access to all framework level data, timers, histograms, metadata
+        job_state : enum
+            Enumerated job state
+        steer : Steering
+            steering instance to manage execution of process graph
+        datahandler : generator
+            generator for serving data to artemis
+        filehandler : FileHandler
+            file handler for managing processing of datums
+        collector : Collector
+            collector class, monitors Arrow memory pool and writers to spill to disk
+    
+    Parameters
+    ----------
+        jobinfo : JobInfo_pb
+            JobInfo Protocol buffer 
+    
+    Other Parameters
+    ----------------
+        loglevel : str
+            Optional level for logging `INFO`, `DEBUG`, `VERBOSE`
+
+    Returns
+    -------
+
+    Examples
+    --------
     """
 
     def __init__(self, jobinfo, **kwargs):
-        """Artemis class which manages event loop, error handling and control flow
-
-        Args:
-            foo (JobInfo): Requires protocol buffer JobInfo
-        kwargs:
-            bar (JobInfo, ...): Optional kwargs for loglevel
-        """    
         self.properties = Properties()
         self.gate = ArtemisGateSvc()
         self.gate.configure(jobinfo)
@@ -116,13 +147,16 @@ class Artemis(MetaMixin, IOMetaMixin):
         """
         Execute an artemis sub-job
 
-        Args:
+        Parameters
+        ----------
 
-        Kwargs:
+        Other Parameters
+        ----------------
 
-        Returns:
-            bool. The return code::
-                False -- exception encountered, sends error to :class:`artemis.Artemis.abort`
+        Returns
+        -------
+            True : bool
+            The return code :: False -- exception encountered, sends error to :class:`artemis.Artemis.abort`
         """
         self.job_state = artemis_pb2.JOB_RUNNING
         self.launch()
@@ -237,8 +271,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         self.logger.info('Artemis is ready')
 
     def configure(self):
-        """
-        Configures all sub-job dependencies.
+        """Configures all sub-job dependencies.
 
         instantiate :class:`artemis.core.steering.Steering`.
 
@@ -247,6 +280,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         instantiate a datahandler.
 
         retrieve tool metadata 
+        
         add tools to metastore
         """
         self.__logger.info('Configure')
@@ -282,8 +316,8 @@ class Artemis(MetaMixin, IOMetaMixin):
             self.gate.tools.add(self.__logger, toolcfg)
 
     def lock(self):
-        """
-        Lock all properties before initialize
+        """Lock all properties before initialize
+        
         """
         # TODO
         # Exceptions?
@@ -296,8 +330,8 @@ class Artemis(MetaMixin, IOMetaMixin):
             raise
 
     def initialize(self):
-        """
-        Initialize all algorithms and tools
+        """Initialize all algorithms and tools
+        
         """
         self.__logger.info("{}: Initialize".format('artemis'))
 
@@ -325,9 +359,9 @@ class Artemis(MetaMixin, IOMetaMixin):
         self.filehandler = self.gate.tools.get("filehandler")
 
     def book(self):
-        """
-        book Artemis sub-job histograms
-        book all algorithm histograms
+        """book Artemis histograms
+        
+        book all algorithm histograms via call to steering.book
         """
         self.__logger.info("Book")
         self.gate.hbook.book('artemis', 'counts', range(10))
@@ -358,9 +392,9 @@ class Artemis(MetaMixin, IOMetaMixin):
             raise
 
     def rebook(self):
-        """
-        Rebook histograms for timers or profiles
-        after random sampling of data chunk
+        """Rebook histograms for timers or profiles.
+        
+        typically called after random sampling of data chunk
         """
         self.__logger.info("Rebook")
 
@@ -377,8 +411,8 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     @timethis
     def execute(self):
-        """
-        Event Loop
+        """Event Loop execution
+        
         Prepare an input datum, e.g. a file 
         Process each chunk, passing to Steering
         After all chunks processed, collect to output buffers
@@ -459,18 +493,24 @@ class Artemis(MetaMixin, IOMetaMixin):
                                self.gate.meta.summary.processed_bytes)
 
     def finalize(self):
-        """
-        finalize Artemis sub-job.
+        """finalize Artemis sub-job.
+        
         call :meth:`artemis.core.steering.Steering.finalize`.
         call :meth:`artemis.io.collector.Collector.finalize`.
         call :meth:`artemis.core.gate.ArtemisGateSvc.finalize`.
 
-        Args:
+        Parameters
+        ----------
 
-        Returns:
+        Returns
+        -------
 
-        Raises:
+        Raises
+        ------
             Exception
+                unknown errors that are not caught are raised as Exception
+            IOError
+                if `gate` cannot write 
         """
         self.__logger.info("Finalizing Artemis job %s" %
                            self.gate.meta.name)
@@ -499,16 +539,21 @@ class Artemis(MetaMixin, IOMetaMixin):
     def abort(self, *args, **kwargs):
         """abort Artemis sub-job
         Unknown Exceptions or Exceptions which require aborting job are propagated. 
+        
         :meth:`artemis.io.collector.Collector.finalize`. 
         :meth:`artemis.core.gate.ArtemisGateSvc.finalize`.
         
-        Args:
-            abort(Exception) 
+        Parameters
+        ----------
+            Exception
         
-        kwargs:
-            bar (Exception)
+        Other Parameters
+        ----------------
+            Exception
         
-        Raises: 
+        Raises
+        ------
+
         """    
         self.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")

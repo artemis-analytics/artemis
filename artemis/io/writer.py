@@ -21,7 +21,7 @@
 #    All rights reserved.
 
 """
-Dedicated Writer classes to manage output data streams
+Writer classes to manage output data streams to collect record batches into Arrow, Parquet or Csv file formats.
 """
 import urllib
 import uuid
@@ -219,7 +219,14 @@ class BufferOutputWriter(IOAlgoBase):
             raise
 
     def _build_table_from_file(self, file_id):
+        '''
+        build a table schema from inferred file schema
 
+        Parameters
+        ----------
+        file_id : uuid
+
+        '''
         ds_id = self.gate.store[file_id].parent_uuid
         pkey = self.gate.store[file_id].file.partition
         job_id = self.gate.meta.job_id
@@ -395,18 +402,18 @@ class BufferOutputWriter(IOAlgoBase):
                quotechar='"', line_terminator='\n', chunksize=None,
                date_format=None, doublequote=True,
                escapechar=None, decimal='.'):
-        """ Write DataFrame to a comma-separated values (csv) file. Obtained from pandas.core.frame.
+        ''' Write DataFrame to a comma-separated values (csv) file. Obtained from pandas.core.frame.
         
         Parameters
-        ---------- 
+        ----------
         buf : pyarrow.buffer 
             arrow buffer of a RecordBatchFile
         path_or_buf : string or file handle, default None
             File path or object, if None is provided the result is returned as
             a string.
-        sep : character, default ','
+        sep : character, default ``,``
             Field delimiter for the output file.
-        na_rep : string, default ''
+        na_rep : string, default ``''``
             Missing data representation
         float_format : string, default None
             Format string for floating point numbers
@@ -419,7 +426,7 @@ class BufferOutputWriter(IOAlgoBase):
             Write row names (index)
         index_label : string or sequence, or False, default None
             Column label for index column(s) if desired. If None is given, and
-            `header` and `index` are True, then the index names are used. A
+            ``header`` and ``index`` are True, then the index names are used. A
             sequence should be given if the DataFrame uses MultiIndex.  If
             False do not print fields for index names. Use index_label=False
             for easier importing in R
@@ -439,7 +446,7 @@ class BufferOutputWriter(IOAlgoBase):
             defaults to csv.QUOTE_MINIMAL. If you have set a `float_format`
             then floats are converted to strings and thus csv.QUOTE_NONNUMERIC
             will treat them as non-numeric
-        quotechar : string (length 1), default '\"'
+        quotechar : string (length 1), default ``'\"'``
             character used to quote fields
         doublequote : boolean, default True
             Control quoting of `quotechar` inside a field
@@ -453,7 +460,11 @@ class BufferOutputWriter(IOAlgoBase):
             Character recognized as decimal separator. E.g. use ',' for
             European data
 
-        """
+        Returns
+        -------
+        bytes
+
+        '''
         
         frame = pa.ipc.open_file(buf).read_pandas()
 

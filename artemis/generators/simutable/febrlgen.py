@@ -25,10 +25,10 @@ algorithms. In addition, the tool includes a data generator
 which generates two record data sets suitable for performing
 record linkage. The data generator creates two datasets with
 the following random variables:
-    field given a frequency table (histogram)
-    date
-    phone
-    identification
+field given a frequency table (histogram)
+date
+phone
+identification
 
 The following probabilities are defined to modify
 The second (duplicate) dataset draws randomly from first (original).
@@ -47,12 +47,13 @@ Null field
 Insert new value
 
 PDFs for number of duplicates for each record:
-    * Uniform
-    * Poisson
-    * Zipf
+Uniform
+Poisson
+Zipf
+
 Each duplicate apply the modifications up to:
-    * (Fixed) Max N modifications for a given record
-    * (Random) Max N modifications for a given field
+(Fixed) Max N modifications for a given record
+(Random) Max N modifications for a given field
 
 Straightforward to implement.
 Requires suitable dictionaries for generating proper Canadian addresses.

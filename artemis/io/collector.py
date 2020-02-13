@@ -18,10 +18,7 @@
 # limitations under the License.
 
 """
-Monitor pyarrow memory pool
-Tree data management
-Buffer management
-Requires access to metadata
+Collector monitors Arrow memory-pool and manages file creation, spills to disk data on-demand, and flushes memory pool when required.
 """
 import pyarrow as pa
 

@@ -6,7 +6,8 @@ Core
 --------
 .. autosummary::
     :toctree: generated/
-    
+   
+    artemis.artemis
     artemis.core.steering
     artemis.core.gate
     artemis.core.book
@@ -26,7 +27,7 @@ Metadata
 --------
 .. autosummary::
     :toctree: generated/
-    
+        
     artemis.meta.cronus
     artemis.meta.Directed_Graph
 
@@ -35,11 +36,8 @@ Tools
 .. autosummary::
     :toctree: generated/
 
-..    artemis.tools.filtercoltool
     artemis.tools.csvtool
-    artemis.tools.fwftool
     artemis.tools.tdigesttool
-    artemis.tools.xlstool
 
 Algorithms
 ----------

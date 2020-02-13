@@ -60,9 +60,7 @@ autosectionlabel_prefix_document = True
 
 source_suffix = ['.rst']
 autodoc_default_options={'members': True, 
-                         'member-order': True, 
+                         'member-order': 'groupwise', 
                          'inherited-members': True,
                          'show-inheritance':True}
-#numpydoc_show_class_members = True
-#numpydoc_show_inherited_class_members = True
 autosummary_generate = True

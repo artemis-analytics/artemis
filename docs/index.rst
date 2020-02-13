@@ -39,7 +39,7 @@ for continous data quality and fit-for-use assessement.
    gettingstarted
    introduction
    developers
-   artemis
+   framework
    meta
    io
    core

@@ -24,15 +24,7 @@
 #    All rights reserved.
 
 """
-Book of histograms
-Derived from DIANA-HEP histbook package
-Wraps Physt rather than histbook hist
-BaseBook just implements common dictionary methods
-
-ArtemisBook is concrete implementation for using
-Physt histograms
-
-Eventually, we'll need our own arrow-based histogram
+Book classes that work as dictionaries. Concrete classes to store, access and manage  histograms, tdigests and tool objects.
 """
 
 import collections
@@ -55,7 +47,18 @@ from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
 
 
 class BaseBook(collections.MutableMapping):
-
+    """Base class for a collection of objects in a dictionary-like object.
+    
+    Attributes
+    ----------
+        _content : OrderedDict
+            dictionary of histograms
+    
+    Parameters
+    ----------
+        hists : dict
+            dictionary of histograms to initialize book
+    """
     def __init__(self, hists={}):
 
         self._content = collections.OrderedDict()
@@ -239,7 +242,12 @@ class BaseBook(collections.MutableMapping):
 @Logger.logged
 class ArtemisBook(BaseBook):
     '''
-    Concrete implementation for Physt histograms and timers
+    Book for histograms and timers.
+    
+    Attributes
+    ----------
+        _timers : OrderedDict
+            dictionary of timer objects
     '''
     def __init__(self, hists={}):
         super().__init__(hists)
@@ -373,7 +381,11 @@ class ArtemisBook(BaseBook):
 @Logger.logged
 class TDigestBook(BaseBook):
     '''
-    Concrete implementation for TDigest objects and serialization
+    Book of TDigest objects
+
+    Provides methods for serializing/deserializing protobuf.
+    Conversion to/from protobuf TDigest to TDigest python implementation.
+
     '''
     def __init__(self, tdigests={}):
         super().__init__(tdigests)

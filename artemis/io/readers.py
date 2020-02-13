@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-
+Generator classes for reading data from various input formats in chunks to pass to Steering for processing.
 """
 import six
 import pyarrow as pa
@@ -30,7 +30,25 @@ from artemis.core.gate import ArtemisGateSvc
 
 
 class BaseReader():
+    """
+    Base reader class implented as a generator
 
+    Attributes
+    ----------
+
+    Parameters
+    ----------
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
     def __init__(self):
         self.gate = ArtemisGateSvc()
 
@@ -51,6 +69,25 @@ class BaseReader():
 
 
 class ReaderFactory():
+    """
+    Factory class for readers 
+
+    Attributes
+    ----------
+
+    Parameters
+    ----------
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
 
     def __new__(cls, reader,
                 filepath_or_buffer,
@@ -95,6 +132,25 @@ class ReaderFactory():
 
 @Logger.logged
 class ArrowReader(BaseReader):
+    """
+    Arrow Record Batch reader class implented as a generator
+
+    Attributes
+    ----------
+
+    Parameters
+    ----------
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
     def __init__(self,
                  filepath_or_buffer,
                  header,
@@ -133,6 +189,25 @@ class ArrowReader(BaseReader):
 
 @Logger.logged
 class CsvReader(BaseReader):
+    """
+    Csv reader class implented as a generator
+
+    Attributes
+    ----------
+
+    Parameters
+    ----------
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
 
     def __init__(self,
                  filepath_or_buffer,
@@ -192,6 +267,25 @@ class CsvReader(BaseReader):
 
 @Logger.logged
 class LegacyReader(BaseReader):
+    """
+    Flat-width text file reader class implented as a generator
+
+    Attributes
+    ----------
+
+    Parameters
+    ----------
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
 
     def __init__(self,
                  filepath_or_buffer,
@@ -249,6 +343,26 @@ class LegacyReader(BaseReader):
 @Logger.logged
 class Sas7bdatReader(BaseReader):
 
+    """
+    Sas7 bdata file format reader class implented as a generator which uses SAS7BDAT reader module under the hood. 
+    Serves data up in fixed number of rows.
+
+    Attributes
+    ----------
+
+    Parameters
+    ----------
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Examples
+    --------
+
+    """
     def __init__(self,
                  filepath_or_buffer,
                  header,

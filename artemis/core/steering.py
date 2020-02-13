@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-Steering
+Steering executes business processes as a computation graph
 """
 from collections import OrderedDict
 
@@ -29,7 +29,35 @@ from artemis.core.tree import Node, Element
 
 
 class Steering(AlgoBase):
+    """Steering manages algorithm execution of a business process graph. 
+    
+    Attributes
+    ---------
+        _menu : OrderedDict
+            Sorted graph of algorithm names
+        _algo_instances : Dict
+            Configured algorithm objects
+        _chunk_cntr : int
+            counter for number of 
 
+    Parameters
+    ----------
+        name : str
+            Configured name of algorithm
+
+    Other Parameters
+    ----------------
+
+    Returns
+    -------
+
+    Raises
+    ------
+
+    Examples
+    ---------
+    
+    """
     def __init__(self, name, **kwargs):
         '''
         init method
@@ -43,15 +71,21 @@ class Steering(AlgoBase):
 
     def initialize(self):
         '''
-        initialize method
+        initialize method calls from_msg
         '''
         self.__logger.info('Initialize Steering')
         self.from_msg()
 
     def from_msg(self):
         '''
-        Configure steering from a protobuf msg
+        Configure steering from a protobuf msg. 
         '''
+        # Loop over algorithms stored in artemis.core.gate.ArtemisGateSvc config
+        # Instantiate each algo and adds to _algo_instances.
+        # Retrieves graph from ArtemisGateSvc. 
+        # Loops over nodes in graph and creates execution tree in artemis.core.gate.ArtemisGateSvc tree
+        # Adds algos to each node for each node sequence.
+        
         self.__logger.info('Loading menu from protobuf')
         # msg = self.gate.meta.config.menu
         msg = self.gate.menu
@@ -72,6 +106,11 @@ class Steering(AlgoBase):
             except Exception:
                 self.__logger.error("Cannot initialize algo %s" % algo.name)
                 raise
+        # Traverse ordered set of execution graphs 
+        # Traverse nodes in each graph
+        # Create the execution tree
+        # Each node in the tree holds a sequence of algorithms
+        # Each node holds the payload to be accessible to the algorithms
         for graph in msg.graphs:
             for node in graph.nodes:
                 self.__logger.debug("graph node %s" % (node.name))
@@ -106,8 +145,8 @@ class Steering(AlgoBase):
 
     def lock(self):
         '''
-        Overides the base class lock
-        controls locking of all algorithm properties
+        Overides the base class lock.
+        Controls locking of all algorithm properties
         '''
         self.__logger.info("Lock Steering properties")
         self.properties.lock = True
@@ -120,7 +159,7 @@ class Steering(AlgoBase):
 
     def book(self):
         '''
-        book method
+        book method calls book on all algorithms in the menu
         '''
         self.__logger.info("Book")
 
@@ -157,19 +196,34 @@ class Steering(AlgoBase):
 
     def _element_name(self, key):
         '''
-        retrieve datastore element name with key
+        retrieve datastore element name with key.
+       
         '''
+        # element name may not be unique in case of shared stored 
         return self.gate.tree.name + \
                 '_' + self.gate.tree.nodes[key].key + \
                 '_' + str(self._chunk_cntr)
 
     def execute(self, payload):
         '''
-        Prepares payload for algorithms
-        Steers algorithm execution
+        Prepares payload for algorithms and controls the algorithm execution.
+        
+        Parameters
+        ----------
+        payload : pyarrow.buffer
+            Expected that payload is a pyarrow buffer.
+        
+        Raises
+        ------
+            Exception
         '''
         self.__logger.debug('Execute %s' % self.name)
-
+        
+        # Traverse the menu graph
+        # Retrieve list of algo names for each sequence in a node
+        # Use the tree to create an Element to hold the payload
+        # Initial node must obtain the payload from Artemis
+        # Subsequent nodes retrieve the input payload from the output of parent node
         for key in self._menu:
             algos = self._menu[key]
             self.__logger.debug('Menu input element: %s' % key)
@@ -208,7 +262,7 @@ class Steering(AlgoBase):
 
     def finalize(self):
         '''
-        finalize method
+        finalize method calls finalize on all algorithms in menu
         '''
         self.__logger.info("Completed steering")
         for key in self._menu:
