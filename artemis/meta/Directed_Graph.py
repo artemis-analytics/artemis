@@ -19,7 +19,10 @@
 
 '''
 
-Creation of Directed Acyclic Graph and Menu data types for Artemis and Cronos
+Computation graph data structure for persisting a business process model as a Directed Acyclic Graph. 
+
+Includes a topological sorting algorithm for generating Directed Acyclic Graphs 
+given a set of inputs and an output in Menu data types used in Artemis and Cronos.
 
 Defines all possible Sequences or Buisness processes as Nodes and each
 chain of sequences as a Directed_Graph datatype

@@ -21,9 +21,6 @@ from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
 
 '''
-Remove specified columns from record batch.
-Default mode: keep only columns matching given names.
-If invert=True, remove only columns matching given names.
 '''
 
 
@@ -36,6 +33,9 @@ class FilterColTool(ToolBase):
     def __init__(self, name, **kwargs):
         '''
         Parameters. Configured once.
+        Remove specified columns from record batch.
+        Default mode: keep only columns matching given names.
+        If invert=True, remove only columns matching given names.
         '''
         self.options = dict(FilterColToolOptions())
         self.options.update(kwargs)

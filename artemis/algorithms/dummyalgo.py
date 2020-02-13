@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-Testing algorithms
+Example algorithm class.
 """
 import sys
 import logging

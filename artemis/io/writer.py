@@ -21,7 +21,7 @@
 #    All rights reserved.
 
 """
-Dedicated Writer classes to manage output data streams
+Writer classes to manage output data streams to collect record batches into Arrow, Parquet or Csv file formats.
 """
 import urllib
 import uuid

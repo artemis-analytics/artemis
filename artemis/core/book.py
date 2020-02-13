@@ -24,15 +24,7 @@
 #    All rights reserved.
 
 """
-Book of histograms
-Derived from DIANA-HEP histbook package
-Wraps Physt rather than histbook hist
-BaseBook just implements common dictionary methods
-
-ArtemisBook is concrete implementation for using
-Physt histograms
-
-Eventually, we'll need our own arrow-based histogram
+Book classes that work as dictionaries. Concrete classes to store, access and manage  histograms, tdigests and tool objects.
 """
 
 import collections

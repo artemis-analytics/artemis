@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-Steering core module manages business process execution
+Steering executes business processes as a computation graph
 """
 from collections import OrderedDict
 

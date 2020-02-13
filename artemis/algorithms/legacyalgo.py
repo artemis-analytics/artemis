@@ -18,7 +18,7 @@
 # limitations under the License.
 
 """
-Conversion of legacy data to Arrow RecordBatch
+Algorithm that parsers and converts a bytes object of flat-width data to Arrow record batch format. Calls a tool that executes an arrow-based flat-width file reader.
 """
 
 

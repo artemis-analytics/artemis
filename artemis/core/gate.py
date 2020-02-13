@@ -16,7 +16,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+"""
+Framework-level services and helper mixin classes to provide access to metadata, histograms, timers, and stores
+"""
 from artemis.logger import Logger
 from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree
