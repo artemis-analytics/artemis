@@ -40,6 +40,7 @@ import urllib.parse
 import logging
 import click
 import os
+import psutil
 
 from artemis.configurables.configurable import MenuBuilder
 from artemis.distributed.job_builder import runjob
@@ -88,7 +89,10 @@ def example_configuration(table_id, seed=42):
     schema = []        # Predefined list of field names on input
     encoding = 'utf8'  # encoding
     gen_nbatches = 5  # Number of batches to generator
-    gen_nrows = 1000  # Number of rows per batch
+    gen_nrows = 1000  # Number of rows per batchi
+    num_workers = 9  # Number of concurrent jobs desired.
+
+
 
     config = Configuration()  # Cronus Configuration message
     config.uuid = str(uuid.uuid4())
@@ -125,8 +129,6 @@ def example_configuration(table_id, seed=42):
 
     filtercoltool = FilterColTool('filtercoltool',
                                   columns=['record_id', 'Product', 'Unit'])
- #   filtercoltool = FilterColTool('filtercoltool',
- #                                 columns=['record_id', 'SIN', 'DOB'])
     config.tools[filtercoltool.name].CopyFrom(filtercoltool.to_msg())
     
     writer = BufferOutputWriter('bufferwriter',
@@ -186,7 +188,9 @@ class ExampleMenu(MenuBuilder):
 
 @click.command()
 @click.option('--location', required = True, prompt = True, help = 'Path to .xlsx')
-def example_job(location):
+@click.option('--scheduler', required = True, prompt = True, help = 'single-threaded/processes')
+@click.option('--num_workers', required = True, prompt = True, type = int, help = 'Enter a number.')
+def example_job(location, scheduler, num_workers):
     # Artemis Job requirements
     # BaseObjectStore - name, path and id
     # Menu
@@ -195,6 +199,7 @@ def example_job(location):
     # Dataset partitions
     # Table schemas for each dataset partition
 
+    
     # Build the Menu
     mb = ExampleMenu()
     msgmenu = mb.build()
@@ -249,6 +254,12 @@ def example_job(location):
         # Includes IO tools
         config = example_configuration(table_id)
 
+        if config.max_malloc_size_bytes * num_workers > psutil.virtual_memory().available:
+            print("Available memory (" + str(psutil.virtual_memory().available) + ") smaller than potential max memory(" + str(config.max_malloc_size_bytes * num_workers) + ") used.")
+            answer = input('Do you wish to proceed? [y/n]')
+            if answer == 'n' or answer == 'N' or answer == 'no' or answer == 'No' or answer == 'NO':
+                quit()
+
         # Algorithms need to added from the menu to the configuration
         for key in mb._algos:
             msg = config.algos.add()
@@ -294,7 +305,7 @@ def example_job(location):
                                      g_dataset.uuid,
                                      str(job_id)))
 
-        results = dask.compute(*ds_results, scheduler='single-threaded')
+        results = dask.compute(*ds_results, scheduler=scheduler)
         store.new_partition(dataset.uuid, 'seqA')
         store.new_partition(dataset.uuid, 'seqB')
         store.save_store()
