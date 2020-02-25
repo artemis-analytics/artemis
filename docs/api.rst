@@ -13,6 +13,15 @@ Core
     artemis.core.book
     artemis.core.datastore
 
+Base Classes
+------------
+.. autosummary::
+    :toctree: generated/
+
+    artemis.core.abcalgo
+    artemis.core.algo
+    artemis.core.tool
+
 IO
 --
 .. autosummary::
