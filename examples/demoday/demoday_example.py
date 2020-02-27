@@ -189,7 +189,7 @@ class ExampleMenu(MenuBuilder):
 @click.command()
 @click.option('--location', required = True, prompt = True, help = 'Path to .xlsx')
 @click.option('--scheduler', required = True, prompt = True, help = 'single-threaded/processes')
-@click.option('--num_workers', required = True, prompt = True, type = int, help = 'Enter a number.')
+@click.option('--num_workers', required = True, prompt = True, default=psutil.cpu_count() , type = int, help = 'Enter a number.')
 def example_job(location, scheduler, num_workers):
     # Artemis Job requirements
     # BaseObjectStore - name, path and id
@@ -199,7 +199,10 @@ def example_job(location, scheduler, num_workers):
     # Dataset partitions
     # Table schemas for each dataset partition
 
-    
+    if scheduler == "single-threaded" and num_workers != 1:
+        print("Scheduler is single-threaded, setting workers to 1.")
+        num_workers = 1
+
     # Build the Menu
     mb = ExampleMenu()
     msgmenu = mb.build()
@@ -286,7 +289,8 @@ def example_job(location, scheduler, num_workers):
         inputs = store.list(prefix=g_dataset.uuid)
 
         ds_results = []
-        for _ in range(2):
+#        for _ in range(2):
+        for _ in range(num_workers):
             job_id = store.new_job(dataset.uuid)
             config = Configuration()
             store.get(config_uuid, config)
