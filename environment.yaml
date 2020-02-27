@@ -45,3 +45,4 @@ dependencies:
     - simplekv
     - dask
     - plotly
+    - psutil
