@@ -1,0 +1,20 @@
+# .readthedocs.yml
+# Read the Docs configuration file
+# Base copied from https://docs.readthedocs.io/en/stable/config-file/v2.html
+#
+# Required
+version: 2
+
+# Build documenteation in the docs/ directory with Sphinx.
+sphinx:
+    configuration: docs/conf.py
+
+# Build your docs in additional formats such as PDF and ePub
+formats: all
+
+# Other requirements
+#
+python:
+    version: 3.7
+    install:
+        - requirements: docs/requirements.txt
