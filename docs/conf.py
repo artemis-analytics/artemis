@@ -11,8 +11,8 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import sphinx_rtd_theme
-#import os
-#import sys
+import os
+import sys
 sys.path.insert(0, os.path.abspath('.'))
 #sys.path.extend([os.path.join(os.path.dirname(__file__),'..','../..')])
 
