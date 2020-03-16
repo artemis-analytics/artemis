@@ -14,7 +14,7 @@
 # limitations under the License.
 package:
     name: artemis
-    version: 0.5.0
+    version: 0.6.0
 
 source:
     path: ../
@@ -57,7 +57,7 @@ test:
     imports:
         - artemis
     commands:
-        - python -m unittest examples/example_product.py
+            # - python -m unittest examples/example_product.py
 
 about:
     summary: 'Artemis Analytics Platform'
