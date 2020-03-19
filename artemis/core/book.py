@@ -47,7 +47,8 @@ from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
 
 
 class BaseBook(collections.MutableMapping):
-    """Base class for a collection of objects in a dictionary-like object.
+    """
+    Base class for a collection of objects in a dictionary-like object.
     
     Attributes
     ----------
