@@ -30,9 +30,9 @@ jobs:
           # Version of conda build to install. If not provided conda-build is not installed. See https://anaconda.org/anaconda/conda-build for available "conda-build" versions.
           # conda-build-version: # optional, default is 
           # Environment.yml to create an environment. See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file for more information.
-          environment-file: ./environment.yml # optional, default is 
+          # environment-file: ./environment.yml # optional, default is 
           # Environment to activate by default on all shells. Deault is "test". If an empty string is used, no environment is activated by default (For "base" activation see the "auto-activate-base" option). If the environment does not exist, it will be created and activated. If "environment-file" is used and you want that to be the environment used, you need to explicitely provide the name of that environmet on "activate-environment". If using sh/bash/cmd.exe shells please read the IMPORTANT! section on the README.md! to properly activate conda environments on these shells.
-          activate-environment: artemis-dev # optional, default is test
+          # activate-environment: artemis-dev # optional, default is test
           # Exact version of a Python version to use on "activate-environment". If provided, this will be installed before the "environment-file". See https://anaconda.org/anaconda/python for available "python" versions.
           python-version: 3.7 # optional, default is 
           # Conda configuration. When "true", conda updates itself any time a user updates or installs a package in the base environment. When "false", conda updates itself only if the user manually issues a conda update command. The default is "true".  This setting always overrides if set to "true" or "false". If you want to use the "condarc-file" setting pass and empty string. See https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/ for more information.
@@ -46,6 +46,7 @@ jobs:
       - name: List Contents
         shell: sh -l {0}
         run: |
+          pwd
           ls
       - name: Sh
         shell: sh -l {0}
