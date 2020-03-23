@@ -1,0 +1,49 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request 
+# events but only for the master branch
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches: [ master ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  artemis-test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    name: Setup Miniconda
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: goanpeca/setup-miniconda@v1.0.2
+        with:
+          # If provided, this version of miniconda will be downloaded and installed. Visit https://repo.continuum.io/miniconda/ for more information on available versions.
+          miniconda-version: 'latest' # optional, default is 
+          # Sepcific version of Conda to install after miniconda is located or installed. See https://anaconda.org/anaconda/conda for available "conda" versions.
+          conda-version: # optional, default is 
+          # Version of conda build to install. If not provided conda-build is not installed. See https://anaconda.org/anaconda/conda-build for available "conda-build" versions.
+          conda-build-version: # optional, default is 
+          # Environment.yml to create an environment. See https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file for more information.
+          environment-file: # optional, default is 
+          # Environment to activate by default on all shells. Deault is "test". If an empty string is used, no environment is activated by default (For "base" activation see the "auto-activate-base" option). If the environment does not exist, it will be created and activated. If "environment-file" is used and you want that to be the environment used, you need to explicitely provide the name of that environmet on "activate-environment". If using sh/bash/cmd.exe shells please read the IMPORTANT! section on the README.md! to properly activate conda environments on these shells.
+          activate-environment: foo # optional, default is test
+          # Exact version of a Python version to use on "activate-environment". If provided, this will be installed before the "environment-file". See https://anaconda.org/anaconda/python for available "python" versions.
+          python-version: 3.7 # optional, default is 
+          # Conda configuration. When "true", conda updates itself any time a user updates or installs a package in the base environment. When "false", conda updates itself only if the user manually issues a conda update command. The default is "true".  This setting always overrides if set to "true" or "false". If you want to use the "condarc-file" setting pass and empty string. See https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/ for more information.
+          auto-update-conda: # optional, default is false
+          # Conda configuration. If you’d prefer that conda’s base environment not be activated on startup, set the to "false". Default is "true". This setting always overrides if set to "true" or "false". If you want to use the "condarc-file" setting pass and empty string. See https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/ for more information.
+          auto-activate-base: # optional, default is true
+          # Conda configuration. Path to a conda configuration file to use for the runner. This file will be copied to "~/.condarc". See https://docs.conda.io/projects/conda/en/latest/user-guide/configuration/ for more information.
+          condarc-file: # optional, default is 
+          # Advanced. Prior to runnning "conda init" all shell profiles will be removed from the runner. Default is "true".
+          remove-profiles: # optional, default is true
+      - name: Sh
+        shell: sh -l {0}
+        run: |
+          conda info
+          conda list
