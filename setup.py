@@ -27,7 +27,7 @@ def main():
     # Any non-Cython extensions should be manually added to 'ext_modules'.
 
     setup(name='artemis',
-        version='0.5.0',
+        version='0.6.0',
         author='Ryan White',
         author_email='ryan.white4@canada.ca',
         packages=find_packages(),
