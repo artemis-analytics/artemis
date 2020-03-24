@@ -47,3 +47,5 @@ jobs:
         run: |
           conda info
           conda list
+          python setup.py build_ext --inplace install
+          python -m unittest
