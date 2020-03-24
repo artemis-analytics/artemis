@@ -114,7 +114,7 @@ conda env create -f environment.yml
 conda activate artemis-dev
 git clone "FWFR GIT REPO"
 conda install conda-build
-conda build conda-recipes
+conda build conda-recipes -c conda-forge
 mv "PATH TO CONDA"/envs/artemis-dev/conda-bld/broken/artemis-"VERSION".tar.bz2 ./
 conda deactivate
 bash release/package.sh -e artemis-dev -n artemis-pack -p artemis-"VERSION" -r "PATH TO ARTEMIS REPO"
