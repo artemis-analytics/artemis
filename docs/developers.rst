@@ -24,8 +24,8 @@ Development environment
 
   mkdir <workspace>
   cd <workspace>
-  git clone https://github.com/ryanmwhitephd/artemis.git
-  git clone https://github.com/ke-noel/fwfr.git
+  git clone https://github.com/artemis-analytics/artemis.git
+  git clone https://github.com/artemis-analytics/fwfr.git
   conda env create -f artemis/environment.yaml
   conda activate artemis-dev
   cd fwfr
@@ -46,7 +46,7 @@ To build Artemis, cd to the root of the artemis repository. Follow the instructi
   conda activate artemis-dev
   git clone "FWFR GIT REPO"
   conda install conda-build
-  conda build conda-recipes
+  conda build conda-recipes -c conda-forge
   mv "PATH TO CONDA"/envs/artemis-dev/conda-bld/broken/artemis-"VERSION".tar.bz2 ./
   conda deactivate
   bash release/package.sh -e artemis-dev -n artemis-pack -p artemis-"VERSION" -r "PATH TO ARTEMIS REPO"
