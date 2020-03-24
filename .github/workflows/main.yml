@@ -47,9 +47,13 @@ jobs:
         run: |
           conda info
           conda list
+          cd ../
           git clone https://github.com/ke-noel/fwfr.git
           cd fwfr
           ./install.sh --source
+          pwd
           cd ../artemis
+          pwd
+          ls
           python setup.py build_ext --inplace install
           python -m unittest
