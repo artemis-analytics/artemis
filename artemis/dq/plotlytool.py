@@ -55,9 +55,10 @@ PlotlyTool(store=None, uuid=""):
     - get_figure(traces=None, output="", show=True, check=True, fig_type="")
     - visualize(output="", show=True, check=True)
 
-This tool's intended functionality includes extracting Histograms and TDigests from a
-dataset, locatable by a UUID code, within an input store, then saving, and possibly
-plotting, the histograms and TDigest CDFs as HTML files.
+Tool functions:
+Extract Histograms and TDigests
+from a Cronus dataset via PID, and cronus store,
+Save and plotting histograms and TDigest CDFs as HTML files.
 
 This can be done by including the following code,
 
@@ -73,16 +74,20 @@ PlotlyTool(
 )
 ```
 
-Note that each of `my_store`, `dataset_uuid`, `path_to_directory`, `show_plots`, and
+Note that each of `my_store`, `dataset_uuid`,
+`path_to_directory`, `show_plots`, and
 `check_with_user` are defined as necessary.
 
 Created in collaboration with:
 
-:collaborators: Ryan White (ryan.white4@canada.ca), Dominic Parent (dominic.parent@canada.ca),
-William Fairgrieve (william.fairgrieve@canada.ca), Russell Gill (russell.gill@canada.ca)
+:collaborators:
+Ryan White (ryan.white4@canada.ca),
+Dominic Parent (dominic.parent@canada.ca),
+William Fairgrieve (william.fairgrieve@canada.ca),
+Russell Gill (russell.gill@canada.ca)
 '''
 
-## ---------- PYLINT DISABLE PARAMETERS ---------- ##
+# ---------- PYLINT DISABLE PARAMETERS ---------- #
 
 # pylint: disable=bare-except
 # pylint: disable=c-extension-no-member
@@ -92,7 +97,7 @@ William Fairgrieve (william.fairgrieve@canada.ca), Russell Gill (russell.gill@ca
 # pylint: disable=too-many-lines
 # pylint: disable=too-many-locals
 
-## ---------- IMPORT NECESSARY PACKAGES ---------- ##
+# ---------- IMPORT NECESSARY PACKAGES ---------- #
 
 # Standard Import(s)
 import logging
@@ -101,7 +106,7 @@ import time
 import urllib.parse
 
 # External Import(s)
-import google
+from google.protobuf.pyext._message import RepeatedCompositeContainer
 import numpy
 from scipy import interpolate
 
@@ -117,7 +122,7 @@ from artemis.externals.tdigest.tdigest import TDigest
 from artemis.io.protobuf import cronus_pb2, histogram_pb2
 from artemis.meta.cronus import BaseObjectStore
 
-## ---------- GLOBAL PARAMETERS ---------- ##
+# ---------- GLOBAL PARAMETERS ---------- #
 
 # for each trace name provided, create a subplot containing only
 # the traces with names that contain the provided trace name
@@ -136,7 +141,7 @@ MAX_TDIGEST_SUBPLOT_COLUMNS = 2
 # set the type of CDF analysis to be conducted
 CDF_ANALYSIS_METHOD = "spline"
 
-## ---------- TRACE TEMPLATES ---------- ##
+# ---------- TRACE TEMPLATES ---------- #
 
 BAR_TEMPLATE = {
     'name': '',
@@ -454,32 +459,38 @@ SCATTER_TEMPLATE = {
     'uirevision': None
 }
 
-## ---------- DEFINE CLASS OBJECTS ---------- ##
+# ---------- DEFINE CLASS OBJECTS ---------- #
+
 
 class ProcessHist:
     '''
-    Class to create dictionaries of plotting properties from input histogram objects.
+    Class to create dictionaries of plotting
+    properties from input histogram objects.
 
     Parameters
     --------------------
-    `histograms`: `google.protobuf.pyext._message.RepeatedCompositeContainer`
+    `histograms`: `RepeatedCompositeContainer`
         A Cronus protobuf object containing histogram data to be plotted.
     '''
 
     def __init__(self, histograms=None):
         '''
-        Constructor object for `ProcessHist` to pass parameters to other methods.
+        Constructor object for `ProcessHist`
+        to pass parameters to other methods.
         '''
-
         self.histograms = histograms
 
     @staticmethod
     def _create_dict(histogram=None, name="", address=""):
         '''
-        Creates a dictionary containing plotting instructions. The instructions specify parameters
-        to be interpretted when plotting the histogram. In addition to the histogram object, the
-        histogram's name and location on the user's computer is made available to the user when
-        viewing the plot, useful for differentiating between plotted histograms.
+        Creates a dictionary containing plotting instructions.
+        The instructions specify parameters
+        to be interpretted when plotting the histogram.
+        In addition to the histogram object, the
+        histogram's name and location on the user's
+        computer is made available to the user when
+        viewing the plot, useful for differentiating
+        between plotted histograms.
 
         Parameters
         --------------------
@@ -488,17 +499,20 @@ class ProcessHist:
         `name`: `str`
             The name of the histogram dataset.
         `address`: `str`
-            The location of the Cronus object originally containing the histogram's data.
+            The location of the Cronus object originally
+            containing the histogram's data.
 
         Returns
         --------------------
         `trace`: `dict`
-            Dictionary containing the histogram data and its plotting information.
+            Dictionary containing the histogram data
+            and its plotting information.
         '''
 
         # extract the data to be plotted and the necessary binning information
         frequencies = [int(frequency) for frequency in histogram.frequencies]
-        binnings = [[bin.lower, bin.upper] for bin in histogram.binnings[0].bins]
+        binnings = [[bin.lower, bin.upper]
+                    for bin in histogram.binnings[0].bins]
 
         # define lists of the midpoint and width of each bin, respectively
         bin_means = [(binning[0] + binning[1])/2 for binning in binnings]
@@ -513,11 +527,11 @@ class ProcessHist:
         # define text to be visible when hovering over a data point
         text = [
             "<br>UUID: {}<br>Job ID: {}<br>Bin: {}-{}<br>Freq: {}".format(
-                uuid, # the dataset's unique identifier, same for all bars in the trace
-                job_id, # ID of the job that created the dataset, same for all bars in the trace
-                item[0], # the start of the current bin
-                item[1], # the end of the current bin
-                frequencies[i] # the number of data points in the current bin
+                uuid,  # dataset PID,
+                job_id,  # job ID that created the dataset,
+                item[0],  # the start of the current bin
+                item[1],  # the end of the current bin
+                frequencies[i]  # the number of data points in the current bin
             ) for i, item in enumerate(binnings)
         ]
 
@@ -527,12 +541,14 @@ class ProcessHist:
             "x": bin_means,
             "y": frequencies,
             "width": width,
-            "text": text, # include the text, text is visible when hovering over a bar
-            "marker": {"color": "black"} # set a default colour
+            "text": text,  # include the text
+            "marker": {"color": "black"}  # set a default colour
         }
 
-        # assign the plotting information as an item in a secondary dictionary along with
-        # some default row and column coordinates and the type of plot to be created
+        # assign the plotting information as an item
+        # in a secondary dictionary along with
+        # some default row and column coordinates
+        # and the type of plot to be created
         trace = {
             "data": trace_data,
             "row": 1,
@@ -545,9 +561,10 @@ class ProcessHist:
     @staticmethod
     def _get_hist_obj(histogram=None):
         '''
-        A class method to extract histogram data using an input Cronus object. The Cronus object
-        contains the address of a histogram dataset. The dataset is located using the address
-        and loaded into a `HistogramCollection` object.
+        A class method to extract histogram data using an input Cronus object.
+        The Cronus object contains the address of a histogram dataset.
+        The dataset is located using the address and loaded
+        into a `HistogramCollection` object.
 
         Parameters
         --------------------
@@ -557,14 +574,18 @@ class ProcessHist:
         Returns
         --------------------
         `output`: `tuple`
-            A tuple of a histogram object containing the histogram data from the Cronus
-            object, as a `HistogramCollection`, and the address of the Cronus object.
+            A tuple of a histogram object containing
+            the histogram data from the Cronus
+            object, as a `HistogramCollection`,
+            and the address of the Cronus object.
         '''
 
-        # define an empty histogram collection object to contain the histogram data
+        # define an empty histogram collection
+        # object to contain the histogram data
         new_histogram = histogram_pb2.HistogramCollection()
 
-        # get the address of the histogram Cronus object, correct invalid characters
+        # get the address of the histogram Cronus object,
+        # correct invalid characters
         address = histogram.address
         address = address.replace("file://", "")
         address = address.replace("%40", "@")
@@ -590,14 +611,18 @@ class ProcessHist:
     @staticmethod
     def _validate(histograms=None):
         '''
-        Class method to validate the `histograms` parameter. The histogram container and interior
-        histograms are checked. If the container is of an incoorect type, its histograms cannot
-        be extracted. If the histograms are of the incorrect type, they cannot be used moving
-        forward. In both cases, an empty list is returned rather than a list of histograms.
+        Class method to validate the `histograms` parameter.
+        The histogram container and interior
+        histograms are checked. If the container is of an incoorect type,
+        its histograms cannot
+        be extracted. If the histograms are of the incorrect type,
+        they cannot be used moving
+        forward. In both cases, an empty list is returned
+        rather than a list of histograms.
 
         Parameters
         --------------------
-        `histograms`: `google.protobuf.pyext._message.RepeatedCompositeContainer`
+        `histograms`: `RepeatedCompositeContainer`
             A Cronus object containing several histogram datasets.
 
         Returns
@@ -606,8 +631,9 @@ class ProcessHist:
             List of histograms from `histograms` that are of the proper type.
         '''
 
-        # check the type of container that was provided; if invalid, provide no histograms
-        if not isinstance(histograms, google.protobuf.pyext._message.RepeatedCompositeContainer):
+        # check the type of container that was provided;
+        # if invalid, provide no histograms
+        if not isinstance(histograms, RepeatedCompositeContainer):
             logging.error(
                 "Invalid Histogram Container Type: '%s'.",
                 type(histograms)
@@ -622,7 +648,8 @@ class ProcessHist:
         # define an empty list to contain the validated histograms
         valid_histograms = []
 
-        # check if each input histogram is of the proper type; if so, pass it to a list
+        # check if each input histogram is of the proper type;
+        # if so, pass it to a list
         for histogram in histograms:
             if not isinstance(histogram, cronus_pb2.CronusObject):
                 logging.error(
@@ -630,42 +657,54 @@ class ProcessHist:
                     type(histogram)
                 )
                 logging.info(
-                    "A histogram object from the input container is of an invalid type. "
-                    "Therefore, the data from this object is not available for plotting."
+                    "A histogram object from the input container \
+                            is of an invalid type. "
+                    "Therefore, the data from this object \
+                            is not available for plotting."
                 )
             else:
                 valid_histograms.append(histogram)
 
-        # if no histograms were determined to be valid, provide a `None` value instead
+        # if no histograms were determined to be valid,
+        # provide a `None` value instead
         if not valid_histograms:
             valid_histograms = None
 
-            # if the valid histograms was an empty list, log why no data was available
+            # if the valid histograms was an empty list,
+            # log why no data was available
             if isinstance(valid_histograms, list):
                 logging.error("No Valid Histogram Data Available.")
                 logging.info(
-                    "Each histogram from the input container was found to be invalid. "
-                    "Therefore, there is no histogram data available for plotting."
+                    "Each histogram from the input \
+                            container was found to be invalid. "
+                    "Therefore, there is no histogram data \
+                            available for plotting."
                 )
 
         return valid_histograms
 
     def generate_collection(self, histogram=None, valid_name="", address=""):
         '''
-        Method to generate a list of histogram trace objects from an input `HistogramCollection`.
-        Each histogram in the collection whose name contains `valid_name` is extracted and passed
-        to `_create_dict`. From `_create_dict`, a dictionary of plotting properties is produced,
-        which is added to a list. Once the list is populated with the dictionaries of all
+        Method to generate a list of histogram trace objects
+        from an input `HistogramCollection`.
+        Each histogram in the collection whose name contains
+        `valid_name` is extracted and passed
+        to `_create_dict`. From `_create_dict`,
+        a dictionary of plotting properties is produced,
+        which is added to a list.
+        Once the list is populated with the dictionaries of all
         histograms containing `valid_name`, the list is returned.
 
         Parameters
         --------------------
         `histogram`: `histogram_pb2.HistogramCollection`
-            A `HistogramCollection` object of every histogram from the initial Cronus object.
+            A `HistogramCollection` object of every histogram
+            from the initial Cronus object.
         `valid_name`: `str`
             Only traces whose name contains this parameter will be plotted.
         `address`: `str`
-            The location of the Cronus object originally containing the histogram's data.
+            The location of the Cronus object originally
+            containing the histogram's data.
 
         Returns
         --------------------
@@ -674,7 +713,7 @@ class ProcessHist:
             the `valid_name` parameter, each converted to dictionaries.
         '''
 
-        # create an empty list of traces and set the default subplot coordinates
+        # create an empty list of traces, set the default subplot coordinates
         all_traces = []
 
         for name in histogram.histograms:
@@ -683,10 +722,13 @@ class ProcessHist:
                 # if the identifier is found, extract the histogram
                 single_hist = histogram.histograms[name]
 
-                # try to access the histogram data and create a trace dictionary
+                # try to access the histogram data
+                # and create a trace dictionary
                 try:
-                    # if the histogram contains at least one non-zero data point,
-                    # convert the data to a dictionary and add it to the trace list
+                    # if the histogram contains
+                    # at least one non-zero data point,
+                    # convert the data to a dictionary
+                    # and add it to the trace list
                     if bool(float(max(single_hist.frequencies)) > 0.0):
                         trace_dict = self._create_dict(
                             histogram=single_hist,
@@ -700,7 +742,8 @@ class ProcessHist:
                             name.upper()
                         )
                         logging.info(
-                            "This histogram trace only contains data with a value of 0. "
+                            "This histogram trace only contains \
+                                    data with a value of 0. "
                             "Therefore, the trace will not be created."
                         )
                 except ValueError:
@@ -717,23 +760,33 @@ class ProcessHist:
 
     def generate_traces(self):
         '''
-        Generate a list of lists each containing histogram trace objects originating from the
-        histograms container, `histograms`, passed to the class object. Only histograms that have
-        been requested by name through the REQ_HIST_TRACE_NAMES variable will have plotting
-        dictionaries created and added to the list of lists. Each dictionary in a sub-list contains
-        plotting information from the same histogram object. Therefore, if the input container
-        contains only one histogram collection object, the output of this method will be a list
-        with one element, a list of plotting dictionaries produced using the requested histograms
-        from the single Histogram collection. If the list of requested histograms is invalid, all
+        Generate a list of lists each containing
+        histogram trace objects originating from the
+        histograms container, `histograms`, passed to the class object.
+        Only histograms that have
+        been requested by name through the REQ_HIST_TRACE_NAMES
+        variable will have plotting
+        dictionaries created and added to the list of lists.
+        Each dictionary in a sub-list contains
+        plotting information from the same histogram object.
+        Therefore, if the input container
+        contains only one histogram collection object,
+        the output of this method will be a list
+        with one element, a list of plotting dictionaries
+        produced using the requested histograms
+        from the single Histogram collection.
+        If the list of requested histograms is invalid, all
         available histograms are used.
 
         Returns
         --------------------
         `traces`: `list`
-            List of dictionaries containing the traces of the inputted histograms.
+            List of dictionaries containing the
+            traces of the inputted histograms.
         '''
 
-        # extract the validated histograms from the original `histograms` object
+        # extract the validated histograms
+        # from the original `histograms` object
         histograms = self._validate(histograms=self.histograms)
 
         # get the list of valid histogram traces names, validate it is a list
@@ -747,8 +800,10 @@ class ProcessHist:
                 type(REQ_HIST_TRACE_NAMES)
             )
             logging.info(
-                "The variable supplying the list of valid histogram trace names was expected "
-                "to be a list. Therefore, every available histogram trace will be created."
+                "The variable supplying the list of valid \
+                        histogram trace names was expected "
+                "to be a list. Therefore, \
+                        every available histogram trace will be created."
             )
             req_hist_names = ["all"]
 
@@ -760,10 +815,13 @@ class ProcessHist:
                 # extract the histogram object from the Cronus object
                 histogram, address = self._get_hist_obj(histogram=histogram)
 
-                logging.info("Creating Histogram Trace %s...", int(iteration) + 1)
+                logging.info("Creating Histogram Trace %s...",
+                             int(iteration) + 1)
 
-                # list the keywords from all the histgrams in the histogram collection
-                all_hist_names = [name.lower().split(".") for name in histogram.histograms]
+                # list the keywords from all the histgrams
+                # in the histogram collection
+                all_hist_names = [name.lower().split(".")
+                                  for name in histogram.histograms]
                 if not all_hist_names:
                     logging.error("Detected Empty Histogram.")
                     logging.info(
@@ -771,7 +829,8 @@ class ProcessHist:
                         "Therefore, no trace can be created."
                     )
 
-                # make a list of all the keywords used in the names of the histograms
+                # make a list of all the keywords used
+                # in the names of the histograms
                 all_hist_keywords = []
                 for list1 in all_hist_names:
                     for item in list1:
@@ -788,7 +847,8 @@ class ProcessHist:
                             item
                         )
                         logging.info(
-                            "No histograms named with the above keyword could be found. "
+                            "No histograms named with the \
+                                    above keyword could be found. "
                             "Therefore, the requested data cannot be plotted."
                         )
                     else:
@@ -798,11 +858,12 @@ class ProcessHist:
                 if not trace_names:
                     logging.error("No Valid Traces Found.")
                     logging.warning(
-                        "All the requested histogram traces could not be found. "
+                        "All requested histogram traces could not be found."
                         "Therefore, no histograms will be created and plotted."
                     )
 
-                # create the list of trace(s) depending on the type of the histogram
+                # create the list of trace(s) depending
+                # on the type of the histogram
                 for name in trace_names:
                     logging.info("Creating Histogram Collection...")
                     traces = self.generate_collection(
@@ -815,15 +876,18 @@ class ProcessHist:
 
         return all_traces
 
+
 class ProcessTDigest:
     '''
-    Class to create dictionaries describing TDigest data to be plotted. The methods in this class
-    load TDigest datasets, produce TDigest maps, extract centroids, compute CDFs, and generate
+    Class to create dictionaries describing TDigest data to be plotted.
+    The methods in this class
+    load TDigest datasets, produce TDigest maps,
+    extract centroids, compute CDFs, and generate
     dictionaries of plotting instructions.
 
     Parameters
     --------------------
-    `tdigests`: `google.protobuf.pyext._message.RepeatedCompositeContainer`
+    `tdigests`: `RepeatedCompositeContainer`
         A protobuf container object containing TDigests to be analyzed.
     '''
 
@@ -837,23 +901,29 @@ class ProcessTDigest:
     @staticmethod
     def _calculate_cdf(tdigest=None, method=""):
         '''
-        Method to calculate the x-axis and y-axis data for a CDF plot. Percentile markers from the
-        inputted TDigest object are used as x-axis values and are supplied to the TDigest's cdf
-        property to generate the y-axis values. Various methods can be used to mainuplate the
-        x-axis percentile values and the y-axis CDF values. The `method` parameter is used to
+        Method to calculate the x-axis and y-axis data for a CDF plot.
+        Percentile markers from the
+        inputted TDigest object are used as x-axis values
+        and are supplied to the TDigest's cdf
+        property to generate the y-axis values.
+        Various methods can be used to mainuplate the
+        x-axis percentile values and the y-axis CDF values.
+        The `method` parameter is used to
         indicate which analysis method to use, if any.
 
         Parameters
         --------------------
         `tdigest`: `artemis.externals.tdigest.tdigest.TDigest`
-            A TDigest object containing data used to produce the x-axis and y-axis data for a CDF.
+            A TDigest object containing data used to produce
+            the x-axis and y-axis data for a CDF.
         `method`: `str`
             The type of analysis method used to generate the CDF data.
 
         Returns
         --------------------
         `x_data, y_data`: `tuple`
-            A tuple of two lists of data representing the x-axis and y-axis of a CDF plot.
+            A tuple of two lists of data representing
+            the x-axis and y-axis of a CDF plot.
         '''
 
         # verify the input TDigest is, in fact, a TDigest object
@@ -868,7 +938,8 @@ class ProcessTDigest:
             )
             method = None
 
-        # define the analysis method used to create the CDF; check if it's valid
+        # define the analysis method used to create the CDF;
+        # check if it's valid
         if isinstance(method, str):
             method = method.lower()
         if method not in ["percentiles", "granular", "uniform", "spline"]:
@@ -886,7 +957,8 @@ class ProcessTDigest:
         y_data = None
 
         if method == "percentiles":
-            # create the CDF of the current TDigest data object using percentiles
+            # create the CDF of the current
+            # TDigest data object using percentiles
             percentiles = []
             cdf_percentiles = []
             for i in range(101):
@@ -943,7 +1015,8 @@ class ProcessTDigest:
     @staticmethod
     def _create_dict(data=None, name="", address=""):
         '''
-        Method to create a dictionary of plotting instructions. The instructions include data to
+        Method to create a dictionary of plotting instructions.
+        The instructions include data to
         plot, the type of plot, the colour scheme, and accompanying text.
 
         Parameters
@@ -953,7 +1026,8 @@ class ProcessTDigest:
         `name`: `str`
             The intended name of the data being plotted.
         `address`: `str`
-            The location of the Cronus object initially containing the TDigest data.
+            The location of the Cronus object
+            initially containing the TDigest data.
 
         Returns
         --------------------
@@ -975,8 +1049,8 @@ class ProcessTDigest:
 
         # create the hovertext template
         template = "<br>UUID: {}<br>Job_ID: {}<br>K: {}<br>Delta: {}".format(
-            uuid, # the TDigest dataset's unique ID
-            job_id, # the ID of the job that created the TDigest dataset
+            uuid,  # the TDigest dataset's unique ID
+            job_id,  # the ID of the job that created the TDigest dataset
             k_value,
             delta
         )
@@ -988,12 +1062,14 @@ class ProcessTDigest:
             "x": x_data,
             "y": y_data,
             "visible": True,
-            "text": template, # include the text visible when hovering over a data point
-            "marker": {"color": "black"} # set the colour of the lines of data
+            "text": template,  # include the text
+            "marker": {"color": "black"}  # set the colour of the lines of data
         }
 
-        # enclose the histogram plotting information in another dictionary with the
-        # row and column subplot positioning coordinates as well as the plot type
+        # enclose the histogram plotting
+        # information in another dictionary with the
+        # row and column subplot positioning
+        # coordinates as well as the plot type
         trace = {
             "data": trace_data,
             "row": 1,
@@ -1006,11 +1082,16 @@ class ProcessTDigest:
     @staticmethod
     def _get_digest_map(tdigest=None):
         '''
-        A method to generate a TDigest map from an input Cronus object. Among other properties,
-        the Cronus object contains the location of a TDigest dataset. This location is used to
-        load the dataset into an empty TDigestBook object. The book is then decomposed into its
-        centroid datasets, which are each added to a TDigest object. Each populated TDigest
-        object is then used to populate a TDigest map. The map and the location of the TDigest
+        A method to generate a TDigest map from an input Cronus object.
+        Among other properties,
+        the Cronus object contains the location of a TDigest dataset.
+        This location is used to
+        load the dataset into an empty TDigestBook object.
+        The book is then decomposed into its
+        centroid datasets, which are each added to a TDigest object.
+        Each populated TDigest
+        object is then used to populate a TDigest map.
+        The map and the location of the TDigest
         dataset are both returned in a tuple.
 
         Parameters
@@ -1022,8 +1103,10 @@ class ProcessTDigest:
         Returns
         --------------------
         `output`: `tuple`
-            A tuple of a dictionary of TDigest datasets, each containing centroid data,
-            and the location of the Cronus object initially containing the TDigest data.
+            A tuple of a dictionary of TDigest datasets,
+            each containing centroid data,
+            and the location of the Cronus object
+            initially containing the TDigest data.
         '''
 
         # create a book of the inputted tdigest data using its address
@@ -1055,20 +1138,25 @@ class ProcessTDigest:
     @staticmethod
     def _validate(tdigests=None):
         '''
-        Method to validate the input `tdigests` parameter. It is expected that `tdigests` is a
-        Protobuf Composite Container filled with Cronus objects. If the input parameter is not
-        a container or contains no Cronus objects, an empty list is returned. Otherwise, a list
-        of the container's Cronus objects is returned. If the output list does not contain any
-        Cronus objects, no data can be located and no TDigests will be available.
+        Method to validate the input `tdigests` parameter.
+        It is expected that `tdigests` is a
+        Protobuf Composite Container filled with Cronus objects.
+        If the input parameter is not
+        a container or contains no Cronus objects, an empty list is returned.
+        Otherwise, a list
+        of the container's Cronus objects is returned.
+        If the output list does not contain any
+        Cronus objects, no data can be located
+        and no TDigests will be available.
 
         Parameters
         --------------------
-        `tdigests`: `google.protobuf.pyext._message.RepeatedCompositeContainer`
+        `tdigests`: `RepeatedCompositeContainer`
             A protobuf container object containing TDigests to be analyzed.
 
         Returns
         --------------------
-        `valid_tdigests`: `google.protobuf.pyext._message.RepeatedCompositeContainer`
+        `valid_tdigests`: `RepeatedCompositeContainer`
             A protobuf container containing only validated TDigests.
         '''
 
@@ -1076,7 +1164,7 @@ class ProcessTDigest:
         valid_tdigests = []
 
         # verify the `tdigests` parameter is not an invalid type or empty
-        if not isinstance(tdigests, google.protobuf.pyext._message.RepeatedCompositeContainer):
+        if not isinstance(tdigests, RepeatedCompositeContainer):
             logging.error(
                 "Invalid TDigest Container Type: '%s'.",
                 type(tdigests)
@@ -1096,8 +1184,10 @@ class ProcessTDigest:
                     type(tdigest)
                 )
                 logging.info(
-                    "A TDigest object from the input container is of an invalid type. "
-                    "Therefore, the data from this object is not available for plotting."
+                    "A TDigest object from the input container \
+                            is of an invalid type. "
+                    "Therefore, the data from this object \
+                            is not available for plotting."
                 )
             else:
                 valid_tdigests.append(tdigest)
@@ -1106,23 +1196,31 @@ class ProcessTDigest:
         if not valid_tdigests:
             valid_tdigests = None
 
-            # if the valid histograms was an empty list, log why no data was available
+            # if the valid histograms was an empty list,
+            # log why no data was available
             if isinstance(valid_tdigests, list):
                 logging.error("No Valid TDigest Data Available.")
                 logging.info(
-                    "Each TDigest from the input container was found to be invalid. "
-                    "Therefore, there is no TDigest data available for plotting."
+                    "Each TDigest from the input container \
+                            was found to be invalid. "
+                    "Therefore, there is no TDigest data \
+                            available for plotting."
                 )
 
         return valid_tdigests
 
     def get_centroids(self, digest_map=None, name=""):
         '''
-        Class method for extracting centroid data from a TDigest map. The inputted `digest_map` is
-        decomposed into its individual TDigest objects, which are passed to the `_calculate_cdf`
-        method to produce a CDF 2-Dimensional dataset. This dataset has two properties added to it,
-        the Tdigest's K-value and Delta value. All four elements are added to a numpy.ndarray and
-        appended to a list. Once populated with an array from each TDigest, the list is returned.
+        Class method for extracting centroid data from a TDigest map.
+        The inputted `digest_map` is
+        decomposed into its individual TDigest objects,
+        which are passed to the `_calculate_cdf`
+        method to produce a CDF 2-Dimensional dataset.
+        This dataset has two properties added to it,
+        the Tdigest's K-value and Delta value.
+        All four elements are added to a numpy.ndarray and
+        appended to a list. Once populated with an array from each TDigest,
+        the list is returned.
 
         Parameters
         --------------------
@@ -1157,23 +1255,30 @@ class ProcessTDigest:
                     k_value = data.K
                     delta = data.delta
 
-                    # append the CDF data, the k-value and the delta value to an array
-                    centroid_array = numpy.array([x_data, y_data, k_value, delta])
+                    # append CDF data, k-value and delta value to an array
+                    centroid_array = \
+                        numpy.array([x_data, y_data, k_value, delta])
                     digest_data.append(centroid_array)
 
         return digest_data
 
     def generate_traces(self):
         '''
-        Class method to generate a list of lists containing dictionaries of plotting instructions.
-        The plotting instructions include CDF data to be plotted, colour schemes, and the position
-        in the subplot. Only requested TDigests are included in the list of lists. TDigests are
-        requested by name through the REQ_TDIGEST_TRACE_NAMES list. Only TDigests whose name is
-        present in this list will have a plotting dictionary created containing its data. Each
-        dictionary in a sub-list contains plotting information from the same TDigest object.
-        Therefore, if the input container contains only one TDigest object, the output of this
-        method will be a list with one element, a list of plotting dictionaries produced using
-        the requested histograms from the single TDigest object. If the list of requested TDigests
+        Class method to generate a list of lists containing
+        dictionaries of plotting instructions.
+        The plotting instructions include CDF data to be plotted,
+        colour schemes, and the position in the subplot.
+        Only requested TDigests are included in the list of lists.
+        TDigests are requested by name through REQ_TDIGEST_TRACE_NAMES list.
+        Only TDigests whose name is present in this list will have a plotting
+        dictionary created containing its data.
+        Each dictionary in a sub-list contains plotting
+        information from the same TDigest object.
+        Therefore, if the input container contains only one TDigest object,
+        the output of this method will be a list with one element,
+        a list of plotting dictionaries produced using
+        the requested histograms from the single TDigest object.
+        If the list of requested TDigests
         is invalid, all available TDigests are used.
 
         Returns
@@ -1193,8 +1298,10 @@ class ProcessTDigest:
                 type(REQ_TDIGEST_TRACE_NAMES)
             )
             logging.info(
-                "The variable supplying the list of valid TDigest trace names was expected "
-                "to be a list. Therefore, every available TDigest trace will be created."
+                "The variable supplying the list of valid \
+                        TDigest trace names was expected "
+                "to be a list. Therefore, every available \
+                        TDigest trace will be created."
             )
             req_tdigest_names = ["all"]
 
@@ -1214,7 +1321,8 @@ class ProcessTDigest:
                 # get the digest map from the current tdigest
                 digest_map, location = self._get_digest_map(tdigest=tdigest)
 
-                # extract all maps and all the names of the maps from the input TDigest
+                # extract all maps and all the
+                # names of the maps from the input TDigest
                 all_names = [str(name).lower() for name in digest_map]
 
                 if not all_names:
@@ -1251,7 +1359,8 @@ class ProcessTDigest:
 
                 tdigest_list = []
                 for name in req_names:
-                    # obtain the list of centroid arrays from the tdigest object
+                    # obtain the list of centroid arrays
+                    # from the tdigest object
                     digest_data = self.get_centroids(
                         digest_map=digest_map,
                         name=name
@@ -1270,15 +1379,23 @@ class ProcessTDigest:
 
         return all_tdigests
 
+
 class MergeTraces:
     '''
-    Class to combine similarly named traces and modify various trace properties. The input traces
-    are a list of lists of dictionaries containing plotting instructions and are organized based
-    on their original object. Every dictionary in a sub-list is from the same `HistogramCollection`
-    or `TDigest` object. For plotting, histograms and TDigests will be organized by name, such that
-    a subplot displays the same data, but from different objects. To do this, each sub-list must
-    contain plotting dictionaries with the same name. Several methods in this class perform this
-    substitution, while modifying the colour scheme and subplot coordinates accordingly.
+    Class to combine similarly named traces
+    and modify various trace properties.
+    The input traces are a list of lists of dictionaries
+    containing plotting instructions and are organized based
+    on their original object.
+    Every dictionary in a sub-list is from the same `HistogramCollection`
+    or `TDigest` object.
+    For plotting, histograms and TDigests will be organized by name, such that
+    a subplot displays the same data, but from different objects.
+    To do this, each sub-list must
+    contain plotting dictionaries with the same name.
+    Several methods in this class perform this
+    substitution, while modifying the colour scheme
+    and subplot coordinates accordingly.
 
     Parameters
     --------------------
@@ -1299,11 +1416,16 @@ class MergeTraces:
     @staticmethod
     def _validate(traces=None, max_cols=0):
         '''
-        A method to validate the input traces, their contents and the maximal number of subplot
-        columns. The `traces` parameter was expected to be a list containing lists of plotting
-        dictionaries. If this is not the case, the dictionaries cannot be accessed and properly
-        re-organized; rather an empty list is returned instead. For the maximum number of subplots,
-        the expected parameter type is an integer. If the parameter is not an integer or float,
+        A method to validate the input traces,
+        their contents and the maximal number of subplot columns.
+        The `traces` parameter was expected to be a list containing
+        lists of plotting dictionaries.
+        If this is not the case, the dictionaries
+        cannot be accessed and properly re-organized;
+        rather an empty list is returned instead.
+        For the maximum number of subplots,
+        the expected parameter type is an integer.
+        If the parameter is not an integer or float,
         a default maximum value of 1 is used instead.
 
         Parameters
@@ -1316,7 +1438,8 @@ class MergeTraces:
         Returns
         --------------------
         `output`: `tuple`
-            The validated traces, as a list, and the validated number of columns as an integer.
+            The validated traces, as a list,
+            and the validated number of columns as an integer.
         '''
 
         # validate the traces parameter is a list
@@ -1340,8 +1463,10 @@ class MergeTraces:
                     type(item)
                 )
                 logging.info(
-                    "Trace groups from the initial list of traces were expected to be "
-                    "lists as well. Therefore, the trace group could not be accessed."
+                    "Trace groups from the initial \
+                            list of traces were expected to be "
+                    "lists as well. \
+                            Therefore, the trace group could not be accessed."
                 )
             else:
                 valid_traces.append(item)
@@ -1379,10 +1504,13 @@ class MergeTraces:
     @staticmethod
     def combine(traces=None, names=None):
         '''
-        A method to combine traces that share the same name. The list of all available names,
-        `names`, is iterated through and each trace found to have the current name is added to a
-        list. Once every trace named as the current name is added to the list, the list is appended
-        to another list. Once every name has been iterated through, the output list will be a list
+        A method to combine traces that share the same name.
+        The list of all available names, `names`, is iterated through
+        and each trace found to have the current name is added to a
+        list. Once every trace named as the current name is added to the list,
+        the list is appended to another list.
+        Once every name has been iterated through,
+        the output list will be a list
         of sub-lists with each sub-list containing traces with the same name.
 
         Parameters
@@ -1395,7 +1523,8 @@ class MergeTraces:
         Returns
         --------------------
         `combined_hists`: `list`
-            A list of lists with each sublist containing similarly-named traces.
+            A list of lists with each sublist
+            containing similarly-named traces.
         '''
 
         # define a list ot contain lists of similarly-named traces
@@ -1407,7 +1536,8 @@ class MergeTraces:
 
             # iterate through each trace name in the list of names;
             # add each trace with a matching name to a list;
-            # once all similarly-named traces are found, move on to the next name
+            # once all similarly-named traces are found,
+            # move on to the next name
             for trace in traces:
                 trace_name = trace["data"]["name"]
                 if trace_name == name:
@@ -1423,9 +1553,11 @@ class MergeTraces:
     @staticmethod
     def modify_coord(traces=None, max_cols=0):
         '''
-        A method to modify the subplot coordinates of each merged trace. The dictionaries in each
-        sub-list of `traces` are intended to be plotted in the same subplots. Therefore, they must
-        have the same `row` and `col` values. Each sub-list is isolated and each dictionary in the
+        A method to modify the subplot coordinates of each merged trace.
+        The dictionaries in each sub-list of `traces` are intended
+        to be plotted in the same subplots.
+        Therefore, they must have the same `row` and `col` values.
+        Each sub-list is isolated and each dictionary in the
         sub-list has its row and column values changed accordingly.
 
         Parameters
@@ -1438,10 +1570,12 @@ class MergeTraces:
         Returns
         --------------------
         `all_traces`: `list`
-            The list of traces with the row and column coordinates properly modified.
+            The list of traces with the row and column
+            coordinates properly modified.
         '''
 
-        # define default/initial values for the row and column subplot coordinates
+        # define default/initial values for the
+        # row and column subplot coordinates
         row = 1
         column = 1
 
@@ -1475,11 +1609,14 @@ class MergeTraces:
     @staticmethod
     def modify_colours(traces=None):
         '''
-        A method to modify the colour scheme of the bars in the subplots. It is intended that data
-        from the same original histogram or TDigest object be of the same colour. Each trace is
-        organized into sub-lists by its original object. Therefore, creating a list of colours and
-        assigning a colour to every dictionary in each sub-list will ensure data from the same
-        origin is always plotted as the same colour, even when organized by trace name.
+        A method to modify the colour scheme of the bars in the subplots.
+        It is intended that data from the same original histogram or
+        TDigest object be of the same colour.
+        Each trace is organized into sub-lists by its original object.
+        Therefore, creating a list of colours and assigning a colour to every
+        dictionary in each sub-list will ensure data from the same
+        origin is always plotted as the same colour,
+        even when organized by trace name.
 
         Parameters
         --------------------
@@ -1489,7 +1626,8 @@ class MergeTraces:
         Returns
         --------------------
         `all_traces`: `list`
-            The list of traces with their individual colour schemes properly modified.
+            The list of traces with their individual
+            colour schemes properly modified.
         '''
 
         # get a list of the default colours from Plotly
@@ -1503,7 +1641,8 @@ class MergeTraces:
         for non_merged_traces in traces:
             adj_traces = []
             for trace in non_merged_traces:
-                # if the trace group contains many traces, recycle the default colours
+                # if the trace group contains many traces,
+                # recycle the default colours
                 if iteration == len(pallette):
                     iteration = 0
 
@@ -1519,14 +1658,18 @@ class MergeTraces:
 
     def merge(self):
         '''
-        A method to validate, combine, and modify input traces based on naming similarities. Calls
-        various methods from the `MergeTraces` class to appropriately merge traces based on their
-        naming, while modifying each trace's colour scheme and subplot coordinates.
+        A method to validate, combine, and modify
+        input traces based on naming similarities.
+        Calls various methods from the `MergeTraces`
+        class to appropriately merge traces based on their
+        naming, while modifying each trace's
+        colour scheme and subplot coordinates.
 
         Returns
         --------------------
         `adj_all_traces`: `list`
-            The validated traces, as a list, and the validated number of columns, as an integer.
+            The validated traces, as a list,
+            and the validated number of columns, as an integer.
         '''
 
         # validate the input parameters
@@ -1535,7 +1678,8 @@ class MergeTraces:
             max_cols=self.max_cols
         )
 
-        # change the colour of each of the markers in similar plots to demarcate them
+        # change the colour of each of the markers
+        # in similar plots to demarcate them
         # ensure traces from the same protobuf file are of the same colour
         if traces:
             traces = self.modify_colours(traces=traces)
@@ -1553,7 +1697,8 @@ class MergeTraces:
             if name not in all_names:
                 all_names.append(name)
 
-        # combine the traces in separate lists based on their naming similarities
+        # combine the traces in separate lists
+        # based on their naming similarities
         all_traces = self.combine(
             traces=all_traces,
             names=all_names
@@ -1568,16 +1713,20 @@ class MergeTraces:
 
         return all_traces
 
+
 class BuildFigure:
     '''
-    Class object to generate a figure from a list of traces, each containing data
-    and plotting properties. Contains various methods to split traces, add default
-    properties, create figures, and update figures with new layouts.
+    Class object to generate a figure from a list of traces,
+    each containing data
+    and plotting properties. Contains various methods to split traces,
+    add default properties, create figures,
+    and update figures with new layouts.
 
     Parameters
     --------------------
     `traces`: `list`
-        A list of traces (dictionaries) containing data and properties to be plotted.
+        A list of traces (dictionaries) containing data
+        and properties to be plotted.
     `figure_type`: `str`
         The type of figure being generated.
     '''
@@ -1594,23 +1743,29 @@ class BuildFigure:
     @staticmethod
     def _create_bar(traces=None, template=None):
         '''
-        Class method to create a bar plot trace using two traces. Systematically
-        replace properties of the `template` trace with properties from the user-
-        defined `trace` as they appear. Only the properties from `trace` that are
-        also in `template` are replaced to avoid defining unsupported properties.
+        Class method to create a bar plot trace using two traces.
+        Systematically replace properties of the `template`
+        trace with properties from the user-defined `trace` as they appear.
+        Only the properties from `trace` that are
+        also in `template` are replaced to avoid
+        defining unsupported properties.
 
         Parameters
         --------------------
         `traces`: `list`
-            A list containing dictionaries of user-defined bar plot properties.
+            A list containing dictionaries of
+            user-defined bar plot properties.
         `template`: `dict`
-            A `dict` object containing every bar plot property and it's default value.
+            A `dict` object containing every
+            bar plot property and it's default value.
 
         Returns
         --------------------
         `output_traces`: `list`
-            A list of dictionaries each containing every bar plot property and it's
-            default value, save for the properties specified in each inputted trace.
+            A list of dictionaries each containing
+            every bar plot property and it's
+            default value, save for the properties
+            specified in each inputted trace.
         '''
 
         logging.info("Creating Bar Plot...")
@@ -1620,10 +1775,12 @@ class BuildFigure:
             # extract the data from the trace
             data = trace_dict["data"]
 
-            # re-define the default properties of an empty bar plot in a new variable
+            # re-define the default properties
+            # of an empty bar plot in a new variable
             bar_trace = template
 
-            # systematically replace default properties with user-defined properties
+            # systematically replace default properties
+            # with user-defined properties
             for key, value in data.items():
                 if key in template.keys():
                     bar_trace[key] = value
@@ -1633,8 +1790,10 @@ class BuildFigure:
                         key
                     )
                     logging.warning(
-                        "The above key was not found in the Bar plot properties. "
-                        "Therefore, this property cannot be included in the plot."
+                        "The above key was not found \
+                                in the Bar plot properties. "
+                        "Therefore, this property cannot \
+                                be included in the plot."
                     )
 
             # assign the plotting properties to the bar plot trace
@@ -1648,23 +1807,29 @@ class BuildFigure:
     @staticmethod
     def _create_scatter(traces=None, template=None):
         '''
-        Class method to create a scatter plot trace using two traces. Systematically
-        replace properties of the `template` trace with properties from the user-
-        defined `trace` as they appear. Only the properties from `trace` that are
-        also in `template` are replaced to avoid defining unsupported properties.
+        Class method to create a scatter plot trace using two traces.
+        Systematically replace properties of the `template` trace
+        with properties from the user-defined `trace` as they appear.
+        Only the properties from `trace` that are
+        also in `template` are replaced to avoid
+        defining unsupported properties.
 
         Parameters
         --------------------
         `traces`: `list`
-            A lsit containing dictionaries of user-defined scatter plot properties.
+            A lsit containing dictionaries of
+            user-defined scatter plot properties.
         `template`: `dict`
-            A `dict` object containing every scatter plot property and it's default value.
+            A `dict` object containing every
+            scatter plot property and it's default value.
 
         Returns
         --------------------
         `output_traces`: `list`
-            A list of dictionaries each containing every scatter plot property and it's
-            default value, save for the properties specified in each inputted trace.
+            A list of dictionaries each containing
+            every scatter plot property and it's
+            default value, save for the properties
+            specified in each inputted trace.
         '''
 
         logging.info("Creating Scatter...")
@@ -1674,10 +1839,12 @@ class BuildFigure:
             # extract the data from each trace
             data = trace_dict["data"]
 
-            # re-define the default properties of an empty scatter plot in a new variable
+            # re-define the default properties of an
+            # empty scatter plot in a new variable
             scatter_trace = template
 
-            # systematically replace default properties with user-defined properties
+            # systematically replace default properties
+            # with user-defined properties
             for key, value in data.items():
                 if key in template.keys():
                     scatter_trace[key] = value
@@ -1687,8 +1854,10 @@ class BuildFigure:
                         key
                     )
                     logging.warning(
-                        "The above key was not found in the Scatter plot properties. "
-                        "Therefore, this property cannot be included in the plot."
+                        "The above key was not found \
+                                in the Scatter plot properties. "
+                        "Therefore, this property cannot \
+                                be included in the plot."
                     )
 
             # assign the properties to the scatter plot trace
@@ -1702,14 +1871,17 @@ class BuildFigure:
     @staticmethod
     def _validate(traces=None, figure_type=""):
         '''
-        A method to validate that `traces` amd `figure_type` are each of the proper types. It is
-        expected that the `traces` parameter is a list and the `figure_type` parameter is a string.
-        If this is not the case, no traces can be made available and/or the figure type is invalid.
+        A method to validate that `traces` amd `figure_type`
+        are each of the proper types. It is
+        expected that the `traces` parameter is a list and the
+        `figure_type` parameter is a string.
+        If this is not the case, no traces can be made
+        available and/or the figure type is invalid.
 
         Parameters
         --------------------
         `traces`: `list`
-            A list of traces containing properties, as dictionaries, to be plotted.
+            A list of traces with properties, as dictionaries, to be plotted.
         `figure_type`: `str`
             The type of figure being generated.
 
@@ -1729,8 +1901,10 @@ class BuildFigure:
                 type(traces)
             )
             logging.info(
-                "Each of the histogram and TDigest traces were expected to be a list "
-                "of non-empty dictionaries. Therefore, the data could not be processed."
+                "Each of the histogram and TDigest \
+                        traces were expected to be a list "
+                "of non-empty dictionaries. \
+                        Therefore, the data could not be processed."
             )
             traces = []
 
@@ -1775,8 +1949,10 @@ class BuildFigure:
     @staticmethod
     def update_figure(figure=None, figure_type=""):
         '''
-        A class method to execute all the required updates to the layout of the figure object. The
-        figure is updated with a variety of layout and axis features to improve the usability and
+        A class method to execute all the required
+        updates to the layout of the figure object. The
+        figure is updated with a variety of layout and
+        axis features to improve the usability and
         readability of the saved and rendered subplots.
 
         Parameters
@@ -1814,7 +1990,8 @@ class BuildFigure:
 
     def generate_figure(self):
         '''
-        Class method to split the list of inputted traces, build a subplot figure from each list
+        Class method to split the list of inputted traces,
+        build a subplot figure from each list
         element, and combine each subplot into one complete figure.
 
         Returns
@@ -1848,10 +2025,14 @@ class BuildFigure:
 
                 # extract properties of the merged traces;
                 # most properties are the same, save for the data
-                row = first_trace["row"] # row location in the subplot array
-                column = first_trace["col"] # column location in the subplot array
-                plot_type = first_trace["plot_type"] # type of plot being created
-                name = first_trace["data"]["name"] # name of the trace
+                # row location in the subplot array
+                row = first_trace["row"]
+                # column location in the subplot array
+                column = first_trace["col"]
+                # type of plot being created
+                plot_type = first_trace["plot_type"]
+                # name of the trace
+                name = first_trace["data"]["name"]
 
                 logging.info(
                     "Creating %s Figure from '%s' Trace...",
@@ -1881,13 +2062,16 @@ class BuildFigure:
                         plot_type
                     )
                     logging.info(
-                        "Only Bar plots (for histograms) and Scatter plots (for TDigest "
-                        "CDFs) are supported. Therefore, the trace will not be plotted."
+                        "Only Bar plots (for histograms) and \
+                                Scatter plots (for TDigest "
+                        "CDFs) are supported. \
+                            Therefore, the trace will not be plotted."
                     )
                     type_supported = False
 
                 if type_supported:
-                    # append the trace and its coordinates, and its name to lists
+                    # append the trace and its coordinates,
+                    # and its name to lists
                     trace_objects.append((traces, row, column))
                     trace_names.append(name)
 
@@ -1927,9 +2111,11 @@ class BuildFigure:
 
         return figure
 
+
 class PlotlyTool:
     '''
-    Class object containing functions to call methods from each of the previous four classes.
+    Class object containing functions to call methods
+    from each of the previous four classes.
 
     Parameters
     --------------------
@@ -1950,28 +2136,32 @@ class PlotlyTool:
     @staticmethod
     def _check_output(output="", check=True):
         '''
-        Method to check if the requested output directory exists and create it, if necessary. If
-        necessary, checks with the user if files and directories can be created and/or deleted to
-        produce the requested directory in which all figure plots are to be saved.
+        Method to check if the requested output directory
+        exists and create it, if necessary. If
+        necessary, checks with the user if files and directories
+        can be created and/or deleted to
+        produce the requested directory in which all
+        figure plots are to be saved.
 
         Parameters
         --------------------
         `output`: `str`
             The path to the directory intended to hold the outputted files.
         `check`: `boolean`
-            Whether the user's permission is required to create/delete files/directories.
+            User's permission is required to create/delete files/directories.
 
         Returns
         --------------------
         `proceed`: `boolean`
-            A boolean indicating if the tool can proceed to plotting histograms and TDigests.
+            tool can proceed to plotting histograms and TDigests.
         '''
 
         # check the requested output location, determine if it exists
         proceed = True
         if not os.path.exists(output):
             if check:
-                # if the intended output location does not exist, ask to create it
+                # if the intended output location does not exist,
+                # ask to create it
                 print("")
                 print("The requested output file location does not exist.")
                 create = input("Create it? 'Yes' or 'No' >>> ")
@@ -1991,8 +2181,10 @@ class PlotlyTool:
     @staticmethod
     def _list(store=None, uuid=""):
         '''
-        A method to list the histograms and TDigests in the inputted store and present at the
-        specified ID. The output is a tuple of two elements: a container of histogram collection
+        A method to list the histograms and TDigests
+        in the inputted store and present at the
+        specified ID. The output is a tuple of two elements:
+        a container of histogram collection
         objects and a container of TDigest datasets.
 
         Parameters
@@ -2005,7 +2197,7 @@ class PlotlyTool:
         Returns
         --------------------
         `output`: `tuple`
-            A tuple containing the histogram and TDigest containers from the store.
+            A tuple containing the histogram and TDigest containers from store.
         '''
 
         # if any inputs are invalid, no histograms or TDigests can be created
@@ -2024,8 +2216,10 @@ class PlotlyTool:
     @staticmethod
     def _validate(store=None, uuid=""):
         '''
-        A method to validate that the inputted store object and UUID are both of the proper type.
-        It is expected that the store be a `BaseObjectStore` and the UUID be a string. If this is
+        A method to validate that the inputted store object and
+        UUID are both of the proper type.
+        It is expected that the store be a `BaseObjectStore` and
+        the UUID be a string. If this is
         not the case, no store and/or UUID can be used due to incompatibility.
 
         Parameters
@@ -2048,7 +2242,8 @@ class PlotlyTool:
                 type(store)
             )
             logging.info(
-                "The inputted `store` parameter was expected to be a `BaseObjectStore`. "
+                "The inputted `store` parameter was expected \
+                to be a `BaseObjectStore`. "
                 "Therefore, the provided store could not be used."
             )
             store = None
@@ -2073,9 +2268,12 @@ class PlotlyTool:
     @staticmethod
     def get_figure(traces=None, output="", show=True, check=True, fig_type=""):
         '''
-        A method to generate Plotly Figure objects, render them, and save them as HTML files in
-        the directory specified by `output`. The `generate_figure` method of `BuildFigure` is
-        called to generate the plots for histograms and TDigests, while the `plot_save` function
+        A method to generate Plotly Figure objects, render them,
+        and save them as HTML files in
+        the directory specified by `output`. The `generate_figure`
+        method of `BuildFigure` is
+        called to generate the plots for histograms and TDigests,
+        while the `plot_save` function
         imported from Plotly saved and/or renders the plots.
 
         Parameters
@@ -2085,7 +2283,7 @@ class PlotlyTool:
         `output`: `str`
             The path to the directory intended to hold the outputted files.
         `check`: `boolean`
-            Whether the user's permission is required to create/delete files/directories.
+            user's permission is required to create/delete files/directories.
         `show`: `boolean`
             A boolean indicating if the plots are rendered as well as saved.
         `fig_type`: `str`
@@ -2099,14 +2297,16 @@ class PlotlyTool:
                 print("")
                 print(
                     "A {} file already exists at the location intended for "
-                    "a new, similar output file, '{}'.".format(fig_type, output)
+                    "a new, similar output file, \
+                        '{}'.".format(fig_type, output)
                 )
                 create = input("Overwrite it? 'Yes' or 'No' >>> ")
                 proceed = bool(create.lower() in ["y", "yes"])
                 print("")
 
         if proceed:
-            # define the BuidFigure class and create a figure from the group of traces
+            # define the BuidFigure class
+            # create a figure from the group of traces
             logging.info(
                 "Building Figure from %s %s Traces...",
                 len(traces),
@@ -2118,7 +2318,8 @@ class PlotlyTool:
             ).generate_figure()
 
             if plot_figure:
-                # define an output file location and save the figure as an HTML file
+                # define an output file location
+                # save the figure as an HTML file
                 action = "Saving and Rendering" if show else "Saving"
                 logging.info(
                     "%s %s Subplot Figure...",
@@ -2135,7 +2336,8 @@ class PlotlyTool:
             if not os.path.exists(output):
                 logging.error("Could Not Save Plot.")
                 logging.info(
-                    "The plot could not be saved as an %s %s file located at '%s'.",
+                    "The plot could not be saved \
+                            as an %s %s file located at '%s'.",
                     fig_type.upper(),
                     output.split(".")[-1].upper(),
                     output
@@ -2148,8 +2350,10 @@ class PlotlyTool:
 
     def visualize(self, output="", show=True, check=True):
         '''
-        A method to perform various functions by calling several classes and their methods to
-        validate parameters, create traces, build plots as figure objects, as well as save
+        A method to perform various functions by calling
+        several classes and their methods to
+        validate parameters, create traces,
+        build plots as figure objects, as well as save
         and/or render the plots.
 
         Parameters
@@ -2159,13 +2363,14 @@ class PlotlyTool:
         `show`: `boolean`
             A boolean indicating if the plots are rendered as well as saved.
         `check`: `boolean`
-            Whether the user's permission is required to create/delete files/directories.
+            User's permission is required to create/delete files/directories.
         '''
 
         # begin logging
         logging.info("Executing `PlotlyTool`...")
 
-        # start a timer, and log it, to record the runtime of the full algorithm
+        # start a timer, and log it
+        # record the runtime of the full algorithm
         start = time.time()
         logging.info(
             "PlotlyTool procedure started at %s.",
@@ -2192,10 +2397,11 @@ class PlotlyTool:
             )
 
             # get the traces from the histogram class method
-            logging.info("==================================================================")
+            logging.info("===================================")
             logging.info("Creating Histogram Traces...")
 
-            # generate a list of lists of traces from the histograms in the input store
+            # generate a list of lists of traces
+            # from the histograms in the input store
             hist_traces = ProcessHist(
                 histograms=histograms
             ).generate_traces()
@@ -2222,13 +2428,9 @@ class PlotlyTool:
                 )
             else:
                 logging.error("Histogram Processing Tool Failed.")
-                logging.info(
-                    "The histogram processing procedure encountered an error or incompatibility. "
-                    "As a result, no histograms could be created or plotted."
-                )
 
             # get the traces from the tdigest class method
-            logging.info("==================================================================")
+            logging.info("===================================")
             logging.info("Creating TDigest Traces...")
 
             # generate a list of traces from the TDigests in the input store
@@ -2258,15 +2460,11 @@ class PlotlyTool:
                 )
             else:
                 logging.error("TDigest Processing Tool Failed.")
-                logging.info(
-                    "The TDigest processing procedure encountered an error or incompatibility. "
-                    "As a result, no TDigests could be created or CDFs plotted."
-                )
-            logging.info("==================================================================")
+            logging.info("===================================")
         else:
             logging.info("`PlotlyTool` execution aborted.")
 
-        # record the time when the program was completed or was stopped and how long it ran for
+        # stop timer
         logging.info(
             "Execution started at %s",
             time.asctime()
