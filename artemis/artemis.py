@@ -50,8 +50,8 @@ from artemis.decorators import timethis
 
 
 class ArtemisFactory:
-    '''
-    Deprecated Factory class
+    '''Deprecated Factory class
+
     Update the configuration message from JobInfo message
     Allows for configuration to be static or predefined
     Reused for new datasets with different input and output data repos
@@ -88,6 +88,7 @@ class ArtemisFactory:
 @Logger.logged
 class Artemis(MetaMixin, IOMetaMixin):
     """Top-level Artemis framework class.
+
     Manages event loop, error handling and control flow
     Mixin classes provide methods for managing metadata
 
@@ -144,8 +145,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         self.collector = None  # Manages Arrow malloc and serialization
 
     def control(self):
-        """
-        Execute an artemis sub-job
+        """Execute an artemis sub-job
 
         Parameters
         ----------
@@ -265,9 +265,7 @@ class Artemis(MetaMixin, IOMetaMixin):
             return False
 
     def launch(self):
-        """
-        This function announces that Artemis sub-job is beginning
-        """
+        """This function announces that Artemis sub-job is beginning"""
         self.logger.info('Artemis is ready')
 
     def configure(self):
@@ -316,9 +314,7 @@ class Artemis(MetaMixin, IOMetaMixin):
             self.gate.tools.add(self.__logger, toolcfg)
 
     def lock(self):
-        """Lock all properties before initialize
-        
-        """
+        """Lock all properties before initialize"""
         # TODO
         # Exceptions?
         self.__logger.info("{}: Lock".format('artemis'))
@@ -330,9 +326,7 @@ class Artemis(MetaMixin, IOMetaMixin):
             raise
 
     def initialize(self):
-        """Initialize all algorithms and tools
-        
-        """
+        """Initialize all algorithms and tools"""
         self.__logger.info("{}: Initialize".format('artemis'))
 
         try:
