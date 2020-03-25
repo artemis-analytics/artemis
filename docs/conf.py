@@ -27,7 +27,7 @@ project = 'pyartemis'
 copyright = '2020, Ryan M. White, Dominic Parent, Russell Gill'
 author = 'Ryan M. White, Dominic Parent, Russell Gill'
 
-
+import artemis
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
