@@ -79,10 +79,3 @@ SimuTable
     artemis.generators.simutable.febrlgen
     artemis.generators.simutable.providers.example
     artemis.generators.simutable.providers.glm
-
-
-
-
-
-
-
