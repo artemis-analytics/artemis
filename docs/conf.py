@@ -18,7 +18,7 @@ import sys
 needs_sphinx = '2.4.4'
 
 sys.path.insert(0, os.path.abspath('.'))
-#sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../'))
 #sys.path.extend([os.path.join(os.path.dirname(__file__),'..','../..')])
 
 # -- Project information -----------------------------------------------------
@@ -27,7 +27,6 @@ project = 'pyartemis'
 copyright = '2020, Ryan M. White, Dominic Parent, Russell Gill'
 author = 'Ryan M. White, Dominic Parent, Russell Gill'
 
-import artemis
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
