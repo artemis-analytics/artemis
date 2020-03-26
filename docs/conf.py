@@ -17,9 +17,9 @@ import sys
 # Minimum version, enforced by sphinx
 needs_sphinx = '2.4.4'
 
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../'))
-#sys.path.extend([os.path.join(os.path.dirname(__file__),'..','../..')])
+#sys.path.insert(0, os.path.abspath('.'))
+#sys.path.insert(0, os.path.abspath('../'))
+sys.path.extend([os.path.join(os.path.dirname(__file__),'..','../..')])
 
 # -- Project information -----------------------------------------------------
 
