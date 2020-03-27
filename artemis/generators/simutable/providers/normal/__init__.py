@@ -31,5 +31,5 @@ class TestCase(unittest.TestCase):
         print(fake.normal())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2016-2019 Jan Pipek
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -20,6 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 from typing import Optional, Container, Tuple, Dict, Any
+
 #  import sys
 
 import numpy as np
@@ -36,19 +37,21 @@ class HistogramCollection(Container[Histogram1D]):
     It contains (potentially nama-addressable) histograms
     with a shared binning.
     """
-    def __init__(self,
-                 *histograms: Histogram1D,
-                 binning: Optional[BinningBase] = None,
-                 title: Optional[str] = None,
-                 name: Optional[str] = None):
+
+    def __init__(
+        self,
+        *histograms: Histogram1D,
+        binning: Optional[BinningBase] = None,
+        title: Optional[str] = None,
+        name: Optional[str] = None
+    ):
         self.histograms = list(histograms)
         if histograms:
             if binning:
                 raise ValueError("")
             self._binning = histograms[0].binning
             if not all(h.binning == self._binning for h in histograms):
-                raise ValueError("All histogram should "
-                                 "share the same binning.")
+                raise ValueError("All histogram should " "share the same binning.")
         else:
             self._binning = binning
         self.name = name
@@ -77,11 +80,7 @@ class HistogramCollection(Container[Histogram1D]):
         histograms = [h.copy() for h in self.histograms]
         for h in histograms:
             h._binning = copy_binning
-        return HistogramCollection(
-            *histograms,
-            title=self.title,
-            name=self.name
-        )
+        return HistogramCollection(*histograms, title=self.title, name=self.name)
 
     @property
     def binning(self) -> BinningBase:
@@ -97,7 +96,7 @@ class HistogramCollection(Container[Histogram1D]):
 
     @property
     def axis_names(self) -> Tuple[str]:
-        return self.axis_name,
+        return (self.axis_name,)
 
     def add(self, histogram: Histogram1D):
         """Add a histogram to the collection."""
@@ -105,12 +104,9 @@ class HistogramCollection(Container[Histogram1D]):
             raise ValueError("Cannot add histogram with different binning.")
         self.histograms.append(histogram)
 
-    def create(self, name: str,
-               values, *, weights=None, dropna: bool = True, **kwargs):
+    def create(self, name: str, values, *, weights=None, dropna: bool = True, **kwargs):
         # TODO: Rename!
-        init_kwargs = {
-            "axis_name": self.axis_name
-        }
+        init_kwargs = {"axis_name": self.axis_name}
         init_kwargs.update(kwargs)
         histogram = Histogram1D(binning=self.binning, name=name, **init_kwargs)
         histogram.fill_n(values, weights=weights, dropna=dropna)
@@ -121,18 +117,18 @@ class HistogramCollection(Container[Histogram1D]):
         if isinstance(item, str):
             candidates = [h for h in self.histograms if h.name == item]
             if len(candidates) == 0:
-                raise KeyError("Collection does not contain "
-                               "histogram named {0}".format(item))
+                raise KeyError(
+                    "Collection does not contain " "histogram named {0}".format(item)
+                )
             return candidates[0]
         else:
             return self.histograms[item]
 
     def __eq__(self, other) -> bool:
         return (
-            (type(other) == HistogramCollection) and
-            (len(other) == len(self)) and
-            all((h1 == h2) for h1, h2 in
-                zip(self.histograms, other.histograms))
+            (type(other) == HistogramCollection)
+            and (len(other) == len(self))
+            and all((h1 == h2) for h1, h2 in zip(self.histograms, other.histograms))
         )
 
     def normalize_bins(self, inplace: bool = False) -> "HistogramCollection":
@@ -159,18 +155,19 @@ class HistogramCollection(Container[Histogram1D]):
         pass
 
     @classmethod
-    def multi_h1(cls, a_dict: Dict[str, Any],
-                 bins=None, **kwargs) -> "HistogramCollection":
+    def multi_h1(
+        cls, a_dict: Dict[str, Any], bins=None, **kwargs
+    ) -> "HistogramCollection":
         """Create a collection from multiple datasets."""
         from physt.binnings import calculate_bins
+
         mega_values = np.concatenate(list(a_dict.values()))
         binning = calculate_bins(mega_values, bins, **kwargs)
 
         title = kwargs.pop("title", None)
         name = kwargs.pop("name", None)
 
-        collection = HistogramCollection(binning=binning,
-                                         title=title, name=name)
+        collection = HistogramCollection(binning=binning, title=title, name=name)
         for key, value in a_dict.items():
             collection.create(key, value)
         return collection
@@ -178,15 +175,15 @@ class HistogramCollection(Container[Histogram1D]):
     @classmethod
     def from_dict(cls, a_dict: dict) -> "HistogramCollection":
         from physt.io import create_from_dict
+
         col = HistogramCollection()
         for item in a_dict["histograms"]:
-            h = create_from_dict(item, "HistogramCollection",
-                                 check_version=False)
+            h = create_from_dict(item, "HistogramCollection", check_version=False)
             col.add(h)
         return col
 
     def to_dict(self):
         return {
             "histogram_type": "histogram_collection",
-            "histograms": [h.to_dict() for h in self.histograms]
+            "histograms": [h.to_dict() for h in self.histograms],
         }

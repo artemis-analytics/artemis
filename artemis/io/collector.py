@@ -18,7 +18,8 @@
 # limitations under the License.
 
 """
-Collector monitors Arrow memory-pool and manages file creation, spills to disk data on-demand, and flushes memory pool when required.
+Collector monitors Arrow memory-pool and manages file creation, spills to disk data
+on-demand, and flushes memory pool when required.
 """
 import pyarrow as pa
 
@@ -36,10 +37,9 @@ class CollectorOptions:
 
 
 class Collector(IOAlgoBase):
-
     def __init__(self, name, **kwargs):
-        '''
-        '''
+        """
+        """
         options = dict(CollectorOptions())
         options.update(kwargs)
 
@@ -47,7 +47,7 @@ class Collector(IOAlgoBase):
         # Configure logging
         Logger.configure(self, **kwargs)
 
-        self.__logger.debug('__init__ Collector')
+        self.__logger.debug("__init__ Collector")
 
         self.max_malloc = self.properties.max_malloc
 
@@ -62,7 +62,7 @@ class Collector(IOAlgoBase):
         # Buffer stream requires a fixed pyArrow schema!
         _wrtcfg = None
         try:
-            _wrtcfg = self.gate.config.tools['bufferwriter']
+            _wrtcfg = self.gate.config.tools["bufferwriter"]
         except KeyError:
             self.__logger.error("BufferWriter configuration not found")
             raise
@@ -109,13 +109,13 @@ class Collector(IOAlgoBase):
         pass
 
     def execute(self):
-        '''
+        """
         Check total allocated memory in Arrow
         and call collect
         Collect does not ensure the file flushed
         Tuning on total allocated memory and the max output buffer
         size before spill
-        '''
+        """
         if pa.total_allocated_bytes() > self.max_malloc:
             # TODO: Insert collect for datastore/nodes/tree.
             # TODO: Test memory release.
@@ -139,23 +139,24 @@ class Collector(IOAlgoBase):
 
     @timethis
     def _collect(self):
-        '''
+        """
         Collect all batches from the leaves
         Occurs after single input source is chunked
         Each chunked converted to a batch
         Batches on leaves collected
         Input file -> Output Arrow RecordBatches
-        '''
-        self.__logger.debug("artemis: collect: pyarrow malloc %i",
-                            pa.total_allocated_bytes())
+        """
+        self.__logger.debug(
+            "artemis: collect: pyarrow malloc %i", pa.total_allocated_bytes()
+        )
 
         self.__logger.debug("Leaves %s", self.gate.tree.leaves)
         for leaf in self.gate.tree.leaves:
             self.__logger.debug("Leaf node %s", leaf)
             node = self.gate.tree.get_node_by_key(leaf)
             els = node.payload
-            self.__logger.debug('Batches of leaf %s', len(els))
-            _name = "writer_"+node.key
+            self.__logger.debug("Batches of leaf %s", len(els))
+            _name = "writer_" + node.key
             _last = None
             try:
                 _last = els[-1].get_data()
@@ -172,15 +173,18 @@ class Collector(IOAlgoBase):
 
                 if self.gate.tools.get(_name)._schema != _schema_batch:
                     self.__logger.error("Schema mismatch")
-                    self.__logger.error("Writer schema %s",
-                                        self.gate.tools.get(_name)._schema)
+                    self.__logger.error(
+                        "Writer schema %s", self.gate.tools.get(_name)._schema
+                    )
                     self.__logger.error("Batch schema %s", _schema_batch)
                     raise ValueError
                 try:
-                    self.gate.tools.get("writer_"+node.key).write(els)
-                    self.__logger.debug("Records %i Batches %i",
-                                        self.gate.tools.get(_name)._nrecords,
-                                        self.gate.tools.get(_name)._nbatches)
+                    self.gate.tools.get("writer_" + node.key).write(els)
+                    self.__logger.debug(
+                        "Records %i Batches %i",
+                        self.gate.tools.get(_name)._nrecords,
+                        self.gate.tools.get(_name)._nbatches,
+                    )
                 except IOError:
                     self.__logger.error("IOError in buffer writer")
                     raise
@@ -197,15 +201,14 @@ class Collector(IOAlgoBase):
             self.__logger("Problem flushing")
             raise
 
-        self.__logger.debug("Allocated after write %i",
-                            pa.total_allocated_bytes())
+        self.__logger.debug("Allocated after write %i", pa.total_allocated_bytes())
         return True
 
     def finalize(self):
-        '''
+        """
         Ensure the data store is empty
         Spill any remaining arrow buffers to disk
-        '''
+        """
         # Ensure all data has been sent to buffer
         _store = ArrowSets()
         if _store.is_empty() is False:
@@ -244,11 +247,13 @@ class Collector(IOAlgoBase):
                 self.__logger.info(text_format.MessageToString(tableinfo))
 
             self.__logger.info("Dataset summary statistics")
-            self.__logger.info("%s Records: %i Batches: %i Files: %i",
-                               writer.name,
-                               writer.total_records,
-                               writer.total_batches,
-                               writer.total_files)
+            self.__logger.info(
+                "%s Records: %i Batches: %i Files: %i",
+                writer.name,
+                writer.total_records,
+                writer.total_batches,
+                writer.total_files,
+            )
 
     def _flush_buffer(self):
         _wnames = []

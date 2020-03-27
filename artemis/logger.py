@@ -25,12 +25,12 @@ import logging
 import urllib
 
 
-class Logger():
-    '''
+class Logger:
+    """
     class to retain common logging properties
-    '''
+    """
 
-    FMT = '%(name)s - %(funcName)s - %(levelname)s - %(message)s'
+    FMT = "%(name)s - %(funcName)s - %(levelname)s - %(message)s"
     DEFAULT_LEVEL = logging.INFO
     CONFIGURED_LEVEL = DEFAULT_LEVEL
 
@@ -38,15 +38,13 @@ class Logger():
     def loglevel(**kwargs):
         # Check kwargs for loglevel, which overrides root logger level setting
         numeric_level = Logger.DEFAULT_LEVEL
-        if 'loglevel' in kwargs:
-            if isinstance(kwargs['loglevel'], int):
-                numeric_level = kwargs['loglevel']
+        if "loglevel" in kwargs:
+            if isinstance(kwargs["loglevel"], int):
+                numeric_level = kwargs["loglevel"]
             else:
-                numeric_level = getattr(logging,
-                                        kwargs['loglevel'].upper(), None)
+                numeric_level = getattr(logging, kwargs["loglevel"].upper(), None)
                 if not isinstance(numeric_level, int):
-                    raise ValueError('Invalid log level: %s' %
-                                     kwargs['loglevel'])
+                    raise ValueError("Invalid log level: %s" % kwargs["loglevel"])
         else:
             # Set the effective level from the root logger
             numeric_level = logging.getLogger().getEffectiveLevel()
@@ -58,28 +56,29 @@ class Logger():
 
     @staticmethod
     def logfilehandler(**kwargs):
-        urldata = urllib.parse.urlparse(kwargs['path'])
+        urldata = urllib.parse.urlparse(kwargs["path"])
         path = urllib.parse.unquote(urldata.path)
-        fh = logging.FileHandler(path, 'w')
+        fh = logging.FileHandler(path, "w")
         fh.setFormatter(logging.Formatter(Logger.FMT))
         fh.setLevel(Logger.CONFIGURED_LEVEL)
         logging.getLogger().addHandler(fh)
 
     @staticmethod
     def logged(obj):
-        '''
+        """
         Taken from autologging.py
         Create a decorator to add logging to a class
-        '''
+        """
         # Default use module name for logger
         # If AlgoBase use mro to set name
         logger_name = obj.__module__
-        logger_attribute_name = '_' + obj.__name__ + '__logger'
+        logger_attribute_name = "_" + obj.__name__ + "__logger"
 
-        def fget(obj): return getattr(obj, logger_attribute_name)
+        def fget(obj):
+            return getattr(obj, logger_attribute_name)
 
         # add the getter property to cls
-        setattr(obj, 'logger', property(fget))
+        setattr(obj, "logger", property(fget))
 
         setattr(obj, logger_attribute_name, logging.getLogger(logger_name))
 
@@ -87,13 +86,14 @@ class Logger():
 
     @staticmethod
     def setloglevel(obj, **kwargs):
-        '''
+        """
         all loggers have hidden name __logger
-        '''
+        """
         # level = Logger.loglevel(**kwargs)
-        _logname = '_' + obj.__class__.__name__ + '__logger'
-        logging.getLogger().debug('Setting the log level for %s' %
-                                  obj.__class__.__name__)
+        _logname = "_" + obj.__class__.__name__ + "__logger"
+        logging.getLogger().debug(
+            "Setting the log level for %s" % obj.__class__.__name__
+        )
         getattr(obj, _logname).setLevel(Logger.CONFIGURED_LEVEL)
 
     @staticmethod
@@ -105,6 +105,6 @@ class Logger():
     def configure(obj, **kwargs):
         Logger.loglevel(**kwargs)
         Logger.setloglevel(obj, **kwargs)
-        if obj.__class__.__name__ == 'Artemis':
+        if obj.__class__.__name__ == "Artemis":
             Logger.logfilehandler(**kwargs)
             Logger.setexternals()

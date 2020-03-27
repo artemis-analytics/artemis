@@ -35,18 +35,17 @@ class TDigestToolOptions:
 
 
 class TDigestTool(ToolBase):
-
     def __init__(self, name, **kwargs):
 
         super().__init__(name, **kwargs)
 
     def initialize(self):
-        self.__logger.info("%s properties: %s",
-                           self.__class__.__name__,
-                           self.properties)
+        self.__logger.info(
+            "%s properties: %s", self.__class__.__name__, self.properties
+        )
 
     def execute(self, record_batch):
-        '''
+        """
 
         This tool will read in a py arrow record batch or
         a read from a csv file and run a t-digest
@@ -65,7 +64,7 @@ class TDigestTool(ToolBase):
         Although this returns none for now, it will be possible
         to return a pyarrow record bactch or simmilar data structure
         as it goes to a record batch and then writes directly to a csv file
-        '''
+        """
 
         # Print the schema of the record batch that this tool has recived
         # Get the schema from the record batch data
@@ -80,8 +79,11 @@ class TDigestTool(ToolBase):
         # Add the columns that are numerical ie: float, double, int
         # Create the tdigets and the map that will be returned
         for i in range(len(columns)):
-            if columns[i].type == 'double' or \
-                    columns[i].type == 'float' or columns[i].type == 'int':
+            if (
+                columns[i].type == "double"
+                or columns[i].type == "float"
+                or columns[i].type == "int"
+            ):
                 try:
                     digest = TDigest()
 

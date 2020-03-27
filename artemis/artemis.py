@@ -29,6 +29,7 @@ import pyarrow as pa
 
 # Framework
 from artemis.logger import Logger
+
 # from artemis.exceptions import NullDataError
 
 # Core
@@ -50,7 +51,7 @@ from artemis.decorators import timethis
 
 
 class ArtemisFactory:
-    '''
+    """
     Deprecated Factory class
     Update the configuration message from JobInfo message
     Allows for configuration to be static or predefined
@@ -60,26 +61,27 @@ class ArtemisFactory:
     bufferwriter tool with output repo path
     file generator tool with input repo path
     also replace a data generator with a file generator
-    '''
-    def __new__(cls, jobinfo, loglevel='INFO'):
+    """
+
+    def __new__(cls, jobinfo, loglevel="INFO"):
         dirpath = jobinfo.output.repo
 
-        if jobinfo.HasField('input'):
-            if jobinfo.input.HasField('atom'):
+        if jobinfo.HasField("input"):
+            if jobinfo.input.HasField("atom"):
                 inpath = jobinfo.input.atom.repo
                 glob = jobinfo.input.atom.glob
                 generator = jobinfo.config.input.generator
-                if generator.config.klass == 'FileGenerator':
+                if generator.config.klass == "FileGenerator":
                     for p in generator.config.properties.property:
-                        if p.name == 'path':
+                        if p.name == "path":
                             p.value = inpath
-                        if p.name == 'glob':
+                        if p.name == "glob":
                             p.value = glob
 
         for tool in jobinfo.config.tools:
-            if tool.name == 'bufferwriter':
+            if tool.name == "bufferwriter":
                 for p in tool.properties.property:
-                    if p.name == 'path':
+                    if p.name == "path":
                         p.value = dirpath
 
         return Artemis(jobinfo, loglevel=loglevel)
@@ -95,8 +97,7 @@ class Artemis(MetaMixin, IOMetaMixin):
     ----------
         properties : Properties
             Stored metadata properties for Artemis
-        gate : ArtemisGateSvc
-            Singleton for access to all framework level data, timers, histograms, metadata
+        gate : ArtemisGatframework level data, timers, histograms, metadata
         job_state : enum
             Enumerated job state
         steer : Steering
@@ -107,12 +108,12 @@ class Artemis(MetaMixin, IOMetaMixin):
             file handler for managing processing of datums
         collector : Collector
             collector class, monitors Arrow memory pool and writers to spill to disk
-    
+
     Parameters
     ----------
         jobinfo : JobInfo_pb
-            JobInfo Protocol buffer 
-    
+            JobInfo Protocol buffer
+
     Other Parameters
     ----------------
         loglevel : str
@@ -132,9 +133,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         self.job_state = artemis_pb2.JOB_STARTING
         # Logging
         logobj = self.register_log()
-        Logger.configure(self,
-                         path=logobj.address,
-                         loglevel=kwargs['loglevel'])
+        Logger.configure(self, path=logobj.address, loglevel=kwargs["loglevel"])
         #######################################################################
 
         # Define the internal objects for Artemis
@@ -156,7 +155,8 @@ class Artemis(MetaMixin, IOMetaMixin):
         Returns
         -------
             True : bool
-            The return code :: False -- exception encountered, sends error to :class:`artemis.Artemis.abort`
+            The return code :: False -- exception encountered
+            sends error to :class:`artemis.Artemis.abort`
         """
         self.job_state = artemis_pb2.JOB_RUNNING
         self.launch()
@@ -166,7 +166,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         try:
             self.configure()
         except Exception as e:
-            self.logger.error('Caught error in configure')
+            self.logger.error("Caught error in configure")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -174,7 +174,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         try:
             self.lock()
         except Exception as e:
-            self.logger.error('Caught error in lock')
+            self.logger.error("Caught error in lock")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -183,7 +183,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         try:
             self.initialize()
         except Exception as e:
-            self.logger.error('Caught error in initialize')
+            self.logger.error("Caught error in initialize")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -209,9 +209,9 @@ class Artemis(MetaMixin, IOMetaMixin):
         self.job_state = artemis_pb2.JOB_SAMPLE
         try:
             r, time_ = self.execute()
-            self.gate.hbook.fill('artemis', 'time.execute', time_)
+            self.gate.hbook.fill("artemis", "time.execute", time_)
         except Exception as e:
-            self.logger.error('Caught error in sample_chunks')
+            self.logger.error("Caught error in sample_chunks")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -220,7 +220,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         try:
             self.rebook()
         except Exception as e:
-            self.logger.error('Caught error in rebook')
+            self.logger.error("Caught error in rebook")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -228,7 +228,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         try:
             self.collector.initialize()
         except Exception as e:
-            self.logger.error('Caught error in init_buffers')
+            self.logger.error("Caught error in init_buffers")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
@@ -238,17 +238,18 @@ class Artemis(MetaMixin, IOMetaMixin):
             self.gate.tree.flush()
             self.datum = None
         except Exception as e:
-            self.logger.error('Caught error in Tree.flush')
+            self.logger.error("Caught error in Tree.flush")
             self.__logger.error("Reason: %s" % e)
             self.abort(e)
             return False
 
-        self.__logger.info("artemis: sampleing complete malloc %i",
-                           pa.total_allocated_bytes())
+        self.__logger.info(
+            "artemis: sampleing complete malloc %i", pa.total_allocated_bytes()
+        )
         self.job_state = artemis_pb2.JOB_EXECUTE
         try:
             r, time_ = self.execute()
-            self.gate.hbook.fill('artemis', 'time.execute', time_)
+            self.gate.hbook.fill("artemis", "time.execute", time_)
         except Exception as e:
             self.logger.error("Unexcepted error caught in run")
             self.__logger.error("Reason: %s" % e)
@@ -268,7 +269,7 @@ class Artemis(MetaMixin, IOMetaMixin):
         """
         This function announces that Artemis sub-job is beginning
         """
-        self.logger.info('Artemis is ready')
+        self.logger.info("Artemis is ready")
 
     def configure(self):
         """Configures all sub-job dependencies.
@@ -276,30 +277,31 @@ class Artemis(MetaMixin, IOMetaMixin):
         instantiate :class:`artemis.core.steering.Steering`.
 
         instantiate :class:`artemis.io.collector.Collector`.
-        
+
         instantiate a datahandler.
 
-        retrieve tool metadata 
-        
+        retrieve tool metadata
+
         add tools to metastore
         """
-        self.__logger.info('Configure')
-        self.__logger.info("%s properties: %s",
-                           self.__class__.__name__,
-                           self.properties)
+        self.__logger.info("Configure")
+        self.__logger.info(
+            "%s properties: %s", self.__class__.__name__, self.properties
+        )
         self.__logger.info("Job ID %s", self.job_id)
 
         # Create Steering instance
         self.__logger.info(self.gate.config)
-        self.steer = Steering('steer', loglevel=Logger.CONFIGURED_LEVEL)
+        self.steer = Steering("steer", loglevel=Logger.CONFIGURED_LEVEL)
 
         # Create the collector
         # Monitors the arrow memory pool
-        self.collector = \
-            Collector('collector',
-                      max_malloc=self.gate.config.max_malloc_size_bytes,
-                      job_id=self.job_id,
-                      loglevel=Logger.CONFIGURED_LEVEL)
+        self.collector = Collector(
+            "collector",
+            max_malloc=self.gate.config.max_malloc_size_bytes,
+            job_id=self.job_id,
+            loglevel=Logger.CONFIGURED_LEVEL,
+        )
 
         # Configure the data handler
         _msggen = self.gate.config.input.generator.config
@@ -317,11 +319,10 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     def lock(self):
         """Lock all properties before initialize
-        
         """
         # TODO
         # Exceptions?
-        self.__logger.info("{}: Lock".format('artemis'))
+        self.__logger.info("{}: Lock".format("artemis"))
         self.properties.lock = True
         try:
             self.steer.lock()
@@ -331,20 +332,19 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     def initialize(self):
         """Initialize all algorithms and tools
-        
         """
-        self.__logger.info("{}: Initialize".format('artemis'))
+        self.__logger.info("{}: Initialize".format("artemis"))
 
         try:
             self.steer.initialize()
         except Exception:
-            self.__logger.error('Cannot initialize Steering')
+            self.__logger.error("Cannot initialize Steering")
             raise
 
         try:
             self.datahandler.initialize()
         except Exception:
-            self.__logger.error("Cannot initialize algo %s" % 'generator')
+            self.__logger.error("Cannot initialize algo %s" % "generator")
             raise
 
         for name in self.gate.tools.keys():
@@ -359,52 +359,47 @@ class Artemis(MetaMixin, IOMetaMixin):
         self.filehandler = self.gate.tools.get("filehandler")
 
     def book(self):
-        """book Artemis histograms
-        
+        """
         book all algorithm histograms via call to steering.book
         """
         self.__logger.info("Book")
-        self.gate.hbook.book('artemis', 'counts', range(10))
-        bins = [x for x in range_positive(0., 10., 0.1)]
+        self.gate.hbook.book("artemis", "counts", range(10))
+        bins = [x for x in range_positive(0.0, 10.0, 0.1)]
 
         # Payload and block distributions
-        self.gate.hbook.book('artemis', 'payload', bins, 'MB', timer=True)
-        self.gate.hbook.book('artemis', 'nblocks', range(100), 'n', timer=True)
-        self.gate.hbook.book('artemis', 'blocksize', bins, 'MB', timer=True)
+        self.gate.hbook.book("artemis", "payload", bins, "MB", timer=True)
+        self.gate.hbook.book("artemis", "nblocks", range(100), "n", timer=True)
+        self.gate.hbook.book("artemis", "blocksize", bins, "MB", timer=True)
 
         # Timing plots
-        bins = [x for x in range_positive(0., 1000., 2.)]
-        self.gate.hbook.book('artemis', 'time.prepblks',
-                             bins, 'ms', timer=True)
-        self.gate.hbook.book('artemis', 'time.prepschema',
-                             bins, 'ms', timer=True)
-        self.gate.hbook.book('artemis', 'time.execute',
-                             bins, 'ms', timer=True)
-        self.gate.hbook.book('artemis', 'time.collect',
-                             bins, 'ms', timer=True)
-        self.gate.hbook.book('artemis', 'time.steer',
-                             bins, 'ms', timer=True)
+        bins = [x for x in range_positive(0.0, 1000.0, 2.0)]
+        self.gate.hbook.book("artemis", "time.prepblks", bins, "ms", timer=True)
+        self.gate.hbook.book("artemis", "time.prepschema", bins, "ms", timer=True)
+        self.gate.hbook.book("artemis", "time.execute", bins, "ms", timer=True)
+        self.gate.hbook.book("artemis", "time.collect", bins, "ms", timer=True)
+        self.gate.hbook.book("artemis", "time.steer", bins, "ms", timer=True)
 
         try:
             self.steer.book()
         except Exception:
-            self.__logger.error('Cannot book Steering')
+            self.__logger.error("Cannot book Steering")
             raise
 
     def rebook(self):
         """Rebook histograms for timers or profiles.
-        
         typically called after random sampling of data chunk
         """
         self.__logger.info("Rebook")
 
         self.gate.hbook.rebook()  # Resets all histograms!
 
-        self.__logger.info("artemis: allocated before reset %i",
-                           pa.total_allocated_bytes())
+        self.__logger.info(
+            "artemis: allocated before reset %i", pa.total_allocated_bytes()
+        )
         self.datahandler.reset()
-        self.__logger.info("artemis: allocated after reset %i",
-                           pa.total_allocated_bytes())
+        self.__logger.info(
+            "artemis: allocated after reset %i", pa.total_allocated_bytes()
+        )
 
         # Reset all meta data needed for processing all job info
         self.reset_job_summary()
@@ -412,18 +407,19 @@ class Artemis(MetaMixin, IOMetaMixin):
     @timethis
     def execute(self):
         """Event Loop execution
-        
-        Prepare an input datum, e.g. a file 
+        Prepare an input datum, e.g. a file
         Process each chunk, passing to Steering
         After all chunks processed, collect to output buffers
         Clear all data, move to next datum
         """
         self.__logger.info("Execute")
-        self.__logger.debug('artemis: Count at run call %i',
-                            self.gate.meta.summary.processed_ndatums)
+        self.__logger.debug(
+            "artemis: Count at run call %i", self.gate.meta.summary.processed_ndatums
+        )
 
-        self.__logger.info("artemis: Run: pyarrow malloc %i",
-                           pa.total_allocated_bytes())
+        self.__logger.info(
+            "artemis: Run: pyarrow malloc %i", pa.total_allocated_bytes()
+        )
 
         if self.job_state == artemis_pb2.JOB_SAMPLE:
             self.__logger.info("Iterate over samples")
@@ -439,21 +435,23 @@ class Artemis(MetaMixin, IOMetaMixin):
             if isinstance(datum, bytes):
                 datum = pa.py_buffer(datum)
 
-            self.gate.hbook.fill('artemis', 'counts',
-                                 self.gate.meta.summary.processed_ndatums)
+            self.gate.hbook.fill(
+                "artemis", "counts", self.gate.meta.summary.processed_ndatums
+            )
             try:
                 reader = self.filehandler.execute(datum)
             except Exception:
                 self.__logger.error("Failed to prepare file")
                 raise
 
-            self.gate.hbook.fill('artemis', 'payload',
-                                 bytes_to_mb(self.filehandler.size_bytes))
-            self.gate.hbook.fill('artemis', 'nblocks',
-                                 len(self.filehandler.blocks))
+            self.gate.hbook.fill(
+                "artemis", "payload", bytes_to_mb(self.filehandler.size_bytes)
+            )
+            self.gate.hbook.fill("artemis", "nblocks", len(self.filehandler.blocks))
 
-            self.__logger.info("artemis: flush before execute %i",
-                               pa.total_allocated_bytes())
+            self.__logger.info(
+                "artemis: flush before execute %i", pa.total_allocated_bytes()
+            )
 
             if self.job_state == artemis_pb2.JOB_SAMPLE:
                 self.__logger.info("Iterate over samples")
@@ -461,22 +459,21 @@ class Artemis(MetaMixin, IOMetaMixin):
             elif self.job_state == artemis_pb2.JOB_EXECUTE:
                 iter_batches = reader
             else:
-                self.__logger.error("Unknown job state for execute %s",
-                                    self.job_state)
+                self.__logger.error("Unknown job state for execute %s", self.job_state)
                 raise ValueError
 
             for batch in iter_batches:
-                self.gate.hbook.fill('artemis', 'blocksize',
-                                     bytes_to_mb(batch.size))
+                self.gate.hbook.fill("artemis", "blocksize", bytes_to_mb(batch.size))
                 steer_exec = timethis(self.steer.execute)
                 try:
                     r, time_ = steer_exec(batch)
                 except Exception:
                     self.__logger.error("Problem executing sample")
                     raise
-                self.__logger.debug("artemis: execute complete malloc %i",
-                                    pa.total_allocated_bytes())
-                self.gate.hbook.fill('artemis', 'time.steer', time_)
+                self.__logger.debug(
+                    "artemis: execute complete malloc %i", pa.total_allocated_bytes()
+                )
+                self.gate.hbook.fill("artemis", "time.steer", time_)
                 self.processed_bytes = batch.size
 
                 if self.job_state == artemis_pb2.JOB_EXECUTE:
@@ -489,12 +486,11 @@ class Artemis(MetaMixin, IOMetaMixin):
             # Update datum input count
             self.processed_ndatums = 1
 
-            self.__logger.info('Processed %i' %
-                               self.gate.meta.summary.processed_bytes)
+            self.__logger.info("Processed %i" % self.gate.meta.summary.processed_bytes)
 
     def finalize(self):
         """finalize Artemis sub-job.
-        
+
         call :meth:`artemis.core.steering.Steering.finalize`.
         call :meth:`artemis.io.collector.Collector.finalize`.
         call :meth:`artemis.core.gate.ArtemisGateSvc.finalize`.
@@ -510,10 +506,9 @@ class Artemis(MetaMixin, IOMetaMixin):
             Exception
                 unknown errors that are not caught are raised as Exception
             IOError
-                if `gate` cannot write 
+                if `gate` cannot write
         """
-        self.__logger.info("Finalizing Artemis job %s" %
-                           self.gate.meta.name)
+        self.__logger.info("Finalizing Artemis job %s" % self.gate.meta.name)
 
         try:
             self.steer.finalize()
@@ -538,23 +533,23 @@ class Artemis(MetaMixin, IOMetaMixin):
 
     def abort(self, *args, **kwargs):
         """abort Artemis sub-job
-        Unknown Exceptions or Exceptions which require aborting job are propagated. 
-        
-        :meth:`artemis.io.collector.Collector.finalize`. 
+        Unknown Exceptions or Exceptions which require aborting job are propagated.
+
+        :meth:`artemis.io.collector.Collector.finalize`.
         :meth:`artemis.core.gate.ArtemisGateSvc.finalize`.
-        
+
         Parameters
         ----------
             Exception
-        
+
         Other Parameters
         ----------------
             Exception
-        
+
         Raises
         ------
 
-        """    
+        """
         self.state = artemis_pb2.JOB_ABORT
         self.__logger.error("Artemis has been triggered to Abort")
         self.__logger.error("Reason %s" % args[0])

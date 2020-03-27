@@ -26,22 +26,26 @@ from artemis.artemis import Artemis
 from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
 
 
-class JobBuilder():
-    '''
+class JobBuilder:
+    """
     Class the simulate functionality of Artemis
-    '''
-    def __init__(self, dirpath,
-                 store_name,
-                 store_uuid,
-                 menu_uuid,
-                 config_uuid,
-                 dataset_uuid,
-                 parentset_uuid,
-                 job_id):
+    """
+
+    def __init__(
+        self,
+        dirpath,
+        store_name,
+        store_uuid,
+        menu_uuid,
+        config_uuid,
+        dataset_uuid,
+        parentset_uuid,
+        job_id,
+    ):
 
         self.job = JobInfo_pb()
-        self.job.name = 'arrowproto'
-        self.job.job_id = 'example'
+        self.job.name = "arrowproto"
+        self.job.job_id = "example"
         self.job.store_path = dirpath
         self.job.store_id = store_uuid
         self.job.store_name = store_name
@@ -52,29 +56,33 @@ class JobBuilder():
         self.job.job_id = str(job_id)
 
     def execute(self):
-        bow = Artemis(self.job, loglevel='INFO')
+        bow = Artemis(self.job, loglevel="INFO")
         bow.control()
         buf = bow.gate.store[self.job.dataset_id].dataset.SerializeToString()
         return buf
 
 
 @dask.delayed
-def runjob(dirpath,
-           store_name,
-           store_uuid,
-           menu_uuid,
-           config_uuid,
-           dataset_uuid,
-           parentset_uuid,
-           job_id):
+def runjob(
+    dirpath,
+    store_name,
+    store_uuid,
+    menu_uuid,
+    config_uuid,
+    dataset_uuid,
+    parentset_uuid,
+    job_id,
+):
 
-    runner = JobBuilder(dirpath,
-                        store_name,
-                        store_uuid,
-                        menu_uuid,
-                        config_uuid,
-                        dataset_uuid,
-                        parentset_uuid,
-                        job_id)
+    runner = JobBuilder(
+        dirpath,
+        store_name,
+        store_uuid,
+        menu_uuid,
+        config_uuid,
+        dataset_uuid,
+        parentset_uuid,
+        job_id,
+    )
     msg = runner.execute()
     return msg

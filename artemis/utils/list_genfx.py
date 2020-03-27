@@ -17,9 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
+"""
 List of generator functions from faker and local providers
-'''
+"""
 from artemis.generators.simutable.loader import PROVIDERS
 from faker import Faker
 
@@ -28,16 +28,16 @@ from faker import Faker
 def local_providers():
     provider_names = []
     for provider in PROVIDERS:
-        provider_names.extend([x for x in dir(provider.Provider)
-                               if not x.startswith('_')])
-    return (list(dict.fromkeys(provider_names)))
+        provider_names.extend(
+            [x for x in dir(provider.Provider) if not x.startswith("_")]
+        )
+    return list(dict.fromkeys(provider_names))
 
 
 # Return a list of generator functions from Faker
 def faker_providers():
-    faker = Faker('en_CA')
+    faker = Faker("en_CA")
     provider_names = []
     for provider in faker.providers:
-        provider_names.extend([x for x in dir(provider)
-                               if not x.startswith('_')])
-    return (list(dict.fromkeys(provider_names)))
+        provider_names.extend([x for x in dir(provider) if not x.startswith("_")])
+    return list(dict.fromkeys(provider_names))

@@ -36,14 +36,15 @@ from artemis.meta.Directed_Graph import GraphMenu
 
 @iterable
 class GlobalConfigOptions:
-    '''
+    """
     Options required to specify a dataset job
     Each instance of Artemis must be configured with these options
 
     Options set to None should be specified as default options
     in inherited configurations
     or must be set by the user
-    '''
+    """
+
     # Required
     jobname = None  # Common to all jobs using the same menu and configuration
     output_repo = None  # Absolute path to write output
@@ -59,7 +60,7 @@ class GlobalConfigOptions:
     write_csv = True  # Output csv files
     sample_ndatums = 1  # Preprocess job to sample files from dataset
     sample_nchunks = 10  # Preprocess job to sample chunks from a file
-    loglevel = 'INFO'
+    loglevel = "INFO"
     # Set by the config classes
     generator_type = None
     filehandler_type = None
@@ -67,12 +68,11 @@ class GlobalConfigOptions:
 
 
 @Logger.logged
-class Configurable():
-
+class Configurable:
     def __init__(self, menu, **options):
-        '''
+        """
         Menu required as input
-        '''
+        """
         if menu is None:
             raise ValueError
 
@@ -91,10 +91,9 @@ class Configurable():
         self._msg.max_malloc_size_bytes = self.max_malloc
         self._tools = []
 
-        if hasattr(self._msg, 'config_id'):
+        if hasattr(self._msg, "config_id"):
             self._msg.config_id = str(uuid.uuid4())
-            self.__logger.info('Job configuration uuid %s',
-                               self._msg.config_id)
+            self.__logger.info("Job configuration uuid %s", self._msg.config_id)
         # if menu:
         #    self._msg.menu.CopyFrom(menu)
 
@@ -103,47 +102,47 @@ class Configurable():
         return self._msg
 
     def retrieve_from_db(self):
-        '''
+        """
         Create DB connection
         Not required to run full configuration
         completes the job configuration process
-        '''
+        """
         pass
 
     def configure(self):
         pass
 
     def _config_generator(self, **kwargs):
-        '''
+        """
         ctype = configuration class to generate
             csv -- generate csv-like data
             legacy -- generator legacy cp500 data
             file -- generator of files
 
         kwargs specified in inherited job configurables
-        '''
+        """
         self.__logger.info(kwargs)
         generator = GeneratorFactory(self.generator_type, **kwargs)
         self._msg.input.generator.config.CopyFrom(generator.to_msg())
 
     def _config_tdigest(self, **kwargs):
-        '''
+        """
         creates the tdigest tool for tests
 
         the **kwargs are not used in this configuration setup
-        '''
-        tdigesttool = TDigestTool('tdigesttool')
+        """
+        tdigesttool = TDigestTool("tdigesttool")
         self._tools.append(tdigesttool.to_msg())
 
     def _config_filehandler(self, **kwargs):
-        '''
+        """
         ctype = configuration class to generator
             accepted class types:
             csv -- reads csv data
             legacy -- reads legacy cp500 data
 
         kwargs specified in inherited job configurables
-        '''
+        """
         tool = FileHandlerFactory(self.filehandler_type, **kwargs)
         self._tools.append(tool.to_msg())
 
@@ -152,10 +151,12 @@ class Configurable():
         self.__logger.info("Max file size %i", self.max_buffer_size)
         self.__logger.info("Write csv %s", self.write_csv)
         self.__logger.info("Absolute output path %s", self.output_repo)
-        tool = BufferOutputWriter('bufferwriter',
-                                  BUFFER_MAX_SIZE=self.max_buffer_size,
-                                  write_csv=self.write_csv,
-                                  path=self.output_repo)
+        tool = BufferOutputWriter(
+            "bufferwriter",
+            BUFFER_MAX_SIZE=self.max_buffer_size,
+            write_csv=self.write_csv,
+            path=self.output_repo,
+        )
         self._tools.append(tool.to_msg())
 
     def _config_sampler(self):
@@ -168,24 +169,24 @@ class Configurable():
             self._msg.tools[tool.name].CopyFrom(tool)
 
     def add_algos(self, algos):
-        '''
+        """
         algos : dict of algos from MenuBuilder
-        '''
+        """
         for key in algos:
             msg = self._msg.algos.add()
             msg.CopyFrom(algos[key].to_msg())
 
 
 @Logger.logged
-class MenuBuilder():
-    '''
+class MenuBuilder:
+    """
     Standard method to build menus
     Menus can be stored in a DB
     So, should be retrieved via a key and converted to
     the protobuf
-    '''
+    """
 
-    def __init__(self, name='test'):
+    def __init__(self, name="test"):
         self._uuid = str(uuid.uuid4())
         self._name = f"{self._uuid}.menu.pb"
         self._algos = dict()
@@ -218,5 +219,3 @@ class MenuBuilder():
         msg = menu.to_msg()
         msg.uuid = self._uuid
         return msg
-
-    

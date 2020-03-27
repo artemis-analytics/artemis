@@ -23,6 +23,7 @@
 # SOFTWARE.
 ###############################################################################
 import random
+
 """
 Functions for generating the cyclic group [0,...n-1]. Use instead of
 random.shuffle() or similar.
@@ -64,7 +65,7 @@ def indices(n):
     rand = find_gcd_one(n)
     i = 1
     while i <= n:
-        yield i*rand % n
+        yield i * rand % n
         i += 1
 
 

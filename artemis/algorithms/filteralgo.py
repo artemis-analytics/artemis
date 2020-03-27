@@ -17,12 +17,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Efficient filtering algorithm to slim columns from input record batches and materialize new record batches.
+Efficient filtering algorithm to slim columns from input record batches and materialize
+new record batches.
 """
 
 from artemis.core.algo import AlgoBase
 from artemis.decorators import timethis
 from artemis.utils.utils import range_positive
+
 # Keep only specified columns from the record batches.
 # Use invert option to remove only specified columns.
 
@@ -30,27 +32,26 @@ from artemis.utils.utils import range_positive
 class FilterAlgo(AlgoBase):
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.__logger.info('%s: __init__ FilterAlgo' % self.name)
+        self.__logger.info("%s: __init__ FilterAlgo" % self.name)
 
     def initialize(self):
-        self.__logger.info('%s: Initialized FilterAlgo' % self.name)
+        self.__logger.info("%s: Initialized FilterAlgo" % self.name)
 
     def book(self):
         self.__logger.info("Book")
-        bins = [x for x in range_positive(0., 100., 2.)]
-        self.gate.hbook.book(self.name, 'time.filtercol',
-                             bins, 'ms', timer=True)
+        bins = [x for x in range_positive(0.0, 100.0, 2.0)]
+        self.gate.hbook.book(self.name, "time.filtercol", bins, "ms", timer=True)
 
     def rebook(self):
         pass
 
     @timethis
     def filter_columns(self, record_batch):
-        return self.get_tool('filtercoltool').execute(record_batch)
+        return self.get_tool("filtercoltool").execute(record_batch)
 
     def execute(self, element):
         fbatch, time_ = self.filter_columns(element.get_data())
-        self.gate.hbook.fill(self.name, 'time.filtercol', time_)
+        self.gate.hbook.fill(self.name, "time.filtercol", time_)
         element.add_data(fbatch)
 
     def finalize(self):

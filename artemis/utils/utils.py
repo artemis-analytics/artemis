@@ -56,16 +56,16 @@ def autobinning(lst, nbins=10):
         raise
 
     lower_edge = mu - 5 * std
-    if lower_edge < 0.:
-        lower_edge = 0.
+    if lower_edge < 0.0:
+        lower_edge = 0.0
 
     upper_edge = mu + 5 * std
-    range_ = (upper_edge - lower_edge)
-    digs, order = ('%0.20e' % range_).split('e')
+    range_ = upper_edge - lower_edge
+    digs, order = ("%0.20e" % range_).split("e")
     order = abs(int(order))
 
     lower_edge = round(lower_edge, order)
     upper_edge = round(upper_edge, order)
-    bin_width = round(range_/nbins, order+1)
+    bin_width = round(range_ / nbins, order + 1)
     bins = [x for x in range_positive(lower_edge, upper_edge, bin_width)]
     return bins

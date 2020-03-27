@@ -38,14 +38,14 @@ class SimuTableGenOptions:
     nsamples = 1
     num_rows = 10
     file_type = 1
-    codec = 'utf8'
-    linesep = u'\r\n'
+    codec = "utf8"
+    linesep = "\r\n"
 
 
 @Logger.logged
 class SimuTableGen(GeneratorBase):
-    '''
-    '''
+    """
+    """
 
     def __init__(self, name, **kwargs):
         print("Initialize SimuTableGen")
@@ -68,23 +68,39 @@ class SimuTableGen(GeneratorBase):
         self.header = None
 
         # FWF
-        self.pos_char = {'0': '{', '1': 'A',
-                         '2': 'B', '3': 'C', '4': 'D',
-                         '5': 'E', '6': 'F', '7': 'G',
-                         '8': 'H', '9': 'I'}
-        self.neg_char = {'0': '}', '1': 'J', '2': 'K',
-                         '3': 'L', '4': 'M',
-                         '5': 'N', '6': 'O', '7': 'P',
-                         '8': 'Q', '9': 'R'}
+        self.pos_char = {
+            "0": "{",
+            "1": "A",
+            "2": "B",
+            "3": "C",
+            "4": "D",
+            "5": "E",
+            "6": "F",
+            "7": "G",
+            "8": "H",
+            "9": "I",
+        }
+        self.neg_char = {
+            "0": "}",
+            "1": "J",
+            "2": "K",
+            "3": "L",
+            "4": "M",
+            "5": "N",
+            "6": "O",
+            "7": "P",
+            "8": "Q",
+            "9": "R",
+        }
         # header = ''
         self.header_offset = 0
-        self.footer = ''
+        self.footer = ""
         self.footer_size = 0
 
         self.__logger.info("Initialized %s", self.__class__.__name__)
-        self.__logger.info("%s properties: %s",
-                           self.__class__.__name__,
-                           self.properties)
+        self.__logger.info(
+            "%s properties: %s", self.__class__.__name__, self.properties
+        )
         print("Initialize SimuTableGen")
 
     @property
@@ -104,11 +120,12 @@ class SimuTableGen(GeneratorBase):
             names.append(field.name)
         self.header = names
 
-        if hasattr(self.properties, 'seed'):
-            self.synthesizer = Synthesizer(self.table, 'en_CA', idx=0,
-                                           seed=self.properties.seed)
+        if hasattr(self.properties, "seed"):
+            self.synthesizer = Synthesizer(
+                self.table, "en_CA", idx=0, seed=self.properties.seed
+            )
         else:
-            self.synthesizer = Synthesizer(self.table, 'en_CA', idx=0)
+            self.synthesizer = Synthesizer(self.table, "en_CA", idx=0)
 
         if self.file_type == 1:
             self.write_batch = self.write_batch_csv
@@ -118,35 +135,33 @@ class SimuTableGen(GeneratorBase):
             self.write_batch = self.write_batch_arrow
 
     def chunk(self):
-        '''
+        """
         Allow for concurrent generate during write
-        '''
+        """
         for _ in range(self.num_rows):
             try:
                 yield tuple(self.synthesizer.generate())
             except TypeError:
-                self.__logger.error('Generator function must return list')
+                self.__logger.error("Generator function must return list")
                 raise
             except Exception:
                 self.__logger.error("Unknown error in chunk")
 
     def sampler(self):
         while self.nsamples > 0:
-            self.__logger.info("%s: Generating datum " %
-                               (self.__class__.__name__))
+            self.__logger.info("%s: Generating datum " % (self.__class__.__name__))
             data = self.write_batch()
-            self.__logger.debug('%s: type data: %s' %
-                                (self.__class__.__name__, type(data)))
+            self.__logger.debug(
+                "%s: type data: %s" % (self.__class__.__name__, type(data))
+            )
             fileinfo = FileObjectInfo()
             fileinfo.type = 1
             fileinfo.partition = self.name
             job_id = f"{self.gate.meta.job_id}_sample_{self.nsamples}"
             ds_id = self.gate.meta.parentset_id
-            id_ = self.gate.store.register_content(data,
-                                                   fileinfo,
-                                                   dataset_id=ds_id,
-                                                   partition_key=self.name,
-                                                   job_id=job_id).uuid
+            id_ = self.gate.store.register_content(
+                data, fileinfo, dataset_id=ds_id, partition_key=self.name, job_id=job_id
+            ).uuid
             buf = pa.py_buffer(data)
             self.gate.store.put(id_, buf)
             yield id_
@@ -154,7 +169,7 @@ class SimuTableGen(GeneratorBase):
             self.__logger.debug("Batch %i", self.nsamples)
 
     def fwf_encode_row(self, row):
-        record = ''
+        record = ""
         #  Create data of specific unit types.
         fields = list(self.table.info.schema.fields)
         for i, dpoint in enumerate(row):
@@ -166,28 +181,23 @@ class SimuTableGen(GeneratorBase):
             dpoint = str(dpoint)
             # signed integers require encoding
             # all other fields expected to be string-like
-            if field_schema['utype'] == 'int':
+            if field_schema["utype"] == "int":
                 if dpoint < 0:
                     # Convert negative integers.
-                    dpoint = dpoint.replace('-', '')
-                    dpoint = dpoint.replace(dpoint[-1],
-                                            self.neg_char[dpoint[-1:]])
+                    dpoint = dpoint.replace("-", "")
+                    dpoint = dpoint.replace(dpoint[-1], self.neg_char[dpoint[-1:]])
                 else:
                     # Convert positive integers.
-                    dpoint = dpoint.replace(dpoint[-1],
-                                            self.pos_char[dpoint[-1:]])
+                    dpoint = dpoint.replace(dpoint[-1], self.pos_char[dpoint[-1:]])
 
             # ensure generated field is within schema length
-            dpoint = dpoint[:field_schema['length']]
+            dpoint = dpoint[: field_schema["length"]]
 
             # pad up to required length
-            if field_schema['utype'] == 'int' \
-                    or field_schema['utype'] == 'uint':
-                dpoint = ('0' * (field_schema['length'] -
-                          len(dpoint))) + dpoint
+            if field_schema["utype"] == "int" or field_schema["utype"] == "uint":
+                dpoint = ("0" * (field_schema["length"] - len(dpoint))) + dpoint
             else:
-                dpoint = dpoint + (' ' * (field_schema['length'] -
-                                          len(dpoint)))
+                dpoint = dpoint + (" " * (field_schema["length"] - len(dpoint)))
 
             # append field to record
             record += dpoint
@@ -195,11 +205,11 @@ class SimuTableGen(GeneratorBase):
         return record
 
     def write_batch_fwf(self):
-        '''
+        """
         Generate a batch of records
         convert rows to fixed width fields
         encode to ascii format in bytes
-        '''
+        """
         fwf = io.StringIO()
         for row in list(self.chunk()):
             if len(row) != len(self.header):
@@ -210,27 +220,27 @@ class SimuTableGen(GeneratorBase):
         return pa.py_buffer(fwf)
 
     def write_batch_csv(self):
-        '''
+        """
         Generate batch of records
         encode to csv in bytes
-        '''
+        """
         csv = io.StringIO()
         if self.header:
-            csv.write(u",".join(self.header))
+            csv.write(",".join(self.header))
             csv.write(self.linesep)
         for row in list(self.chunk()):
-            csv.write(u",".join(map(str, row)))
+            csv.write(",".join(map(str, row)))
             csv.write(self.linesep)
 
         csv = csv.getvalue().encode(self.codec)
         return pa.py_buffer(csv)
 
     def write_batch_arrow(self):
-        '''
+        """
         Generate a batch of records
         convert to pyarrow arrays
         convert to RecordBatch
-        '''
+        """
         data = list(self.chunk())
         data = zip(*data)
         arrays = []
@@ -241,27 +251,27 @@ class SimuTableGen(GeneratorBase):
         return batch
 
     def write_csv(self):
-        '''
+        """
         Write n chunks to csv
         Write file to disk
-        '''
-        csv = b''
+        """
+        csv = b""
 
-        while (len(csv)//1024**2) < self.maxfilesize:
+        while (len(csv) // 1024 ** 2) < self.maxfilesize:
             csv += self.write_batch_csv()
-            if(self.checkcount()):
+            if self.checkcount():
                 break
         return csv
 
     def write_fwf(self):
-        '''
+        """
         Write fwf with all records
-        '''
-        fwf = b''
+        """
+        fwf = b""
 
-        while (len(fwf)//1024**2) < self.maxfilesize:
+        while (len(fwf) // 1024 ** 2) < self.maxfilesize:
             fwf += self.write_batch_fwf()
-            if(self.checkcount()):
+            if self.checkcount():
                 break
         return fwf
 
@@ -270,11 +280,11 @@ class SimuTableGen(GeneratorBase):
         writer = pa.RecordBatchFileWriter(sink, self.pa_schema)
 
         batches_size = 0
-        while (batches_size//1024**2) < self.maxfilesize:
+        while (batches_size // 1024 ** 2) < self.maxfilesize:
             batch = self.write_batch_arrow()
             batches_size += pa.get_record_batch_size(batch)
             writer.write_batch(batch)
-            if(self.checkcount()):
+            if self.checkcount():
                 break
 
         writer.close()
@@ -283,21 +293,17 @@ class SimuTableGen(GeneratorBase):
 
     def __next__(self):
         next(self._batch_iter)
-        self.__logger.info("%s: Generating datum " %
-                           (self.__class__.__name__))
+        self.__logger.info("%s: Generating datum " % (self.__class__.__name__))
         data = self.write_batch()
-        self.__logger.debug('%s: type data: %s' %
-                            (self.__class__.__name__, type(data)))
+        self.__logger.debug("%s: type data: %s" % (self.__class__.__name__, type(data)))
         fileinfo = FileObjectInfo()
         fileinfo.type = 1
         fileinfo.partition = self.name
         job_id = f"{self.gate.meta.job_id}_batch_{self._batchidx}"
         ds_id = self.gate.meta.parentset_id
-        id_ = self.gate.store.register_content(data,
-                                               fileinfo,
-                                               dataset_id=ds_id,
-                                               partition_key=self.name,
-                                               job_id=job_id).uuid
+        id_ = self.gate.store.register_content(
+            data, fileinfo, dataset_id=ds_id, partition_key=self.name, job_id=job_id
+        ).uuid
         try:
             self.gate.store.put(id_, data)
         except IOError:

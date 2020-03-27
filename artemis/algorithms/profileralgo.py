@@ -26,10 +26,9 @@ from artemis.core.algo import AlgoBase
 
 
 class ProfilerAlgo(AlgoBase):
-
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.__logger.info('%s: __init__ ProfilerAlgo' % self.name)
+        self.__logger.info("%s: __init__ ProfilerAlgo" % self.name)
         self.reader = None
         self.jobops = None
         self.digests = {}
@@ -37,7 +36,7 @@ class ProfilerAlgo(AlgoBase):
         self.print_percentiles = True
 
     def initialize(self):
-        self.__logger.info('%s: Initialized ProfilerAlgo' % self.name)
+        self.__logger.info("%s: Initialized ProfilerAlgo" % self.name)
 
     def book(self):
         pass
@@ -45,8 +44,7 @@ class ProfilerAlgo(AlgoBase):
     def create_tdigests(self, record_batch):
         tool_digests = {}
         try:
-            tool_digests = \
-                self.get_tool('tdigesttool').execute(record_batch)
+            tool_digests = self.get_tool("tdigesttool").execute(record_batch)
             return tool_digests
         except Exception:
             raise
@@ -61,8 +59,9 @@ class ProfilerAlgo(AlgoBase):
         # We can break up the record batch into a
         # bunch of columns each column can be passed to the profiler algorithim
 
-        self.__logger.debug('Num cols: %s Num rows: %s',
-                            raw_.num_columns, raw_.num_rows)
+        self.__logger.debug(
+            "Num cols: %s Num rows: %s", raw_.num_columns, raw_.num_rows
+        )
 
         # Create the map column name -> TDigest from the record batch schema
         # We only do this the first time that this algorithim is called,
@@ -95,7 +94,7 @@ class ProfilerAlgo(AlgoBase):
                 self.digests[key] = self.digests[key] + tool_digests[key]
 
         except Exception:
-            self.__logger.error('TDigest creation fails')
+            self.__logger.error("TDigest creation fails")
             raise
 
         # Redundant, it is the same object as the input!
@@ -110,7 +109,8 @@ class ProfilerAlgo(AlgoBase):
             # if key == 'Normal':
             # print(value.centroids_to_list())
             if len(value.centroids_to_list()) == 0:
-                self.__logger.debug(key + " is not a numeric value "
-                                    "and does not have a TDigest")
+                self.__logger.debug(
+                    key + " is not a numeric value " "and does not have a TDigest"
+                )
             else:
                 pass

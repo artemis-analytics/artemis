@@ -1,7 +1,7 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2016-2019 Jan Pipek
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -49,8 +49,7 @@ def make_bin_array(bins) -> np.ndarray:
         return np.hstack((bins[:-1, np.newaxis], bins[1:, np.newaxis]))
     elif bins.ndim == 2:
         if bins.shape[1] != 2:
-            raise RuntimeError("Binning schema with ndim==2 "
-                               "must have 2 columns")
+            raise RuntimeError("Binning schema with ndim==2 " "must have 2 columns")
         # if bins.shape[0] == 0:
         #     raise RuntimeError("Needs at least one bin")
         return bins  # Already correct, just pass
@@ -71,7 +70,7 @@ def to_numpy_bins(bins) -> np.ndarray:
     edges: all edges
     """
     bins = np.asarray(bins)
-    if bins.ndim == 1:     # Already in the proper format
+    if bins.ndim == 1:  # Already in the proper format
         return bins
     if not is_consecutive(bins):
         raise RuntimeError("Cannot create numpy bins from inconsecutive edges")
@@ -117,18 +116,16 @@ def to_numpy_bins_with_mask(bins) -> Tuple[np.ndarray, np.ndarray]:
             for i in range(bins.shape[0] - 1):
                 mask.append(j)
                 edges.append(bins[i, 1])
-                if bins[i, 1] != bins[i+1, 0]:
-                    edges.append(bins[i+1, 0])
+                if bins[i, 1] != bins[i + 1, 0]:
+                    edges.append(bins[i + 1, 0])
                     j += 1
                 j += 1
             mask.append(j)
             edges.append(bins[-1, 1])
     else:
-        raise RuntimeError("to_numpy_bins_with_mask: "
-                           "array with dim=1 or 2 expected")
+        raise RuntimeError("to_numpy_bins_with_mask: " "array with dim=1 or 2 expected")
     if not np.all(np.diff(edges) > 0):
-        raise RuntimeError("to_numpy_bins_with_mask: "
-                           "edges array not monotone.")
+        raise RuntimeError("to_numpy_bins_with_mask: " "edges array not monotone.")
     return edges, mask
 
 
@@ -150,7 +147,7 @@ def is_rising(bins) -> bool:
     return True
 
 
-def is_consecutive(bins, rtol: float = 1.e-5, atol: float = 1.e-8) -> bool:
+def is_consecutive(bins, rtol: float = 1.0e-5, atol: float = 1.0e-8) -> bool:
     """Check whether the bins are consecutive (edges match).
 
     Does not check if the bins are in rising order.
