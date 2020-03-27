@@ -27,10 +27,11 @@ from pprint import pformat
 from artemis.io.protobuf.configuration_pb2 import Properties as Properties_pb
 
 
-class Properties():
-    '''
+class Properties:
+    """
     Dynamically create getter/setter for user-defined properties
-    '''
+    """
+
     def __init__(self, lock=False):
         self.lock = lock
         self.properties = dict()
@@ -46,36 +47,43 @@ class Properties():
         # fixes flake8 errors
 
         # add the property to self
-        setattr(self.__class__, name,
-                property(lambda self: self._get_property(name),
-                         lambda self, value: self._set_property(name, value)))
+        setattr(
+            self.__class__,
+            name,
+            property(
+                lambda self: self._get_property(name),
+                lambda self, value: self._set_property(name, value),
+            ),
+        )
         # add corresponding local variable
-        setattr(self, '_' + name, value)
+        setattr(self, "_" + name, value)
 
     @staticmethod
     def from_msg(msg):
-        '''
+        """
         returns dict
-        '''
-        _supported = {'str': str,
-                      'float': float,
-                      'int': int,
-                      'bool': bool,
-                      'dict': dict}
+        """
+        _supported = {
+            "str": str,
+            "float": float,
+            "int": int,
+            "bool": bool,
+            "dict": dict,
+        }
         properties = {}
         for p in msg.property:
-            if p.type == 'NoneType':
+            if p.type == "NoneType":
                 continue
-            elif p.type == 'dict' or p.type == 'bool' or p.type == 'list':
+            elif p.type == "dict" or p.type == "bool" or p.type == "list":
                 properties[p.name] = eval(p.value)
             else:
                 properties[p.name] = _supported[p.type](p.value)
         return properties
 
     def to_dict(self):
-        '''
+        """
         Ordered dictionary of all user-defined properties
-        '''
+        """
         _dict = OrderedDict()
         for key in self.properties:
             _dict[key] = self.properties[key]
@@ -94,10 +102,9 @@ class Properties():
 
     def _set_property(self, name, value):
         if not self.lock:
-            setattr(self, '_' + name, value)
+            setattr(self, "_" + name, value)
         else:
-            print('Cannot change "{}": properties are locked'
-                  .format(name))
+            print('Cannot change "{}": properties are locked'.format(name))
 
     def _get_property(self, name):
-        return getattr(self, '_' + name)
+        return getattr(self, "_" + name)

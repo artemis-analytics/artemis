@@ -29,7 +29,7 @@ from artemis.core.algo import AlgoBase
 
 class DummyAlgo1(AlgoBase):
     """Dummy Algorithm use a template for writing User-defined algorithms UDA
-    
+
     Attributes
     ----------
         __logger : Logger
@@ -45,7 +45,7 @@ class DummyAlgo1(AlgoBase):
 
     Other Parameters
     ----------------
-        
+
     Returns
     -------
 
@@ -55,21 +55,21 @@ class DummyAlgo1(AlgoBase):
     Examples
     --------
     """
+
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.__logger.info('%s: __init__ DummyAlgo1' % self.name)
+        self.__logger.info("%s: __init__ DummyAlgo1" % self.name)
 
     def initialize(self):
         """Additional initialization as defined by the user can be done here.
         """
-        self.__logger.info('%s: initialize DummyAlgo1' % self.name)
-        self.__logger.info('%s: property %s' %
-                           (self.name, self.properties.myproperty))
-        self.__logger.info('%s: Initialized DummyAlgo1' % self.name)
+        self.__logger.info("%s: initialize DummyAlgo1" % self.name)
+        self.__logger.info("%s: property %s" % (self.name, self.properties.myproperty))
+        self.__logger.info("%s: Initialized DummyAlgo1" % self.name)
 
     def book(self):
         """
-        Book all histograms that will be used in this algorithm. 
+        Book all histograms that will be used in this algorithm.
         Histogram names will be modified with the algorithm name."""
 
         # Access histograms books via the gate service
@@ -78,16 +78,18 @@ class DummyAlgo1(AlgoBase):
     def execute(self, element):
         """
         Execute operations on data that is associated with a node in the process graph.
-        
+
         Parameters
         ----------
             element : Element
-                Element provides a reference to data that is managed in a common memory store (key-value). 
-                
+                Element provides a reference to data that is managed in a common memory
+                store (key-value).
+
         """
-        if(logging.getLogger().isEnabledFor(logging.DEBUG) or
-                self.__logger.isEnabledFor(logging.DEBUG)):
-            
+        if logging.getLogger().isEnabledFor(
+            logging.DEBUG
+        ) or self.__logger.isEnabledFor(logging.DEBUG):
+
             # Retrieve data from the datastore via the element for this node
             raw_ = element.get_data()
 
@@ -95,18 +97,20 @@ class DummyAlgo1(AlgoBase):
             # Note that we can indepdently change the logging level
             # for algo loggers and root logger
             # Use string interpolation to prevent excessive format calls
-            self.__logger.debug('%s: execute ' % self.name)
+            self.__logger.debug("%s: execute " % self.name)
             # Check logging level if formatting requiered
-            self.__logger.debug('{}: execute: payload {}'.
-                                format(self.name, sys.getsizeof(payload)))
+            self.__logger.debug(
+                "{}: execute: payload {}".format(self.name, sys.getsizeof(raw_))
+            )
 
-            # Fill a histogram 
+            # Fill a histogram
             self.gate.hbook.fill(self.name, "testh1", random.randint(0, 10))
 
             # Add data to the datastore for this node
             element.add_data(raw_)
 
     def finalize(self):
-        """Any postprocessing at the end of the job, such as creating summary information is done here."""
+        """Any postprocessing at the end of the job, such as creating summary
+        information is done here."""
 
         pass

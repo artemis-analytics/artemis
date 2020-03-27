@@ -1,7 +1,7 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2016-2019 Jan Pipek
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -116,8 +116,11 @@ class HistogramBase:
                 elif np.issubdtype(frequencies.dtype, np.floating):
                     frequencies = frequencies.astype(np.float64)
                 else:
-                    raise RuntimeError("Frequencies of type {0} not understood"
-                                       .format(frequencies.dtype))
+                    raise RuntimeError(
+                        "Frequencies of type {0} not understood".format(
+                            frequencies.dtype
+                        )
+                    )
             dtype = frequencies.dtype
             if frequencies.shape != self.shape:
                 raise RuntimeError("Values must have same dimension as bins.")
@@ -134,8 +137,7 @@ class HistogramBase:
         if np.any(self._errors2 < 0):
             raise RuntimeError("Cannot have negative squared errors.")
         if self._errors2.shape != self._frequencies.shape:
-            raise RuntimeError("Errors must have same "
-                               "dimension as frequencies.")
+            raise RuntimeError("Errors must have same " "dimension as frequencies.")
 
         self.keep_missed = kwargs.pop("keep_missed", True)
         # Note: missed are dealt differently in 1D/ND cases
@@ -203,20 +205,26 @@ class HistogramBase:
         # TODO: Add unit test
         if isinstance(name_or_index, int):
             if name_or_index < 0 or name_or_index >= self.ndim:
-                raise ValueError("No such axis, must be from 0 to {0}"
-                                 .format(self.ndim-1))
+                raise ValueError(
+                    "No such axis, must be from 0 to {0}".format(self.ndim - 1)
+                )
             return name_or_index
         elif isinstance(name_or_index, str):
             if name_or_index not in self.axis_names:
                 named_axes = [name for name in self.axis_names if name]
-                raise ValueError("No axis with such name: {0}, "
-                                 "available names: {1}. "
-                                 "In most places, you can also use numbers."
-                                 .format(name_or_index, ", ".join(named_axes)))
+                raise ValueError(
+                    "No axis with such name: {0}, "
+                    "available names: {1}. "
+                    "In most places, you can also use numbers.".format(
+                        name_or_index, ", ".join(named_axes)
+                    )
+                )
             return self.axis_names.index(name_or_index)
         else:
-            raise TypeError("Argument of type {0} not understood, "
-                            "int or str expected.".format(type(name_or_index)))
+            raise TypeError(
+                "Argument of type {0} not understood, "
+                "int or str expected.".format(type(name_or_index))
+            )
 
     @property
     def shape(self) -> Tuple[int, ...]:
@@ -265,9 +273,11 @@ class HistogramBase:
         elif value.kind == "f":
             type_info = np.finfo(value)
         else:
-            raise RuntimeError("Unsupported dtype. "
-                               "Only integer/floating-point "
-                               "types are supported.")
+            raise RuntimeError(
+                "Unsupported dtype. "
+                "Only integer/floating-point "
+                "types are supported."
+            )
 
         return value, type_info
 
@@ -291,18 +301,18 @@ class HistogramBase:
             return
 
         if self.dtype is None or np.can_cast(self.dtype, value):
-            pass    # Ok
+            pass  # Ok
         elif check:
             if np.issubdtype(value, np.integer):
                 if self.dtype.kind == "f":
                     for array in (self._frequencies, self._errors2):
                         if np.any(array % 1.0):
-                            raise RuntimeError("Data contain "
-                                               "non-integer values.")
+                            raise RuntimeError("Data contain " "non-integer values.")
             for array in (self._frequencies, self._errors2):
                 if np.any((array > type_info.max) | (array < type_info.min)):
-                    raise RuntimeError("Data contain values "
-                                       "outside the specified range.")
+                    raise RuntimeError(
+                        "Data contain values " "outside the specified range."
+                    )
 
         self._dtype = value
         self._frequencies = self._frequencies.astype(value)
@@ -323,8 +333,7 @@ class HistogramBase:
         if self._dtype is None:
             new_dtype = np.dtype(other_dtype)
         else:
-            new_dtype = \
-                np.find_common_type([self._dtype, np.dtype(other_dtype)], [])
+            new_dtype = np.find_common_type([self._dtype, np.dtype(other_dtype)], [])
         if new_dtype != self.dtype:
             self.set_dtype(new_dtype)
 
@@ -346,8 +355,9 @@ class HistogramBase:
         """
         return self._frequencies / self.bin_sizes
 
-    def normalize(self, inplace: bool = False,
-                  percent: bool = False) -> "HistogramBase":
+    def normalize(
+        self, inplace: bool = False, percent: bool = False
+    ) -> "HistogramBase":
         """Normalize the histogram, so that the total weight is equal to 1.
 
         Parameters
@@ -365,7 +375,7 @@ class HistogramBase:
         HistogramND.partial_normalize
         """
         if inplace:
-            self /= self.total * (.01 if percent else 1)
+            self /= self.total * (0.01 if percent else 1)
             return self
         else:
             return self / self.total * (100 if percent else 1)
@@ -422,8 +432,9 @@ class HistogramBase:
     def adaptive(self, value: bool):
         self.set_adaptive(value)
 
-    def _change_binning(self, new_binning,
-                        bin_map: Iterable[Tuple[int, int]], axis: int = 0):
+    def _change_binning(
+        self, new_binning, bin_map: Iterable[Tuple[int, int]], axis: int = 0
+    ):
         """Set new binnning and update the bin contents according to a map.
 
         Fills frequencies and errors with 0.
@@ -443,10 +454,14 @@ class HistogramBase:
         self._reshape_data(new_binning.bin_count, bin_map, axis)
         self._binnings[axis] = new_binning
 
-    def merge_bins(self, amount: Optional[int] = None, *,
-                   min_frequency: Optional[float] = None,
-                   axis: Optional[AxisIdentifier] = None,
-                   inplace: bool = False) -> 'HistogramBase':
+    def merge_bins(
+        self,
+        amount: Optional[int] = None,
+        *,
+        min_frequency: Optional[float] = None,
+        axis: Optional[AxisIdentifier] = None,
+        inplace: bool = False
+    ) -> "HistogramBase":
         """Reduce the number of bins and add their content:
 
         Parameters
@@ -460,15 +475,15 @@ class HistogramBase:
         """
         if not inplace:
             histogram = self.copy()
-            histogram.merge_bins(amount,
-                                 min_frequency=min_frequency,
-                                 axis=axis, inplace=True)
+            histogram.merge_bins(
+                amount, min_frequency=min_frequency, axis=axis, inplace=True
+            )
             return histogram
         elif axis is None:
             for i in range(self.ndim):
-                self.merge_bins(amount=amount,
-                                min_frequency=min_frequency,
-                                axis=i, inplace=True)
+                self.merge_bins(
+                    amount=amount, min_frequency=min_frequency, axis=i, inplace=True
+                )
         else:
             axis = self._get_axis(axis)
             if amount is not None:
@@ -519,20 +534,28 @@ class HistogramBase:
         else:
             new_shape = list(self.shape)
             new_shape[axis] = new_size
-            new_frequencies = np.zeros(new_shape,
-                                       dtype=self._frequencies.dtype)
+            new_frequencies = np.zeros(new_shape, dtype=self._frequencies.dtype)
             new_errors2 = np.zeros(new_shape, dtype=self._frequencies.dtype)
             self._apply_bin_map(
                 old_frequencies=self._frequencies,
                 new_frequencies=new_frequencies,
                 old_errors2=self._errors2,
                 new_errors2=new_errors2,
-                bin_map=bin_map, axis=axis)
+                bin_map=bin_map,
+                axis=axis,
+            )
             self._frequencies = new_frequencies
             self._errors2 = new_errors2
 
-    def _apply_bin_map(self, old_frequencies, new_frequencies, old_errors2,
-                       new_errors2, bin_map, axis=0):
+    def _apply_bin_map(
+        self,
+        old_frequencies,
+        new_frequencies,
+        old_errors2,
+        new_errors2,
+        bin_map,
+        axis=0,
+    ):
         """Fill new data arrays using a map.
 
         Parameters
@@ -557,20 +580,19 @@ class HistogramBase:
         if old_frequencies is not None and old_frequencies.shape[axis] > 0:
             if isinstance(bin_map, int):
                 new_index = [slice(None) for i in range(self.ndim)]
-                new_index[axis] = \
-                    slice(bin_map, bin_map + old_frequencies.shape[axis])
+                new_index[axis] = slice(bin_map, bin_map + old_frequencies.shape[axis])
                 new_frequencies[tuple(new_index)] += old_frequencies
                 new_errors2[tuple(new_index)] += old_errors2
             else:
-                for (old, new) in bin_map:      # Generic enough
+                for (old, new) in bin_map:  # Generic enough
                     new_index = [slice(None) for i in range(self.ndim)]
                     new_index[axis] = new
                     old_index = [slice(None) for i in range(self.ndim)]
                     old_index[axis] = old
-                    new_frequencies[tuple(new_index)] += \
-                        old_frequencies[tuple(old_index)]
-                    new_errors2[tuple(new_index)] += \
-                        old_errors2[tuple(old_index)]
+                    new_frequencies[tuple(new_index)] += old_frequencies[
+                        tuple(old_index)
+                    ]
+                    new_errors2[tuple(new_index)] += old_errors2[tuple(old_index)]
 
     def has_same_bins(self, other: "HistogramBase") -> bool:
         """Whether two histograms share the same binning."""
@@ -629,8 +651,9 @@ class HistogramBase:
         ----
         May change the dtype if weight is set
         """
-        raise NotImplementedError("You have to define the `fill` "
-                                  "method in Histogram class.")
+        raise NotImplementedError(
+            "You have to define the `fill` " "method in Histogram class."
+        )
 
     def fill_n(self, values, weights=None, **kwargs):
         """Add more values at once.
@@ -705,8 +728,12 @@ class HistogramBase:
         Override if necessary (like it's done in Histogram1D).
         """
         from .binnings import BinningBase
+
         kwargs = {
-            "binnings": [BinningBase.from_dict(binning_data) for binning_data in a_dict["binnings"]],
+            "binnings": [
+                BinningBase.from_dict(binning_data)
+                for binning_data in a_dict["binnings"]
+            ],
             "dtype": np.dtype(a_dict["dtype"]),
             "frequencies": a_dict.get("frequencies"),
             "errors2": a_dict.get("errors2"),
@@ -740,19 +767,18 @@ class HistogramBase:
         The JSON representation.
         """
         from .io import save_json
+
         return save_json(self, path, **kwargs)
 
     def __repr__(self):
         if self.name:
             result = "{0}('{4}', bins={1}, total={2}, dtype={3})".format(
-                self.__class__.__name__,
-                self.shape,
-                self.total,
-                self.dtype,
-                self.name)
+                self.__class__.__name__, self.shape, self.total, self.dtype, self.name
+            )
         else:
             result = "{0}(bins={1}, total={2}, dtype={3})".format(
-                self.__class__.__name__, self.shape, self.total, self.dtype)
+                self.__class__.__name__, self.shape, self.total, self.dtype
+            )
         return result
 
     def __add__(self, other):
@@ -762,7 +788,7 @@ class HistogramBase:
         return new
 
     def __radd__(self, other):
-        if other == 0:    # Enable sum()
+        if other == 0:  # Enable sum()
             return self
         else:
             return self + other
@@ -771,8 +797,7 @@ class HistogramBase:
         if np.isscalar(other):
             raise RuntimeError("Cannot add constant to histograms.")
         if other.ndim != self.ndim:
-            raise RuntimeError("Cannot add histograms with "
-                               "different dimensions.")
+            raise RuntimeError("Cannot add histograms with " "different dimensions.")
         elif self.has_same_bins(other):
             # print("Has same!!!!!!!!!!")
             self._coerce_dtype(other.dtype)
@@ -781,8 +806,7 @@ class HistogramBase:
             self._missed += other._missed
         elif self.is_adaptive():
             if other.missed > 0:
-                raise RuntimeError("Cannot adapt histogram with "
-                                   "missed values.")
+                raise RuntimeError("Cannot adapt histogram with " "missed values.")
             try:
                 other = other.copy()
                 other.set_adaptive(True)
@@ -791,7 +815,7 @@ class HistogramBase:
 
                 # TODO: Fix state after exception
                 # maps1 = []
-                maps2 = []
+                #  maps2 = []
                 for i in range(self.ndim):
                     new_bins = self._binnings[i].copy()
 
@@ -802,7 +826,7 @@ class HistogramBase:
                 self._errors2 += other.errors2
 
             except Exception:
-                raise  # RuntimeError("Cannot find common binning for added histograms.")
+                raise  # RuntimeError("No common binning for added histograms found.")
         else:
             raise RuntimeError("Incompatible binning")
 
@@ -819,6 +843,7 @@ class HistogramBase:
 
     def __isub__(self, other):
         import warnings
+
         warnings.warn("Subtracting histograms is considered to be a bad idea.")
         return self.__iadd__(other * (-1))
 
@@ -830,7 +855,9 @@ class HistogramBase:
     def __imul__(self, other):
         if not np.isscalar(other):
             raise RuntimeError("Histograms may be multiplied only by a constant.")
-        if np.issubdtype(self.dtype, np.integer) and np.issubdtype(type(other), np.floating):
+        if np.issubdtype(self.dtype, np.integer) and np.issubdtype(
+            type(other), np.floating
+        ):
             self.dtype = float
         self._frequencies *= other
         self._errors2 *= other ** 2
@@ -868,17 +895,21 @@ class HistogramBase:
         self.fill(value)
 
     @classmethod
-    def _merge_meta_data(cls, first: "HistogramBase", 
-                         second: "HistogramBase") -> dict:
+    def _merge_meta_data(cls, first: "HistogramBase", second: "HistogramBase") -> dict:
         """Merge meta data of two histograms leaving only the equal values.
 
         (Used in addition and subtraction)
         """
         keys = set(first._meta_data.keys())
         keys = keys.union(set(second._meta_data.keys()))
-        return {key:
-                (first._meta_data.get(key, None) if first._meta_data.get(key, None) == second._meta_data.get(key, None) else None)
-                for key in keys}
+        return {
+            key: (
+                first._meta_data.get(key, None)
+                if first._meta_data.get(key, None) == second._meta_data.get(key, None)
+                else None
+            )
+            for key in keys
+        }
 
     def __array__(self) -> np.ndarray:
         """Convert to numpy array.

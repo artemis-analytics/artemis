@@ -37,9 +37,8 @@ from artemis.core.abcalgo import AbcAlgoBase
 
 
 class ToolBase(metaclass=AbcAlgoBase):
-
     def __init__(self, name, **kwargs):
-        '''
+        """
         Access the Base logger directly through
         self.__logger
         Derived class use the classmethods for info, debug, warn, error
@@ -48,11 +47,11 @@ class ToolBase(metaclass=AbcAlgoBase):
 
         Can we use staticmethods in artemis to make uniform
         formatting of info, debug, warn, error?
-        '''
+        """
         # Configure logging
         Logger.configure(self, **kwargs)
 
-        self.__logger.debug('__init__ ToolBase')
+        self.__logger.debug("__init__ ToolBase")
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
@@ -61,9 +60,9 @@ class ToolBase(metaclass=AbcAlgoBase):
 
     @property
     def name(self):
-        '''
+        """
         Tool name
-        '''
+        """
         return self.__name
 
     def to_msg(self):
@@ -76,11 +75,11 @@ class ToolBase(metaclass=AbcAlgoBase):
 
     @staticmethod
     def from_msg(logger, msg):
-        logger.info('Loading Tool from msg %s', msg.name)
+        logger.info("Loading Tool from msg %s", msg.name)
         try:
             module = importlib.import_module(msg.module)
         except ImportError:
-            logger.error('Unable to load module %s', msg.module)
+            logger.error("Unable to load module %s", msg.module)
             raise
         except Exception as e:
             logger.error("Unknow error loading module: %s" % e)
@@ -88,8 +87,7 @@ class ToolBase(metaclass=AbcAlgoBase):
         try:
             class_ = getattr(module, msg.klass)
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (msg.name, msg.klass))
+            logger.error("%s: missing attribute %s" % (msg.name, msg.klass))
             raise
         except Exception as e:
             logger.error("Reason: %s" % e)
@@ -101,15 +99,13 @@ class ToolBase(metaclass=AbcAlgoBase):
         # Update the logging level of
         # algorithms if loglevel not set
         # Ensures user-defined algos get the artemis level logging
-        if 'loglevel' not in properties:
-            properties['loglevel'] = \
-                    logger.getEffectiveLevel()
+        if "loglevel" not in properties:
+            properties["loglevel"] = logger.getEffectiveLevel()
 
         try:
             instance = class_(msg.name, **properties)
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (msg.name, 'properties'))
+            logger.error("%s: missing attribute %s" % (msg.name, "properties"))
             raise
         except Exception as e:
             logger.error("%s: Cannot initialize %s" % e)
@@ -118,20 +114,20 @@ class ToolBase(metaclass=AbcAlgoBase):
         return instance
 
     def lock(self):
-        '''
+        """
         Lock all properties for algorithm
-        '''
+        """
         self.properties.lock = True
 
     def initialize(self):
-        '''
+        """
         Framework initialize
-        '''
+        """
         pass
 
     def execute(self, payload):
-        '''
+        """
         Tool can take any input defined by the user
         Ideally, most tools accept an Arrow Array or batch
-        '''
+        """
         pass

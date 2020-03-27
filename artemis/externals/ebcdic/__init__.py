@@ -32,14 +32,14 @@ import codecs
 
 
 __all__ = [
-    'codec_names',
-    'ignored_codec_names',
-    'lookup',
-    '__version__',
-    '__version_info__'
+    "codec_names",
+    "ignored_codec_names",
+    "lookup",
+    "__version__",
+    "__version_info__",
 ]
 __version_info__ = (1, 1, 1)
-__version__ = '.'.join([str(item) for item in __version_info__])
+__version__ = ".".join([str(item) for item in __version_info__])
 
 
 def _codec_names():
@@ -50,7 +50,7 @@ def _codec_names():
     import os.path
 
     package_folder = os.path.dirname(__file__)
-    for codec_path in glob.glob(os.path.join(package_folder, 'cp*.py')):
+    for codec_path in glob.glob(os.path.join(package_folder, "cp*.py")):
         codec_name = os.path.splitext(os.path.basename(codec_path))[0]
         yield codec_name
 
@@ -58,7 +58,12 @@ def _codec_names():
 def _create_codec_name_to_info_map():
     result = {}
     for codec_name in codec_names:
-        codec_module = __import__('artemis.externals.ebcdic.' + codec_name, globals(), locals(), ['getregentry'])
+        codec_module = __import__(
+            "artemis.externals.ebcdic." + codec_name,
+            globals(),
+            locals(),
+            ["getregentry"],
+        )
         result[codec_name] = codec_module.getregentry()
     return result
 
@@ -76,9 +81,10 @@ def ignored_codec_names():
     A list of codec names in this package that are ignored because they are
     already provided by other means, e.g. the standard library.
     """
-    return [codec_name
-            for codec_name, codec_info in sorted(_codec_name_to_info_map.items())
-            if codec_info != codecs.lookup(codec_name)
+    return [
+        codec_name
+        for codec_name, codec_info in sorted(_codec_name_to_info_map.items())
+        if codec_info != codecs.lookup(codec_name)
     ]
 
 
@@ -89,7 +95,9 @@ def lookup(codec_name):
     """
     result = _find_ebcdic_codec(codec_name)
     if result is None:
-        raise LookupError('EBCDIC codec is %r but must be one of: %s' % (codec_name, codec_names))
+        raise LookupError(
+            "EBCDIC codec is %r but must be one of: %s" % (codec_name, codec_names)
+        )
     return result
 
 

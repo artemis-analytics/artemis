@@ -34,7 +34,6 @@ class CsvToolOptions:
 
 
 class CsvTool(ToolBase):
-
     def __init__(self, name, **kwargs):
 
         # Retrieves the default options from arrow
@@ -51,25 +50,25 @@ class CsvTool(ToolBase):
         self._readopts = ReadOptions(**ropts)
         self._parseopts = ParseOptions(**popts)
         self._convertopts = ConvertOptions(**copts)
-        self.__logger.info('%s: __init__ CsvTool', self.name)
+        self.__logger.info("%s: __init__ CsvTool", self.name)
         self.__logger.info("Options %s", options)
 
     def _get_opts(self, cls, **kwargs):
         options = {}
         for attr in dir(cls):
-            if attr[:2] != '__' and attr != "escape_char":
+            if attr[:2] != "__" and attr != "escape_char":
                 options[attr] = getattr(cls, attr)
                 if attr in kwargs:
                     options[attr] = kwargs[attr]
         return options
 
     def initialize(self):
-        self.__logger.info("%s properties: %s",
-                           self.__class__.__name__,
-                           self.properties)
+        self.__logger.info(
+            "%s properties: %s", self.__class__.__name__, self.properties
+        )
 
     def execute(self, block):
-        '''
+        """
         Calls the read_csv module from pyarrow
 
         Parameters
@@ -79,12 +78,14 @@ class CsvTool(ToolBase):
         Returns
         ---------
         pyarrow RecordBatch
-        '''
+        """
         try:
-            table = read_csv(block,
-                             read_options=self._readopts,
-                             parse_options=self._parseopts,
-                             convert_options=self._convertopts)
+            table = read_csv(
+                block,
+                read_options=self._readopts,
+                parse_options=self._parseopts,
+                convert_options=self._convertopts,
+            )
         except Exception:
             self.__logger.error("Problem converting csv to table")
             raise

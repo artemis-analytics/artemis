@@ -18,7 +18,8 @@
 # limitations under the License.
 
 """
-Algorithm that parsers and converts a bytes object of csv data to Arrow record batch format. Calls a tool that executes the pyarrow csv reader.
+Algorithm that parsers and converts a bytes object of csv data to Arrow record batch
+format. Calls a tool that executes the pyarrow csv reader.
 """
 from artemis.core.algo import AlgoBase
 from artemis.decorators import timethis
@@ -26,23 +27,21 @@ from artemis.utils.utils import range_positive
 
 
 class CsvParserAlgo(AlgoBase):
-
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.__logger.info('%s: __init__ CsvParserAlgo' % self.name)
+        self.__logger.info("%s: __init__ CsvParserAlgo" % self.name)
         # TODO
         # Add any required tools to list of algo properties
         # All tools must be loaded in the ToolStore
         # Check for existence of tool
 
     def initialize(self):
-        self.__logger.info('%s: Initialized CsvParserAlgo' % self.name)
+        self.__logger.info("%s: Initialized CsvParserAlgo" % self.name)
 
     def book(self):
         self.__logger.info("Book")
-        bins = [x for x in range_positive(0., 100., 2.)]
-        self.gate.hbook.book(self.name, 'time.pyarrowparse',
-                             bins, 'ms', timer=True)
+        bins = [x for x in range_positive(0.0, 100.0, 2.0)]
+        self.gate.hbook.book(self.name, "time.pyarrowparse", bins, "ms", timer=True)
 
     def rebook(self):
         pass
@@ -50,7 +49,7 @@ class CsvParserAlgo(AlgoBase):
     @timethis
     def pyarrow_parsing(self, block):
         try:
-            batch = self.get_tool('csvtool').execute(block)
+            batch = self.get_tool("csvtool").execute(block)
         except Exception:
             raise
         return batch
@@ -64,7 +63,7 @@ class CsvParserAlgo(AlgoBase):
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
-        self.gate.hbook.fill(self.name, 'time.pyarrowparse', time_)
+        self.gate.hbook.fill(self.name, "time.pyarrowparse", time_)
 
         self.__logger.debug("Arrow schema: %s: ", tbatch.schema)
 

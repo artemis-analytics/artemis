@@ -34,11 +34,12 @@ from artemis.io.protobuf.artemis_pb2 import JobInfo
 
 
 @Logger.logged
-class HCollections():
-    '''
+class HCollections:
+    """
     Reads Artemis protobuf histograms
     Converts to a multipage Pdf
-    '''
+    """
+
     def __init__(self, fname, hname):
         self.collection = HistogramCollection()
         self.jobinfo = JobInfo()
@@ -58,14 +59,14 @@ class HCollections():
 
     def _get_data(self):
         try:
-            with open(self.filename, 'rb') as f:
+            with open(self.filename, "rb") as f:
                 self.jobinfo.ParseFromString(f.read())
         except IOError:
             print("Cannot read collections")
         except Exception:
             raise
         try:
-            with open(self.hname, 'rb') as f:
+            with open(self.hname, "rb") as f:
                 self.collection.ParseFromString(f.read())
         except IOError:
             print("Cannot read collections")
@@ -79,23 +80,24 @@ class HCollections():
         nrecords = 0
         for table in self.jobinfo.summary.tables:
             nrecords += table.num_rows
-        text = 'Job Summary'
-        text += '\nTotal bytes processed: '
+        text = "Job Summary"
+        text += "\nTotal bytes processed: "
         text += str(self.jobinfo.summary.processed_bytes)
-        text += '\nTotal files processed: '
+        text += "\nTotal files processed: "
         text += str(self.jobinfo.summary.processed_ndatums)
-        text += '\nTotal output files produced '
+        text += "\nTotal output files produced "
         text += str(len(self.jobinfo.summary.tables))
-        text += '\nTotal records '
+        text += "\nTotal records "
         text += str(nrecords)
-        text += '\nJob time ' + str(self.jobinfo.summary.job_time.seconds)
+        text += "\nJob time " + str(self.jobinfo.summary.job_time.seconds)
         print(text)
         return text
 
     def _unpack_collection(self):
 
-        hists = {name: read(value) for name, value in
-                 self.collection.histograms.items()}
+        hists = {
+            name: read(value) for name, value in self.collection.histograms.items()
+        }
         print("Unpacked collection")
         return hists
 
@@ -103,7 +105,7 @@ class HCollections():
 
         hgroups = {}
         for key in self.hists.keys():
-            algo = key.split('.')[0]
+            algo = key.split(".")[0]
             if algo in hgroups.keys():
                 hgroups[algo].append(key)
             else:
@@ -112,7 +114,7 @@ class HCollections():
         return hgroups
 
     def create_pages(self):
-        oname = self.filename + '.pdf'
+        oname = self.filename + ".pdf"
         with PdfPages(oname) as pdf:
 
             # Job Summary page
@@ -126,18 +128,18 @@ class HCollections():
                     i += 1
                     if nplots % i == 0:
                         break
-                if(i == 1):
+                if i == 1:
                     i += 1
                 ncols = i
                 nrows = nplots // ncols
                 nrows += nplots % ncols
                 # print(nrows, ncols)
-                plt.rc('text', usetex=True)
+                plt.rc("text", usetex=True)
                 # fig, axes = plt.subplots(nrows, ncols)
                 fig = plt.figure(figsize=(8.5, 11))
-                pos = range(1, nplots+1)
+                pos = range(1, nplots + 1)
                 for k, item in enumerate(self.hgroups[key]):
-                    title = str(item).replace('_', '')
+                    title = str(item).replace("_", "")
                     # print(k, item, title)
                     axe = fig.add_subplot(nrows, ncols, pos[k])
                     try:
@@ -150,14 +152,14 @@ class HCollections():
 
             # We can also set the file's metadata via the PdfPages object:
             d = pdf.infodict()
-            d['Title'] = 'Artemis Monitoring'
-            d['Author'] = u'Ryan M White'
-            d['Subject'] = 'Data monitoring and validation'
-            d['Keywords'] = 'PdfPages multipage keywords author title subject'
-            d['CreationDate'] = datetime.datetime(2018, 10, 31)
+            d["Title"] = "Artemis Monitoring"
+            d["Author"] = u"Ryan M White"
+            d["Subject"] = "Data monitoring and validation"
+            d["Keywords"] = "PdfPages multipage keywords author title subject"
+            d["CreationDate"] = datetime.datetime(2018, 10, 31)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     fname = sys.argv[1]
     hname = sys.argv[2]
 

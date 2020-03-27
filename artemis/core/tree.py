@@ -26,6 +26,7 @@ class Element:
     Element class to generically contain whatever we want to put in the tree.
     Only important field is "key".
     """
+
     def __init__(self, key):
         self._key = key
         self._locked = False
@@ -56,7 +57,7 @@ class Element:
 
     def add_data(self, data):
         if self.locked:
-            print('Cannot add data, element is locked.')
+            print("Cannot add data, element is locked.")
         else:
             self._store.add_to_dict(self.key, data)
 
@@ -66,6 +67,7 @@ class Element:
 
 class Node:
     """Stable container to hold Element objects and operate on them."""
+
     def __init__(self, key, parents):
 
         self.parents = parents
@@ -89,8 +91,9 @@ class Node:
         self.payload.append(element)
 
 
-class Tree():
+class Tree:
     """Structure of Nodes. Metadata/job organisation."""
+
     def __init__(self, name):
         self.name = name
         self.root = None

@@ -47,9 +47,8 @@ from artemis.core.gate import IOMetaMixin, MetaMixin
 
 
 class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
-
     def __init__(self, name, **kwargs):
-        '''
+        """
         Access the Base logger directly through
         self.__logger
         Derived class use the classmethods for info, debug, warn, error
@@ -58,11 +57,11 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
 
         Can we use staticmethods in artemis to make uniform
         formatting of info, debug, warn, error?
-        '''
+        """
         # Configure logging
         Logger.configure(self, **kwargs)
 
-        self.__logger.debug('__init__ AlgoBase')
+        self.__logger.debug("__init__ AlgoBase")
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
@@ -72,59 +71,54 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
         self.gate = ArtemisGateSvc()
 
     def __init_subclass__(cls, **kwargs):
-        '''
+        """
         See PEP 487
         Essentially acts as a class method decorator
-        '''
+        """
         super().__init_subclass__(**kwargs)
 
     @property
     def name(self):
-        '''
+        """
         Algorithm name
-        '''
+        """
         return self.__name
 
     @staticmethod
     def load(logger, **kwargs):
-        '''
+        """
         Returns the class instance from a dictionary
-        '''
-        logger.info('Loading Algo %s' % kwargs['name'])
+        """
+        logger.info("Loading Algo %s" % kwargs["name"])
         try:
-            module = importlib.import_module(
-                    kwargs['module']
-                    )
+            module = importlib.import_module(kwargs["module"])
         except ImportError:
-            logger.error('Unable to load module %s' % kwargs['module'])
+            logger.error("Unable to load module %s" % kwargs["module"])
             raise
         except Exception as e:
             logger.error("Unknow error loading module: %s" % e)
             raise
         try:
-            class_ = getattr(module, kwargs['class'])
+            class_ = getattr(module, kwargs["class"])
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (kwargs['name'], kwargs['class']))
+            logger.error("%s: missing attribute %s" % (kwargs["name"], kwargs["class"]))
             raise
         except Exception as e:
             logger.error("Reason: %s" % e)
             raise
 
-        logger.debug(pformat(kwargs['properties']))
+        logger.debug(pformat(kwargs["properties"]))
 
         # Update the logging level of
         # algorithms if loglevel not set
         # Ensures user-defined algos get the artemis level logging
-        if 'loglevel' not in kwargs['properties']:
-            kwargs['properties']['loglevel'] = \
-                    logger.getEffectiveLevel()
+        if "loglevel" not in kwargs["properties"]:
+            kwargs["properties"]["loglevel"] = logger.getEffectiveLevel()
 
         try:
-            instance = class_(kwargs['name'], **kwargs['properties'])
+            instance = class_(kwargs["name"], **kwargs["properties"])
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (kwargs['name'], 'properties'))
+            logger.error("%s: missing attribute %s" % (kwargs["name"], "properties"))
             raise
         except Exception as e:
             logger.error("%s: Cannot initialize %s" % e)
@@ -133,7 +127,7 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
         return instance
 
     def to_dict(self):
-        '''
+        """
         Create json-serialize class
         to create the algorithm from all properties
 
@@ -141,12 +135,12 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
         module - where the class algo resides
         class - concrete class name
         properties - all the user-defined properties
-        '''
+        """
         _dict = OrderedDict()
-        _dict['name'] = self.name
-        _dict['class'] = self.__class__.__name__
-        _dict['module'] = self.__module__
-        _dict['properties'] = self.properties.to_dict()
+        _dict["name"] = self.name
+        _dict["class"] = self.__class__.__name__
+        _dict["module"] = self.__module__
+        _dict["properties"] = self.properties.to_dict()
 
         return _dict
 
@@ -160,11 +154,11 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
 
     @staticmethod
     def from_msg(logger, msg):
-        logger.info('Loading Algo from msg %s', msg.name)
+        logger.info("Loading Algo from msg %s", msg.name)
         try:
             module = importlib.import_module(msg.module)
         except ImportError:
-            logger.error('Unable to load module %s', msg.module)
+            logger.error("Unable to load module %s", msg.module)
             raise
         except Exception as e:
             logger.error("Unknow error loading module: %s" % e)
@@ -172,8 +166,7 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
         try:
             class_ = getattr(module, msg.klass)
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (msg.name, msg.klass))
+            logger.error("%s: missing attribute %s" % (msg.name, msg.klass))
             raise
         except Exception as e:
             logger.error("Reason: %s" % e)
@@ -185,15 +178,13 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
         # Update the logging level of
         # algorithms if loglevel not set
         # Ensures user-defined algos get the artemis level logging
-        if 'loglevel' not in properties:
-            properties['loglevel'] = \
-                    logger.getEffectiveLevel()
+        if "loglevel" not in properties:
+            properties["loglevel"] = logger.getEffectiveLevel()
 
         try:
             instance = class_(msg.name, **properties)
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (msg.name, 'properties'))
+            logger.error("%s: missing attribute %s" % (msg.name, "properties"))
             raise
         except Exception as e:
             logger.error("%s: Cannot initialize %s" % e)
@@ -202,47 +193,46 @@ class AlgoBase(MetaMixin, metaclass=AbcAlgoBase):
         return instance
 
     def lock(self):
-        '''
+        """
         Lock all properties for algorithm
-        '''
+        """
         self.properties.lock = True
 
     def initialize(self):
-        '''
+        """
         Framework initialize
-        '''
+        """
         raise NotImplementedError
 
     def book(self):
-        '''
+        """
         Book histograms
-        '''
+        """
         raise NotImplementedError
 
     def rebook(self):
-        '''
+        """
         Rebook with new binnings
-        '''
+        """
         raise NotImplementedError
 
     def execute(self, payload):
-        '''
+        """
         Algo always accepts the output Node on a graph
         Data is accessed via the Parent.payload
-        '''
+        """
         raise NotImplementedError
 
     def finalize(self):
-        '''
+        """
         report timings, counters, etc..
-        '''
+        """
         raise NotImplementedError
 
 
 class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
-
     def __init__(self, name, **kwargs):
-        '''
+        """
         Access the Base logger directly through
         self.__logger
         Derived class use the classmethods for info, debug, warn, error
@@ -251,11 +241,11 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
 
         Can we use staticmethods in artemis to make uniform
         formatting of info, debug, warn, error?
-        '''
+        """
         # Configure logging
         Logger.configure(self, **kwargs)
 
-        self.__logger.debug('__init__ AlgoBase')
+        self.__logger.debug("__init__ AlgoBase")
         # name will be mangled to _AlgoBase__name
         self.__name = name
         self.properties = Properties()
@@ -266,51 +256,46 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
 
     @property
     def name(self):
-        '''
+        """
         Algorithm name
-        '''
+        """
         return self.__name
 
     @staticmethod
     def load(logger, **kwargs):
-        '''
+        """
         Returns the class instance from a dictionary
-        '''
-        logger.info('Loading Algo %s' % kwargs['name'])
+        """
+        logger.info("Loading Algo %s" % kwargs["name"])
         try:
-            module = importlib.import_module(
-                    kwargs['module']
-                    )
+            module = importlib.import_module(kwargs["module"])
         except ImportError:
-            logger.error('Unable to load module %s' % kwargs['module'])
+            logger.error("Unable to load module %s" % kwargs["module"])
             raise
         except Exception as e:
             logger.error("Unknow error loading module: %s" % e)
             raise
         try:
-            class_ = getattr(module, kwargs['class'])
+            class_ = getattr(module, kwargs["class"])
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (kwargs['name'], kwargs['class']))
+            logger.error("%s: missing attribute %s" % (kwargs["name"], kwargs["class"]))
             raise
         except Exception as e:
             logger.error("Reason: %s" % e)
             raise
 
-        logger.debug(pformat(kwargs['properties']))
+        logger.debug(pformat(kwargs["properties"]))
 
         # Update the logging level of
         # algorithms if loglevel not set
         # Ensures user-defined algos get the artemis level logging
-        if 'loglevel' not in kwargs['properties']:
-            kwargs['properties']['loglevel'] = \
-                    logger.getEffectiveLevel()
+        if "loglevel" not in kwargs["properties"]:
+            kwargs["properties"]["loglevel"] = logger.getEffectiveLevel()
 
         try:
-            instance = class_(kwargs['name'], **kwargs['properties'])
+            instance = class_(kwargs["name"], **kwargs["properties"])
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (kwargs['name'], 'properties'))
+            logger.error("%s: missing attribute %s" % (kwargs["name"], "properties"))
             raise
         except Exception as e:
             logger.error("%s: Cannot initialize %s" % e)
@@ -319,7 +304,7 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
         return instance
 
     def to_dict(self):
-        '''
+        """
         Create json-serialize class
         to create the algorithm from all properties
 
@@ -327,12 +312,12 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
         module - where the class algo resides
         class - concrete class name
         properties - all the user-defined properties
-        '''
+        """
         _dict = OrderedDict()
-        _dict['name'] = self.name
-        _dict['class'] = self.__class__.__name__
-        _dict['module'] = self.__module__
-        _dict['properties'] = self.properties.to_dict()
+        _dict["name"] = self.name
+        _dict["class"] = self.__class__.__name__
+        _dict["module"] = self.__module__
+        _dict["properties"] = self.properties.to_dict()
 
         return _dict
 
@@ -346,11 +331,11 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
 
     @staticmethod
     def from_msg(logger, msg):
-        logger.info('Loading Algo from msg %s', msg.name)
+        logger.info("Loading Algo from msg %s", msg.name)
         try:
             module = importlib.import_module(msg.module)
         except ImportError:
-            logger.error('Unable to load module %s', msg.module)
+            logger.error("Unable to load module %s", msg.module)
             raise
         except Exception as e:
             logger.error("Unknow error loading module: %s" % e)
@@ -358,8 +343,7 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
         try:
             class_ = getattr(module, msg.klass)
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (msg.name, msg.klass))
+            logger.error("%s: missing attribute %s" % (msg.name, msg.klass))
             raise
         except Exception as e:
             logger.error("Reason: %s" % e)
@@ -371,15 +355,13 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
         # Update the logging level of
         # algorithms if loglevel not set
         # Ensures user-defined algos get the artemis level logging
-        if 'loglevel' not in properties:
-            properties['loglevel'] = \
-                    logger.getEffectiveLevel()
+        if "loglevel" not in properties:
+            properties["loglevel"] = logger.getEffectiveLevel()
 
         try:
             instance = class_(msg.name, **properties)
         except AttributeError:
-            logger.error("%s: missing attribute %s" %
-                         (msg.name, 'properties'))
+            logger.error("%s: missing attribute %s" % (msg.name, "properties"))
             raise
         except Exception as e:
             logger.error("%s: Cannot initialize %s" % e)
@@ -388,38 +370,38 @@ class IOAlgoBase(MetaMixin, IOMetaMixin, metaclass=AbcAlgoBase):
         return instance
 
     def lock(self):
-        '''
+        """
         Lock all properties for algorithm
-        '''
+        """
         self.properties.lock = True
 
     def initialize(self):
-        '''
+        """
         Framework initialize
-        '''
+        """
         raise NotImplementedError
 
     def book(self):
-        '''
+        """
         Book histograms
-        '''
+        """
         raise NotImplementedError
 
     def rebook(self):
-        '''
+        """
         Rebook with new binnings
-        '''
+        """
         raise NotImplementedError
 
     def execute(self, payload):
-        '''
+        """
         Algo always accepts the output Node on a graph
         Data is accessed via the Parent.payload
-        '''
+        """
         raise NotImplementedError
 
     def finalize(self):
-        '''
+        """
         report timings, counters, etc..
-        '''
+        """
         raise NotImplementedError
