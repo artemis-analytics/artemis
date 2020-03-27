@@ -20,7 +20,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v2
-      - uses: goanpeca/setup-miniconda@v1.x
+      - uses: goanpeca/setup-miniconda@1.x
         with:
           channels: conda-forge 
       - shell: bash -l {0}
@@ -35,7 +35,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - uses: actions/checkout@v2
-      - uses: goanpeca/setup-miniconda@v1.x
+      - uses: goanpeca/setup-miniconda@1.x
         with:
           # If provided, this version of miniconda will be downloaded and installed. Visit https://repo.continuum.io/miniconda/ for more information on available versions.
           miniconda-version: 'latest' # optional, default is 
