@@ -22,43 +22,74 @@ import pyarrow as pa
 from random import randint
 
 from artemis.core.tool import ToolBase
-from artemis.tools.filtercoltool import FilterColTool
 
+# from artemis.tools.filtercoltool import FilterColTool
+
+
+def module_exists(module_name, object_name):
+    try:
+        __import__(module_name, fromlist=[object_name])
+    except ImportError:
+        return False
+    else:
+        return True
+
+
+@unittest.skipUnless(
+    module_exists("artemis.tools.filtercoltool", "FilterColTool"),
+    "filtercoltool not installed",
+)
 class FilterColTestCase(unittest.TestCase):
-    
     def test_basic(self):
-        tool = FilterColTool('tool', columns=["b"], invert=False)
-        batch = pa.RecordBatch.from_arrays([pa.array([1, 2, 3]), pa.array([4, 5, 6]), 
-                                           pa.array([7, 8, 9])], ["a", "b", "c"])
+        from artemis.tools.filtercoltool import FilterColTool
+
+        tool = FilterColTool("tool", columns=["b"], invert=False)
+        batch = pa.RecordBatch.from_arrays(
+            [pa.array([1, 2, 3]), pa.array([4, 5, 6]), pa.array([7, 8, 9])],
+            ["a", "b", "c"],
+        )
         tbatch = tool.execute(batch)
         assert batch.num_rows == tbatch.num_rows
         assert tbatch.to_pydict() == {"b": [4, 5, 6]}
 
     def test_default_invert(self):
-        tool = FilterColTool('tool', columns=["b"])
-        batch = pa.RecordBatch.from_arrays([pa.array([1, 2, 3]), pa.array([4, 5, 6]), 
-                                           pa.array([7, 8, 9])], ["a", "b", "c"])
+        from artemis.tools.filtercoltool import FilterColTool
+
+        tool = FilterColTool("tool", columns=["b"])
+        batch = pa.RecordBatch.from_arrays(
+            [pa.array([1, 2, 3]), pa.array([4, 5, 6]), pa.array([7, 8, 9])],
+            ["a", "b", "c"],
+        )
         tbatch = tool.execute(batch)
         assert batch.num_rows == tbatch.num_rows
         assert tbatch.to_pydict() == {"b": [4, 5, 6]}
 
     def test_no_columns(self):
+        from artemis.tools.filtercoltool import FilterColTool
+
         # Should pass back original list
-        tool = FilterColTool('tool')
-        batch = pa.RecordBatch.from_arrays([pa.array([1, 2, 3]), pa.array([4, 5, 6]), 
-                                           pa.array([7, 8, 9])], ["a", "b", "c"])
+        tool = FilterColTool("tool")
+        batch = pa.RecordBatch.from_arrays(
+            [pa.array([1, 2, 3]), pa.array([4, 5, 6]), pa.array([7, 8, 9])],
+            ["a", "b", "c"],
+        )
         tbatch = tool.execute(batch)
         assert batch.num_rows == tbatch.num_rows
         assert batch.num_columns == tbatch.num_columns
         assert tbatch.to_pydict() == {"a": [1, 2, 3], "b": [4, 5, 6], "c": [7, 8, 9]}
 
     def test_invert_true(self):
-        tool = FilterColTool('tool', columns=["b"], invert=True)
-        batch = pa.RecordBatch.from_arrays([pa.array([1, 2, 3]), pa.array([4, 5, 6]), 
-                                           pa.array([7, 8, 9])], ["a", "b", "c"])
+        from artemis.tools.filtercoltool import FilterColTool
+
+        tool = FilterColTool("tool", columns=["b"], invert=True)
+        batch = pa.RecordBatch.from_arrays(
+            [pa.array([1, 2, 3]), pa.array([4, 5, 6]), pa.array([7, 8, 9])],
+            ["a", "b", "c"],
+        )
         tbatch = tool.execute(batch)
         assert batch.num_rows == tbatch.num_rows
         assert tbatch.to_pydict() == {"a": [1, 2, 3], "c": [7, 8, 9]}
+
 
 if __name__ == "__main__":
     unittest.main()
