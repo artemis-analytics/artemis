@@ -58,16 +58,11 @@ jobs:
           # Advanced. Prior to runnning "conda init" all shell profiles will be removed from the runner. Default is "true".
           # remove-profiles: # optional, default is true
           channels: conda-forge 
+                    artemis-analytics
       - shell: bash -l {0}
         run: |
           conda info
           conda list
-          cd ../
-          git clone https://github.com/ke-noel/fwfr.git
-          cd fwfr
-          ./install.sh --source
-          pwd
-          cd ../artemis
           pwd
           ls
           python setup.py build_ext --inplace install
