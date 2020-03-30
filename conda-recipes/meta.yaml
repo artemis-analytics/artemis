@@ -30,6 +30,8 @@ requirements:
         - make  
         - python=3.7.3
         - setuptools
+        - pyfwfr
+        - cython
     run:
         - python=3.7.3
         - pip  # keep conda happy  
@@ -53,6 +55,7 @@ requirements:
         - xlrd
         - faker<3.0.0
         - coverage
+        - pyfwfr
 test:
     imports:
         - artemis
