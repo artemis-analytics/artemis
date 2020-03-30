@@ -19,7 +19,7 @@ python:
     install:
       - method: setuptools
         path: artemis
-#    install:
-#        - requirements: docs/requirements.txt
-conda:
-  environment: environment.yaml
+    install:
+        - requirements: docs/requirements.txt
+#conda:
+#  environment: environment.yaml
