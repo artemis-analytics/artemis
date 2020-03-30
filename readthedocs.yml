@@ -7,7 +7,9 @@ version: 2
 
 # Build documenteation in the docs/ directory with Sphinx.
 sphinx:
-    configuration: docs/conf.py
+  builder: html  
+  configuration: docs/conf.py
+  fail_on_warning: true
 
 # Build your docs in additional formats such as PDF and ePub
 formats: all
