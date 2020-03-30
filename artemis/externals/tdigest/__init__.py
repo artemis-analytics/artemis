@@ -24,6 +24,6 @@
 ###############################################################################
 
 
-from .tdigest import TDigest
+from .tdigest import TDigest  # noqa: F401
 
-__version__ = "0.5.2.1"
+# __version__ = "0.5.2.1"

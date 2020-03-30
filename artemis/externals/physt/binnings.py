@@ -1008,10 +1008,10 @@ try:
     # If possible, import astropy's binning methods
     # See: http://docs.astropy.org/en/stable/visualization/histogram.html
     # Just check
-    from astropy.stats.histogram import histogram as _astropy_histogram
+    from astropy.stats.histogram import histogram as _astropy_histogram  # noqa: F401
     import warnings
 
-    warnings.filterwarnings("ignore", module="astropy\..*")
+    warnings.filterwarnings("ignore", module="astropy\\..*")
 
     def bayesian_blocks_binning(data, range=None, **kwargs) -> NumpyBinning:
         """Binning schema based on Bayesian blocks (from astropy).
