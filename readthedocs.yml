@@ -16,8 +16,9 @@ formats: all
 #
 python:
     version: 3.7
-    method: setuptools
-    path: artemis
+    install:
+      - method: setuptools
+        path: artemis
 #    install:
 #        - requirements: docs/requirements.txt
 conda:
