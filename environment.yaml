@@ -45,3 +45,5 @@ dependencies:
     - simplekv
     - dask
     - plotly
+    - sphinx=2.4.4
+    - sphinx_rtd_theme

@@ -16,5 +16,9 @@ formats: all
 #
 python:
     version: 3.7
-    install:
-        - requirements: docs/requirements.txt
+    method: setuptools
+    path: artemis
+#    install:
+#        - requirements: docs/requirements.txt
+conda:
+  environment: environment.yaml
