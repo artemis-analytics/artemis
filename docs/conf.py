@@ -14,6 +14,7 @@ import sphinx_rtd_theme
 import os
 import sys
 
+print("Sphnix build path %s" % sys.path)
 # Minimum version, enforced by sphinx
 needs_sphinx = "2.4.4"
 
