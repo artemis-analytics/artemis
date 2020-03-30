@@ -26,22 +26,18 @@ from artemis.meta.Directed_Graph import Directed_Graph, Node
 
 
 class LegacyGenMenu(MenuBuilder):
-
-    def __init__(self, name='test'):
+    def __init__(self, name="test"):
         super().__init__(name)
 
     def _algo_builder(self):
-        '''
+        """
         define all algorithms required
-        '''
-        self._algos['legacyalgo'] = LegacyDataAlgo('legacyparser',
-                                                   loglevel='INFO')
+        """
+        self._algos["legacyalgo"] = LegacyDataAlgo("legacyparser", loglevel="INFO")
 
     def _seq_builder(self):
-        self._seqs['seqX'] = Node(["initial"],
-                                  ('legacyparser',),
-                                  "seqX")
+        self._seqs["seqX"] = Node(["initial"], ("legacyparser",), "seqX")
 
     def _chain_builder(self):
-        self._chains['legacyChain'] = Directed_Graph("legacychain")
-        self._chains['legacyChain'].add(self._seqs['seqX'])
+        self._chains["legacyChain"] = Directed_Graph("legacychain")
+        self._chains["legacyChain"].add(self._seqs["seqX"])

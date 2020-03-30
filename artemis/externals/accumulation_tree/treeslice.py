@@ -29,7 +29,7 @@
 
 
 class TreeSlice(object):
-    __slots__ = ['_tree', '_start', '_stop']
+    __slots__ = ["_tree", "_start", "_stop"]
 
     def __init__(self, tree, start, stop):
         self._tree = tree
@@ -37,7 +37,7 @@ class TreeSlice(object):
         self._stop = stop
 
     def __repr__(self):
-        tpl = "%s({%s})" % (self._tree.__class__.__name__, '%s')
+        tpl = "%s({%s})" % (self._tree.__class__.__name__, "%s")
         return tpl % ", ".join(("%r: %r" % item for item in self.items()))
 
     def __contains__(self, key):
@@ -82,6 +82,7 @@ class TreeSlice(object):
 
     def keys(self):
         return self._tree.key_slice(self._start, self._stop)
+
     __iter__ = keys
 
     def values(self):

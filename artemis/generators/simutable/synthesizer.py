@@ -32,7 +32,7 @@ from artemis.generators.simutable.febrlgen import Modifier
 
 @Logger.logged
 class Synthesizer(object):
-    '''
+    """
     Yields row of fake data
     given a metadata model
     instance of faker needs to
@@ -46,15 +46,15 @@ class Synthesizer(object):
     # Bug
     # The modifier is not picking up the seed since it is instantiated
     # before seed is set. Needs to be investigated!
-    '''
+    """
 
     def __init__(self, model, local, idx=0, seed=None):
-        '''
+        """
         requires class model name
-        '''
+        """
 
         self.__logger.info("Synthesizer init")
-        self.__logger.debug('DEBUG Message')
+        self.__logger.debug("DEBUG Message")
 
         self.fake = Faker(local)
         self.__reccntr = idx
@@ -63,7 +63,7 @@ class Synthesizer(object):
         self.is_dependent = []
         for field in model.info.schema.info.fields:
             self.schema.append(field.name)
-            if field.info.aux.dependent == '':
+            if field.info.aux.dependent == "":
                 self.is_dependent.append(False)
             else:
                 self.is_dependent.append(True)
@@ -89,47 +89,44 @@ class Synthesizer(object):
         self.mod = None
 
         # Generator counters/stats
-        self.stats = {"Total": 0,
-                      "Original": 0,
-                      "Duplicate": 0}
+        self.stats = {"Total": 0, "Original": 0, "Duplicate": 0}
         self.h_dupdist = Histogram1D(range(10))
 
-        if model.info.aux.HasField('duplicate'):
+        if model.info.aux.HasField("duplicate"):
             self.duplicate = True
             self.duplicate_cfg = dict()
-            self.duplicate_cfg['Prob_duplicate'] = \
-                model.info.aux.duplicate.probability
-            self.duplicate_cfg['Dist_duplicate'] = \
-                model.info.aux.duplicate.distribution
-            self.duplicate_cfg['Max_duplicate'] = \
-                model.info.aux.duplicate.maximum
+            self.duplicate_cfg["Prob_duplicate"] = model.info.aux.duplicate.probability
+            self.duplicate_cfg["Dist_duplicate"] = model.info.aux.duplicate.distribution
+            self.duplicate_cfg["Max_duplicate"] = model.info.aux.duplicate.maximum
 
             self.nduplicate_weights = self.generate_duplicate_pdf()
-            if model.info.aux.HasField('record_modifier'):
-                self.mod = Modifier(self.fake,
-                                    self.generator_fcns,
-                                    self.schema,
-                                    model.info.aux.record_modifier)
+            if model.info.aux.HasField("record_modifier"):
+                self.mod = Modifier(
+                    self.fake,
+                    self.generator_fcns,
+                    self.schema,
+                    model.info.aux.record_modifier,
+                )
 
-        self.__logger.info('')
-        self.__logger.info('Synthesizer configured')
-        self.__logger.info('Model: %s' % model)
-        self.__logger.info('Schema:')
+        self.__logger.info("")
+        self.__logger.info("Synthesizer configured")
+        self.__logger.info("Model: %s" % model)
+        self.__logger.info("Schema:")
         self.__logger.info(pformat(self.schema))
-        self.__logger.info('Dataset record index: %d' % idx)
+        self.__logger.info("Dataset record index: %d" % idx)
 
-        if(seed):
-            self.__logger.info('Seed set: %d' % seed)
+        if seed:
+            self.__logger.info("Seed set: %d" % seed)
 
-        self.__logger.info('Generate duplicate records:')
+        self.__logger.info("Generate duplicate records:")
         self.__logger.info(pformat(self.duplicate))
 
-        if(self.duplicate):
-            self.__logger.info('Duplicate record probabilities')
+        if self.duplicate:
+            self.__logger.info("Duplicate record probabilities")
             self.__logger.info(pformat(self.duplicate_cfg))
-            self.__logger.info('Duplicate PDF')
+            self.__logger.info("Duplicate PDF")
             self.__logger.info(pformat(self.nduplicate_weights))
-            self.__logger.info('Record modifier configuration')
+            self.__logger.info("Record modifier configuration")
             self.__logger.info(model.info.aux.record_modifier)
 
     @property
@@ -150,36 +147,36 @@ class Synthesizer(object):
 
     def record_counter(self):
         self.__reccntr += 1
-        self.stats['Original'] += 1
+        self.stats["Original"] += 1
 
     def record_id(self):
-        id = 'rec-' + str(self.record_count) + '-id'
+        id = "rec-" + str(self.record_count) + "-id"
         return id
 
     def set_seed(self, seed):
         self.fake.seed(seed)
 
     def add_providers(self):
-        '''
+        """
         Add custom providers
-        '''
+        """
         klasses = [provider.Provider for provider in PROVIDERS]
         for k in klasses:
             self.fake.add_provider(k)
 
     def get_field_parameters(self, in_parms):
-        '''
+        """
         Convert field parameters to/from a message to python type
         parameters which do not contain Fields
         are converted to python type
-        '''
+        """
         if len(in_parms) == 0:
             return None
 
         values = []
         is_msg = False
         for parm in in_parms:
-            if parm.type == 'Field':
+            if parm.type == "Field":
                 is_msg = True
                 continue
             _type = eval(parm.type)
@@ -196,21 +193,20 @@ class Synthesizer(object):
         self.__logger.info("Setting Generator functions from Msg")
         for field in table.info.schema.info.fields:
             self.__logger.info("Gathering fakers %s", field.name)
-            if field.info.aux.dependent != '':
+            if field.info.aux.dependent != "":
                 continue
-            self.__logger.info('Independent field %s', field)
-            parms = \
-                self.get_field_parameters(field.info.aux.generator.parameters)
+            self.__logger.info("Independent field %s", field)
+            parms = self.get_field_parameters(field.info.aux.generator.parameters)
             fake = None
-            if field.name == 'record_id':
+            if field.name == "record_id":
                 fake = self.record_id
             else:
                 try:
-                    fake = \
-                        self.fake.get_formatter(field.info.aux.generator.name)
+                    fake = self.fake.get_formatter(field.info.aux.generator.name)
                 except Exception:
-                    self.__logger.error('Cannot find fake in Faker ',
-                                        field.info.aux.generator.name)
+                    self.__logger.error(
+                        "Cannot find fake in Faker ", field.info.aux.generator.name
+                    )
 
             self.generator_fcns[field.name] = (fake, parms)
             self.__logger.debug(parms)
@@ -218,22 +214,22 @@ class Synthesizer(object):
             self.__logger.debug(self.generator_fcns[field.name])
 
     def generate_duplicate_pdf(self):
-        '''
+        """
         Create a map of duplicates and probabilities
         according to a pdf, i.e. uniform
         and store for re-use on each original event
         current version taken directly from FEBRL
         needs review b/c number of duplicates stored starts at 2?
-        '''
+        """
         num_dup = 1
-        prob_sum = 0.
+        prob_sum = 0.0
         prob_list = [(num_dup, prob_sum)]
-        max_dups = self.duplicate_cfg['Max_duplicate']
+        max_dups = self.duplicate_cfg["Max_duplicate"]
         uniform_val = 1.0 / float(max_dups)
 
-        for i in range(max_dups-1):
+        for i in range(max_dups - 1):
             num_dup += 1
-            prob_list.append((num_dup, uniform_val+prob_list[-1][1]))
+            prob_list.append((num_dup, uniform_val + prob_list[-1][1]))
         return prob_list
 
     def cache_original(self, darr):
@@ -245,8 +241,8 @@ class Synthesizer(object):
     def generate_original(self):
         fakers = self.schema
         self.reset_original()
-        self.__logger.debug('generate_original()')
-        self.__logger.debug('Event ID %d' % self.record_count)
+        self.__logger.debug("generate_original()")
+        self.__logger.debug("Event ID %d" % self.record_count)
         darr = []
         for i, fake in enumerate(fakers):
             if self.is_dependent[i] is True:
@@ -255,8 +251,7 @@ class Synthesizer(object):
                 value = self.generator_fcns[fake][0]()
                 darr.append(value)
             else:
-                value = \
-                    self.generator_fcns[fake][0](self.generator_fcns[fake][1])
+                value = self.generator_fcns[fake][0](self.generator_fcns[fake][1])
                 if isinstance(value, list):
                     darr.extend(value)
                 else:
@@ -268,44 +263,44 @@ class Synthesizer(object):
     def duplicate_original(self):
         darr = []
         if self._original is None:
-            self.__logger.error('Error, no original record cached')
+            self.__logger.error("Error, no original record cached")
             return darr
-        elif self.__dupcntr < self.duplicate_cfg['Max_duplicate']:
+        elif self.__dupcntr < self.duplicate_cfg["Max_duplicate"]:
             darr = self._original.copy()
-            if 'rec' in darr[0]:
-                darr[0] = darr[0] + '-dup-' + str(self.__dupcntr)
+            if "rec" in darr[0]:
+                darr[0] = darr[0] + "-dup-" + str(self.__dupcntr)
             if self.mod:
                 self.mod.modify(darr)
             self.__dupcntr += 1
-            self.stats['Duplicate'] += 1
+            self.stats["Duplicate"] += 1
         else:
-            self.__logger.error('Error, duplicate count already reached')
+            self.__logger.error("Error, duplicate count already reached")
         return darr
 
     def random_select_ndups(self):
         ind = -1
-        while(self.nduplicate_weights[ind][1] > self.fake.random.random()):
+        while self.nduplicate_weights[ind][1] > self.fake.random.random():
             ind -= 1
         return self.nduplicate_weights[ind][0]
 
     def expect_duplicate(self):
-        '''
+        """
         Determines whether original record will be duplicated
         Gets the maximum number of duplicated records to generate
-        '''
+        """
         # Reset everything for this record
         self._expect_duplicate = False
         self.__dupcntr = 0
         self.__maxdup = 0
         # Get the probability to generate duplicate for next record
-        if self.fake.random.random() < self.duplicate_cfg['Prob_duplicate']:
+        if self.fake.random.random() < self.duplicate_cfg["Prob_duplicate"]:
             self._expect_duplicate = True
             self.__maxdup = self.random_select_ndups()
         else:
             self._expect_duplicate = False
             self.__maxdup = 0
 
-        self.__logger.debug('expect_duplicate ndups: %d', self.__maxdup)
+        self.__logger.debug("expect_duplicate ndups: %d", self.__maxdup)
 
     def generate(self):
         darr = []
@@ -315,8 +310,8 @@ class Synthesizer(object):
             if self._expect_duplicate is False:
                 darr = self.generate_original()
                 self.expect_duplicate()
-                if(logging.getLogger().isEnabledFor(logging.DEBUG)):
-                    self.__logger.debug('Original record')
+                if logging.getLogger().isEnabledFor(logging.DEBUG):
+                    self.__logger.debug("Original record")
                     self.__logger.debug(pformat(self._original))
 
             elif self._expect_duplicate is True:
@@ -324,8 +319,9 @@ class Synthesizer(object):
                     darr = self.duplicate_original()
                 else:
                     # Update duplicate distribution
-                    self.__logger.debug("Event %d duplicates %d",
-                                        (self.stats['Total'], self.__dupcntr))
+                    self.__logger.debug(
+                        "Event %d duplicates %d", (self.stats["Total"], self.__dupcntr)
+                    )
                     self.h_dupdist.fill(self.__dupcntr)
                     # clear cache
                     self.reset_original()
@@ -333,16 +329,17 @@ class Synthesizer(object):
                     # Get the probability to generate duplicate for next record
                     self.expect_duplicate()
             else:
-                self.__logger.debug('Not generating duplicate for Event ID %d',
-                                    self.record_count)
+                self.__logger.debug(
+                    "Not generating duplicate for Event ID %d", self.record_count
+                )
                 darr = self.generate_original()
         else:
             darr = self.generate_original()
 
-        self.stats['Total'] += 1
-        if self.stats['Total'] % 10000 == 0:
-            self.__logger.info("Event counter: %d" % self.stats['Total'])
-        self.__logger.debug('Complete Event ID %d' % self.record_count)
+        self.stats["Total"] += 1
+        if self.stats["Total"] % 10000 == 0:
+            self.__logger.info("Event counter: %d" % self.stats["Total"])
+        self.__logger.debug("Complete Event ID %d" % self.record_count)
         return darr
 
     def plots(self):
@@ -351,10 +348,10 @@ class Synthesizer(object):
         self.__logger.info("=============================================")
         self.__logger.info("Duplicate distribution")
         self.__logger.info(pformat(self.__dupdist))
-        self.__logger.info('Event counters')
-        self.__logger.info('Total records: %d' % self.stats['Total'])
-        self.__logger.info('Original records: %d' % self.stats['Original'])
-        self.__logger.info('Duplicate records: %d' % self.stats['Duplicate'])
+        self.__logger.info("Event counters")
+        self.__logger.info("Total records: %d" % self.stats["Total"])
+        self.__logger.info("Original records: %d" % self.stats["Original"])
+        self.__logger.info("Duplicate records: %d" % self.stats["Duplicate"])
         self.__logger.info(pformat(self.h_dupdist.to_dict()))
         if self.duplicate is True:
             self.mod.get_stats()

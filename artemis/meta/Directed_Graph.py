@@ -17,11 +17,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
+"""
 
-Computation graph data structure for persisting a business process model as a Directed Acyclic Graph. 
+Computation graph data structure for persisting a business process model as a Directed
+Acyclic Graph.
 
-Includes a topological sorting algorithm for generating Directed Acyclic Graphs 
+Includes a topological sorting algorithm for generating Directed Acyclic Graphs
 given a set of inputs and an output in Menu data types used in Artemis and Cronos.
 
 Defines all possible Sequences or Buisness processes as Nodes and each
@@ -45,7 +46,7 @@ Overall, this class uses the mypy library to enforce type saftey here
 mypy library: http://mypy-lang.org/
 
 
-'''
+"""
 
 import pygraphviz as pgv
 from collections import OrderedDict, deque, namedtuple
@@ -58,8 +59,8 @@ from artemis.logger import Logger
 
 
 @Logger.logged
-class Node():
-    '''
+class Node:
+    """
     Node (prev. Sequence) class
 
     input ids = list of input element ids
@@ -70,7 +71,7 @@ class Node():
     algos = tuple of the function names to execute
 
     Sequence object should be an iterable, immutable object
-    '''
+    """
 
     def __init__(self, parents: List, algos: Tuple[str], id: str) -> None:
         self._parents = []  # type: list
@@ -86,12 +87,12 @@ class Node():
                 if isinstance(parent, str):
                     self._parents.append(parent)
                 elif isinstance(parent, Directed_Graph):
-                    '''
+                    """
                     if the parent of this node is a Directed_Graph object,
                     we take the leaves of this graph as a string and
                     add those leaves as strings to
                     _parents which is a list(str)
-                    '''
+                    """
                     for leaf in parent.leaf:
                         self._parents.append(leaf)
                 else:
@@ -99,24 +100,26 @@ class Node():
                     #                    self.__class__.name)
                     raise TypeError("Input id is not str or Graph")
 
-            '''
+            """
             This is a tuple that is the internal representation of the Node
-            '''
+            """
 
     def __str__(self) -> str:
-        return_string = "Parents: " + "".join(' {0}'.format(p)
-                                              for p in self._parents) + "\n"
-        return_string += "Algos: " + "".join('{0}'.format(a)
-                                             for a in self._algos) + "\n"
-        return_string += "ID: " + '{0}'.format(self._id)
+        return_string = (
+            "Parents: " + "".join(" {0}".format(p) for p in self._parents) + "\n"
+        )
+        return_string += (
+            "Algos: " + "".join("{0}".format(a) for a in self._algos) + "\n"
+        )
+        return_string += "ID: " + "{0}".format(self._id)
         return return_string
 
     @property
     def parents(self) -> List:
-        '''
+        """
         list of input parent ids in the dependency graphs
         mutable list since inputs should easily extended
-        '''
+        """
         return self._parents
 
     @property
@@ -125,10 +128,10 @@ class Node():
 
     @property
     def id(self) -> str:
-        '''
+        """
         Represents the name of a unique id in the dependency graph
         This is the name of the Node in this context
-        '''
+        """
         return self._id
 
     def change_id(self, new_id: str) -> None:
@@ -138,16 +141,17 @@ class Node():
     def __len__(self) -> int:
         return len(self._node)
 
-    '''
+    """
     the return type of this type is ambiguous
-    '''
+    """
+
     def __getitem__(self, position: int):
         return self._node[position]
 
 
 @Logger.logged
-class Directed_Graph():
-    '''
+class Directed_Graph:
+    """
     List of nodes (or a "chain" of action nodes(sequences)
     which must occur in an order))
 
@@ -160,7 +164,7 @@ class Directed_Graph():
 
     Note: Chain could originate from previous chain, or multiple chain
     allowing for predefined chains to used by others
-    '''
+    """
 
     def __init__(self, id: str, root: List = ["initial"]) -> None:
         self._id = id  # type: str
@@ -170,8 +174,7 @@ class Directed_Graph():
         # when creating this graph
         self._leaf = []  # type: list[str]
         self._nodes = []  # type: list[Node]
-        self._initial_node = Node(parents=["none"],
-                                  algos=("none"), id="initial")
+        self._initial_node = Node(parents=["none"], algos=("none"), id="initial")
         # this is a dictionary whose keys are the nodes of the graph.
         # For each key, the corresponding value is a list containing
         # the nodes that are connected by a direct arc from this node.
@@ -205,9 +208,9 @@ class Directed_Graph():
 
     @property
     def id(self) -> str:
-        '''
+        """
         Return the chain name
-        '''
+        """
         return self._id
 
     @property
@@ -216,9 +219,9 @@ class Directed_Graph():
 
     @property
     def leaf(self) -> List[str]:
-        '''
+        """
         Returns the list(str) of the leaves of this Directed_Graph
-        '''
+        """
         return self._leaf
 
     @property
@@ -232,31 +235,31 @@ class Directed_Graph():
     def __len__(self) -> int:
         return len(self._nodes)
 
-    '''
+    """
     the return type of this type is ambiguous
-    '''
+    """
+
     def __getitem__(self, position: int):
         return self._nodes[position]
 
     def add(self, node: Node) -> None:
         self._nodes.append(node)
 
-    
     # def internal_graph(self):
     #     return self._internal_graph
-    
 
     def attempted_built(self) -> bool:
         return self._attempted_built
 
-    '''
+    """
     Creates a pygraphviz from the tree of buisness processes
     We may have to move the following code depending on what graph
     (either sorted or unsorted we want to visualize)
 
     We begin by using the unsorted graph and then adding
     all of the parent/child relationships this way
-    '''
+    """
+
     def create_vis(self, terminal_print=False, prefix=None) -> None:
 
         output_graph = pgv.AGraph(strict=False, directed=True)
@@ -273,17 +276,17 @@ class Directed_Graph():
         if terminal_print is True:
             print(output_graph.string())
 
-        output_graph.layout(prog='dot')
+        output_graph.layout(prog="dot")
         if prefix is None:
-            output_graph.draw(str(hash(self)) + '.png')
+            output_graph.draw(str(hash(self)) + ".png")
         else:
-            output_graph.draw(prefix + '.png')
+            output_graph.draw(prefix + ".png")
         return
 
     def build(self) -> bool:
-        '''
+        """
         Builds the graph from the private member information
-        '''
+        """
 
         if self._attempted_built is True:
             print("Error: this graph has already been built")
@@ -298,7 +301,7 @@ class Directed_Graph():
         dependency_tree = {}
         algorithim_map = {}
 
-        '''
+        """
         Updates the self._leaf field once the Directed_graph has been built
 
         We add the leaves (Nodes with no children)
@@ -308,7 +311,7 @@ class Directed_Graph():
         and a set of nodes with children and the diffrence
         between those sets is the set of Nodes without children,
         it: leaves as desired
-        '''
+        """
 
         have_children = set()
         all_nodes = set()
@@ -324,7 +327,6 @@ class Directed_Graph():
 
         self._leaf = list(all_nodes - have_children)
 
-        
         # initialize the internal_graph dictionary
         # for node in self._nodes:
         #    self._internal_graph[node.id] = []
@@ -395,7 +397,6 @@ class Directed_Graph():
         # for item in topological_sort_list:
         #     print(item)
         # print("TOPOLOGICALSORT LIST")
-        
 
         ordered_nodes = deque()
         for current_node in topological_sort_list:
@@ -408,17 +409,19 @@ class Directed_Graph():
                 is_valid = False
                 continue
 
-            new_node = Node(dependency_tree[current_node.id],
-                            algorithim_map[current_node.id],
-                            current_node.id)
+            new_node = Node(
+                dependency_tree[current_node.id],
+                algorithim_map[current_node.id],
+                current_node.id,
+            )
             ordered_nodes.appendleft(new_node)
 
         return is_valid
 
 
 @Logger.logged
-class GraphMenu():
-    '''
+class GraphMenu:
+    """
     List of Chains (Directed_Graphs) which describe the various processing
     for the given inputs
 
@@ -435,7 +438,7 @@ class GraphMenu():
 
     Dictionary of sequences
     OutputElement: (tuple of sequences)
-    '''
+    """
 
     def __init__(self, name: str) -> None:
         self._name = name
@@ -475,19 +478,18 @@ class GraphMenu():
             pass
 
     def create_vis(self, terminal_print: bool = False, prefix=None) -> None:
-        '''
+        """
         Creates a pygraphviz from the menu of buisness processes
         We may have to move the following code depending on what graph
         (either sorted or unsorted we want to visualize)
         We begin by using the unsorted graph and then
         adding all of the parent/child relationships this way
-        '''
+        """
         output_graph = pgv.AGraph(strict=False, directed=True)
 
-        
-        #if self._from_msg != True or self._attempted_built != True:
+        # if self._from_msg != True or self._attempted_built != True:
         #    print("Error: unable to create visualization")
-            #self.__logger.error("Error: unable to create visualization")
+        # self.__logger.error("Error: unable to create visualization")
         #    return
 
         if self._from_msg is True:
@@ -504,22 +506,22 @@ class GraphMenu():
         if terminal_print is True:
             print(output_graph.string())
 
-        output_graph.layout(prog='dot')
+        output_graph.layout(prog="dot")
         if prefix is None:
-            output_graph.draw(str(hash(self)) + '.png')
+            output_graph.draw(str(hash(self)) + ".png")
         else:
-            output_graph.draw(prefix + '.png')
+            output_graph.draw(prefix + ".png")
         return
 
     def build(self) -> None:
-        '''
+        """
         Similar to Chain.build
         Get root --> expect to be initial
         Get leaves --> Can be multiple
         "one to many" idea of the Directed_Graph and Menu classes
-        '''
+        """
 
-        Node_properties = namedtuple('Node_properties', 'algos parents')
+        Node_properties = namedtuple("Node_properties", "algos parents")
 
         # set attempted_built to true as we have called build
         self._attempted_built = True
@@ -547,10 +549,11 @@ class GraphMenu():
             else:
                 unique_set.add(node.id)
 
-        root = list(_reduce(set.union, dependancy_tree.values())
-                    - set(dependancy_tree.keys()))
+        root = list(
+            _reduce(set.union, dependancy_tree.values()) - set(dependancy_tree.keys())
+        )
 
-        if(len(root) != 1):
+        if len(root) != 1:
             # self.__logger.error("%s: Root node has multiple inputs" %
             #                    self.__class__.__name__)
             pass
@@ -606,23 +609,22 @@ class GraphMenu():
 
         for element in topological_sort_list:
             if element.id == "initial":
-                self._ordered_sequence[element.id] = \
-                    Node_properties(("iorequest",), [])
+                self._ordered_sequence[element.id] = Node_properties(("iorequest",), [])
             else:
-                self._ordered_sequence[element.id] = \
-                    Node_properties(algorithim_map[element.id],
-                                    dependancy_tree[element.id])
+                self._ordered_sequence[element.id] = Node_properties(
+                    algorithim_map[element.id], dependancy_tree[element.id]
+                )
 
         # self.__logger.debug(pformat(self._ordered_sequence))
 
     def get_leaves(self) -> List:
-        '''
+        """
         This fucntion returns a list of the leaf nodes of a Directed_Graph
 
         Input: self object
         Return: List of str, each bieng the id of a leaf node,
         in no specified order
-        '''
+        """
 
         if not self._attempted_built:
             raise ValueError("Cannot get leaves from unbuilt graph")
@@ -645,7 +647,7 @@ class GraphMenu():
         return leaves
 
     def to_graph(self) -> OrderedDict:
-        '''
+        """
         The name of this function is misleading, this function
         is used for steering and returns a
         dictionary of node -> algorithims used
@@ -654,7 +656,7 @@ class GraphMenu():
         Execution graph for Steering
 
         Perhaps this is what is called in steering
-        '''
+        """
 
         graph_dictionary = OrderedDict()
         for key in self._ordered_sequence:
@@ -671,10 +673,10 @@ class GraphMenu():
         return graph_dictionary
 
     def to_tree(self) -> OrderedDict:
-        '''
+        """
         Generates the dictionary of children and parents
         I am not sure where this is used
-        '''
+        """
         tree_dictionary = OrderedDict()
         for key in self._ordered_sequence:
             print(key)
@@ -684,9 +686,9 @@ class GraphMenu():
         return tree_dictionary
 
     def to_msg(self) -> Menu_pb:
-        '''
+        """
         Writes the Map to a protocol buffer message
-        '''
+        """
 
         msg = Menu_pb()
         msg.name = self._name
@@ -709,28 +711,30 @@ class GraphMenu():
         return msg
 
     def to_menu_from_msg(self, msg: Menu_pb) -> None:
-        '''
+        """
         Reads in a menu from a protocol buffer message
 
         Due to how the menus are represented in protocol buffers,
         it is only possible to create the
         _ordered_sequence from the protocol buffers
-        '''
+        """
 
         if not isinstance(msg, Menu_pb):
             # self.__logger.warning("Unable to add read message")
-            raise TypeError("Error: attempted to read "
-                            "protobuf message from non-message object")
+            raise TypeError(
+                "Error: attempted to read " "protobuf message from non-message object"
+            )
             return
 
         self._from_msg = True
 
         if self._attempted_built is True:
-            self.__logger.error("Error reading from msg to Menu: "
-                                "Menu has already been built")
+            self.__logger.error(
+                "Error reading from msg to Menu: " "Menu has already been built"
+            )
             return
 
-        Node_properties = namedtuple('Node_properties', 'algos parents')
+        Node_properties = namedtuple("Node_properties", "algos parents")
 
         # read from the protocol buffer message that we are passed
         for graph in msg.graphs:
@@ -742,15 +746,16 @@ class GraphMenu():
                 for parent in node.parents:
                     current_parents.append(parent)
 
-                self._ordered_sequence[current_name] = \
-                    Node_properties(current_algos, current_parents)
+                self._ordered_sequence[current_name] = Node_properties(
+                    current_algos, current_parents
+                )
 
         return
 
 
 @Logger.logged
-class Directed_GraphDef():
-    '''
+class Directed_GraphDef:
+    """
     User defined class for generating the actual graph
 
     Ported over from dag.py
@@ -758,21 +763,21 @@ class Directed_GraphDef():
     Unsure of it's true use but keeping for futureproof/legacy reasons
 
     Seems to be deprecated or an unfinished prototype
-    '''
+    """
 
     def __init__(self, items):
-        '''
+        """
         Define all the possible algorithims to use
-        '''
+        """
         self._items = items  # Menu items
         pass
 
     def graph(item, inputElement="initial"):
-        '''
+        """
         takes the menu item name and default list of inputs
         inputElement can be of type Chain:
         inputElement = chain.leaf()
-        '''
+        """
         graph = Directed_Graph(item)
         # define sequences
         return graph

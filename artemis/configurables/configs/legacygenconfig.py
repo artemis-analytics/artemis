@@ -31,15 +31,15 @@ from artemis.tools.fwftool import FwfTool
 
 @iterable
 class LegacyOptions:
-    generator_type = 'legacy'
-    filehandler_type = 'legacy'
+    generator_type = "legacy"
+    filehandler_type = "legacy"
     nbatches = 10
     num_rows = 10000
-    delimiter = '\r\n'
+    delimiter = "\r\n"
     nrecords_per_block = 4095
-    encoding = 'cp500'
-    header = ''
-    footer = ''
+    encoding = "cp500"
+    header = ""
+    footer = ""
     skip_rows = 0
     column_names = []
     field_widths = []
@@ -47,7 +47,6 @@ class LegacyOptions:
 
 @Logger.logged
 class LegacyGenConfig(Configurable):
-
     def __init__(self, menu=None, **kwargs):
         options = dict(GlobalConfigOptions())
         options.update(dict(LegacyIOOptions()))
@@ -57,41 +56,47 @@ class LegacyGenConfig(Configurable):
     def configure(self, **columns):
 
         self.__logger.info(columns)
-        mftool = MfTool('legacytool', **columns)
+        mftool = MfTool("legacytool", **columns)
         blocksize = mftool.record_size * self.nrecords_per_block
         rsize = 0
         schema = []
         for key in columns:
-            rsize = rsize + columns[key]['length']
+            rsize = rsize + columns[key]["length"]
             schema.append(key)
 
-        fwftool = FwfTool('fwftool',
-                          block_size=(2 * blocksize),
-                          is_cobol=True,
-                          skip_rows=self.skip_rows,
-                          column_names=self.column_names,
-                          field_widths=self.field_widths,
-                          encoding=self.encoding+',swaplfnl')
+        fwftool = FwfTool(
+            "fwftool",
+            block_size=(2 * blocksize),
+            is_cobol=True,
+            skip_rows=self.skip_rows,
+            column_names=self.column_names,
+            field_widths=self.field_widths,
+            encoding=self.encoding + ",swaplfnl",
+        )
 
-        self._config_generator(nbatches=self.nbatches,
-                               num_rows=self.num_rows,
-                               seed=self.seed,
-                               header=self.header,
-                               footer=self.footer,
-                               header_offset=self.header_offset,
-                               footer_size=self.footer_size,
-                               encoding=self.encoding,
-                               **columns)
+        self._config_generator(
+            nbatches=self.nbatches,
+            num_rows=self.num_rows,
+            seed=self.seed,
+            header=self.header,
+            footer=self.footer,
+            header_offset=self.header_offset,
+            footer_size=self.footer_size,
+            encoding=self.encoding,
+            **columns
+        )
 
-        self._config_filehandler(blocksize=blocksize,
-                                 delimiter=self.delimiter,
-                                 header=self.header,
-                                 footer=self.footer,
-                                 header_offset=rsize,
-                                 footer_size=rsize,
-                                 encoding=self.encoding,
-                                 schema=schema,
-                                 seed=self.seed)
+        self._config_filehandler(
+            blocksize=blocksize,
+            delimiter=self.delimiter,
+            header=self.header,
+            footer=self.footer,
+            header_offset=rsize,
+            footer_size=rsize,
+            encoding=self.encoding,
+            schema=schema,
+            seed=self.seed,
+        )
 
         self._config_tdigest()
 
@@ -111,14 +116,14 @@ class LegacyGenConfig(Configurable):
 
 @iterable
 class LegacyIOOptions:
-    generator_type = 'file'
-    filehandler_type = 'legacy'
+    generator_type = "file"
+    filehandler_type = "legacy"
     nbatches = 10
     num_rows = 10000
     nrecords_per_block = 4095
-    encoding = 'cp500'
-    header = ''
-    footer = ''
+    encoding = "cp500"
+    header = ""
+    footer = ""
     skip_rows = 0
     column_names = []
     field_widths = []
@@ -126,7 +131,6 @@ class LegacyIOOptions:
 
 @Logger.logged
 class LegacyIOConfig(Configurable):
-
     def __init__(self, menu=None, **kwargs):
         options = dict(GlobalConfigOptions())
         options.update(dict(LegacyIOOptions()))
@@ -135,35 +139,41 @@ class LegacyIOConfig(Configurable):
 
     def configure(self, **columns):
 
-        self._config_generator(path=self.input_repo,
-                               glob=self.input_glob,
-                               nbatches=self.nbatches,
-                               seed=self.seed)
+        self._config_generator(
+            path=self.input_repo,
+            glob=self.input_glob,
+            nbatches=self.nbatches,
+            seed=self.seed,
+        )
 
-        mftool = MfTool('legacytool', codec=self.encoding, **columns)
+        mftool = MfTool("legacytool", codec=self.encoding, **columns)
         blocksize = mftool.record_size * self.nrecords_per_block
 
-        fwftool = FwfTool('fwftool',
-                          block_size=(2 * blocksize),
-                          is_cobol=True,
-                          skip_rows=self.skip_rows,
-                          column_names=self.column_names,
-                          field_widths=self.field_widths,
-                          encoding=self.encoding+',swaplfnl')
+        fwftool = FwfTool(
+            "fwftool",
+            block_size=(2 * blocksize),
+            is_cobol=True,
+            skip_rows=self.skip_rows,
+            column_names=self.column_names,
+            field_widths=self.field_widths,
+            encoding=self.encoding + ",swaplfnl",
+        )
         rsize = 0
         schema = []
         for key in columns:
-            rsize = rsize + columns[key]['length']
+            rsize = rsize + columns[key]["length"]
             schema.append(key)
 
-        self._config_filehandler(blocksize=blocksize,
-                                 header=self.header,
-                                 footer=self.footer,
-                                 header_offset=rsize,
-                                 footer_size=rsize,
-                                 schema=schema,
-                                 encoding=self.encoding,
-                                 seed=self.seed)
+        self._config_filehandler(
+            blocksize=blocksize,
+            header=self.header,
+            footer=self.footer,
+            header_offset=rsize,
+            footer_size=rsize,
+            schema=schema,
+            encoding=self.encoding,
+            seed=self.seed,
+        )
         self._config_tdigest()
 
         # Ensure block_size for arrow parser greater than

@@ -18,7 +18,8 @@
 # limitations under the License.
 
 """
-Generator classes for reading data from various input formats in chunks to pass to Steering for processing.
+Generator classes for reading data from various input formats in chunks to pass to
+Steering for processing.
 """
 import six
 import pyarrow as pa
@@ -29,7 +30,7 @@ from artemis.errors import AbstractMethodError
 from artemis.core.gate import ArtemisGateSvc
 
 
-class BaseReader():
+class BaseReader:
     """
     Base reader class implented as a generator
 
@@ -49,6 +50,7 @@ class BaseReader():
     --------
 
     """
+
     def __init__(self):
         self.gate = ArtemisGateSvc()
 
@@ -68,9 +70,9 @@ class BaseReader():
         pass
 
 
-class ReaderFactory():
+class ReaderFactory:
     """
-    Factory class for readers 
+    Factory class for readers
 
     Attributes
     ----------
@@ -89,43 +91,34 @@ class ReaderFactory():
 
     """
 
-    def __new__(cls, reader,
-                filepath_or_buffer,
-                header,
-                header_offset,
-                blocks,
-                rnd,
-                nsamples,
-                num_rows):
+    def __new__(
+        cls,
+        reader,
+        filepath_or_buffer,
+        header,
+        header_offset,
+        blocks,
+        rnd,
+        nsamples,
+        num_rows,
+    ):
 
-        if reader == 'csv':
-            return CsvReader(filepath_or_buffer,
-                             header,
-                             header_offset,
-                             blocks,
-                             rnd,
-                             nsamples)
-        elif reader == 'legacy':
-            return LegacyReader(filepath_or_buffer,
-                                header,
-                                header_offset,
-                                blocks,
-                                rnd,
-                                nsamples)
-        elif reader == 'ipc':
-            return ArrowReader(filepath_or_buffer,
-                               header,
-                               header_offset,
-                               blocks,
-                               rnd,
-                               nsamples)
-        elif reader == 'sas7bdat':
-            return Sas7bdatReader(filepath_or_buffer,
-                                  header,
-                                  header_offset,
-                                  rnd,
-                                  nsamples,
-                                  num_rows)
+        if reader == "csv":
+            return CsvReader(
+                filepath_or_buffer, header, header_offset, blocks, rnd, nsamples
+            )
+        elif reader == "legacy":
+            return LegacyReader(
+                filepath_or_buffer, header, header_offset, blocks, rnd, nsamples
+            )
+        elif reader == "ipc":
+            return ArrowReader(
+                filepath_or_buffer, header, header_offset, blocks, rnd, nsamples
+            )
+        elif reader == "sas7bdat":
+            return Sas7bdatReader(
+                filepath_or_buffer, header, header_offset, rnd, nsamples, num_rows
+            )
         else:
             raise TypeError
 
@@ -151,14 +144,10 @@ class ArrowReader(BaseReader):
     --------
 
     """
-    def __init__(self,
-                 filepath_or_buffer,
-                 header,
-                 header_offset,
-                 blocks,
-                 rnd,
-                 nsamples=4
-                 ):
+
+    def __init__(
+        self, filepath_or_buffer, header, header_offset, blocks, rnd, nsamples=4
+    ):
         super().__init__()
         # self.reader = pa.ipc.open_file(filepath_or_buffer)
         self.reader = self.gate.store.open(filepath_or_buffer)
@@ -170,8 +159,7 @@ class ArrowReader(BaseReader):
         self.rnd = rnd
 
     def sampler(self):
-        rndblocks = iter(self.rnd.choice(self.reader.num_record_batches,
-                         self.nsamples))
+        rndblocks = iter(self.rnd.choice(self.reader.num_record_batches, self.nsamples))
         for iblock in rndblocks:
             yield self.reader.get_batch(iblock)
         self.__logger.info("Completed sampling")
@@ -209,14 +197,9 @@ class CsvReader(BaseReader):
 
     """
 
-    def __init__(self,
-                 filepath_or_buffer,
-                 header,
-                 header_offset,
-                 blocks,
-                 rnd,
-                 nsamples=4
-                 ):
+    def __init__(
+        self, filepath_or_buffer, header, header_offset, blocks, rnd, nsamples=4
+    ):
         super().__init__()
         self.stream = self.gate.store.open(filepath_or_buffer)
         self.header = header
@@ -235,8 +218,7 @@ class CsvReader(BaseReader):
                 raise ValueError
 
     def sampler(self):
-        rndblocks = iter(self.rnd.choice(len(self.blocks),
-                         self.nsamples))
+        rndblocks = iter(self.rnd.choice(len(self.blocks), self.nsamples))
         for iblock in rndblocks:
             block = self.blocks[iblock]
             self.stream.seek(block[0])
@@ -253,9 +235,7 @@ class CsvReader(BaseReader):
             raise
 
         if self.stream.tell() != block[0]:
-            self.__logger.error("Wrong block %i %i",
-                                block[0],
-                                self.stream.tell())
+            self.__logger.error("Wrong block %i %i", block[0], self.stream.tell())
             raise IOError
         data = self.header
         data += self.stream.read(block[1])
@@ -287,14 +267,9 @@ class LegacyReader(BaseReader):
 
     """
 
-    def __init__(self,
-                 filepath_or_buffer,
-                 header,
-                 header_offset,
-                 blocks,
-                 rnd,
-                 nsamples=4
-                 ):
+    def __init__(
+        self, filepath_or_buffer, header, header_offset, blocks, rnd, nsamples=4
+    ):
         super().__init__()
         # TODO
         # Switch between metastore and buffer ?
@@ -314,8 +289,7 @@ class LegacyReader(BaseReader):
             raise ValueError
 
     def sampler(self):
-        rndblocks = iter(self.rnd.choice(len(self.blocks),
-                         self.nsamples))
+        rndblocks = iter(self.rnd.choice(len(self.blocks), self.nsamples))
         for iblock in rndblocks:
             block = self.blocks[iblock]
             self.stream.seek(block[0])
@@ -330,9 +304,7 @@ class LegacyReader(BaseReader):
             raise
 
         if self.stream.tell() != block[0]:
-            self.__logger.error("Wrong block %i %i",
-                                block[0],
-                                self.stream.tell())
+            self.__logger.error("Wrong block %i %i", block[0], self.stream.tell())
             raise IOError
         return self.stream.read_buffer(block[1])
 
@@ -344,8 +316,8 @@ class LegacyReader(BaseReader):
 class Sas7bdatReader(BaseReader):
 
     """
-    Sas7 bdata file format reader class implented as a generator which uses SAS7BDAT reader module under the hood. 
-    Serves data up in fixed number of rows.
+    Sas7 bdata file format reader class implented as a generator which uses SAS7BDAT
+    reader module under the hood.  Serves data up in fixed number of rows.
 
     Attributes
     ----------
@@ -363,14 +335,10 @@ class Sas7bdatReader(BaseReader):
     --------
 
     """
-    def __init__(self,
-                 filepath_or_buffer,
-                 header,
-                 header_offset,
-                 rnd,
-                 nsamples=4,
-                 num_rows=4095
-                 ):
+
+    def __init__(
+        self, filepath_or_buffer, header, header_offset, rnd, nsamples=4, num_rows=4095
+    ):
         # Switch between metastore and buffer ?
         # self.stream = pa.input_stream(filepath_or_buffer)
         super().__init__()
@@ -381,15 +349,17 @@ class Sas7bdatReader(BaseReader):
         self.nsamples = nsamples
         self.rnd = rnd
         self.schema = None
-        self.reader = SAS7BDAT(self.__module__,
-                               log_level=self.__logger.getEffectiveLevel(),
-                               extra_time_format_strings=None,
-                               extra_date_format_strings=None,
-                               skip_header=False,
-                               encoding='utf8',
-                               encoding_errors='ignore',
-                               align_correction=True,
-                               fh=self.stream)  # Use pa.open_stream()
+        self.reader = SAS7BDAT(
+            self.__module__,
+            log_level=self.__logger.getEffectiveLevel(),
+            extra_time_format_strings=None,
+            extra_date_format_strings=None,
+            skip_header=False,
+            encoding="utf8",
+            encoding_errors="ignore",
+            align_correction=True,
+            fh=self.stream,
+        )  # Use pa.open_stream()
         self.iter_ = self.reader.readlines()
         self._prepare()
 
@@ -398,13 +368,19 @@ class Sas7bdatReader(BaseReader):
         self.schema = self.reader.column_names_strings
         self.header_offset = self.reader.properties.header_length
         #  SASHeader __repr__
-        self.header = 'Header:\n%s' % '\n'.join(
-            ['\t%s: %s' % (k, v.decode(self.reader.encoding,
-                                       self.reader.encoding_errors)
-             if isinstance(v, bytes) else v)
-             for k, v in sorted(six.iteritems(_props.__dict__))]
-            )
-        self.header = bytes(self.header, 'utf8')
+        self.header = "Header:\n%s" % "\n".join(
+            [
+                "\t%s: %s"
+                % (
+                    k,
+                    v.decode(self.reader.encoding, self.reader.encoding_errors)
+                    if isinstance(v, bytes)
+                    else v,
+                )
+                for k, v in sorted(six.iteritems(_props.__dict__))
+            ]
+        )
+        self.header = bytes(self.header, "utf8")
         self.schema = next(self.iter_)
 
     def reset(self):
@@ -412,17 +388,16 @@ class Sas7bdatReader(BaseReader):
         next(self.iter_)  # Skip header row
 
     def sampler(self):
-        '''
+        """
         Requires reading entire SAS
         Otherwise, we'll need to rewrite the underlying reader
         to sample raw bytes correctly
 
         TODO -- Implement random bytes chunk from SASbdat files
-        '''
+        """
         self.reset()
         batches = [batch for batch in self]
-        rndblocks = iter(self.rnd.choice(len(batches),
-                         self.nsamples))
+        rndblocks = iter(self.rnd.choice(len(batches), self.nsamples))
         for iblock in rndblocks:
             yield batches[iblock]
         self.__logger.debug("Completed sampling")

@@ -1,7 +1,7 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2016-2019 Jan Pipek
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -44,20 +44,19 @@ def find_subclass(base: type, name: str) -> type:
 
     Uses only the class name without namespace.
     """
-    class_candidates = [klass
-                        for klass in all_subclasses(base)
-                        if klass.__name__ == name
-                        ]
+    class_candidates = [
+        klass for klass in all_subclasses(base) if klass.__name__ == name
+    ]
     if len(class_candidates) == 0:
-        raise RuntimeError("No \"{0}\" subclass of \"{1}\".".
-                           format(base.__name__, name))
+        raise RuntimeError('No "{0}" subclass of "{1}".'.format(base.__name__, name))
     elif len(class_candidates) > 1:
-        raise RuntimeError("Multiple \"{0}\" subclasses of \"{1}\".".
-                           format(base.__name__, name))
+        raise RuntimeError(
+            'Multiple "{0}" subclasses of "{1}".'.format(base.__name__, name)
+        )
     return class_candidates[0]
 
 
-def pop_many(a_dict: Dict[str, Any], *args: str,  **kwargs) -> Dict[str, Any]:
+def pop_many(a_dict: Dict[str, Any], *args: str, **kwargs) -> Dict[str, Any]:
     """Pop multiple items from a dictionary.
 
     Parameters

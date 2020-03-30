@@ -1,7 +1,7 @@
 # The MIT License (MIT)
-# 
+#
 # Copyright (c) 2016-2019 Jan Pipek
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
@@ -34,7 +34,7 @@ Modified by Ryan Mackenzie White for the Artemis Framework
 """
 #  from . import binnings
 
-__version__ = '0.4.6'
+__version__ = "0.4.6"
 
 
 def histogram(data, bins=None, *args, **kwargs):
@@ -101,8 +101,9 @@ def histogram(data, bins=None, *args, **kwargs):
     if isinstance(data, tuple) and isinstance(data[0], str):
         return histogram(data[1], bins, *args, name=data[0], **kwargs)
     elif type(data).__name__ == "DataFrame":
-        raise RuntimeError("Cannot create histogram "
-                           "from a pandas DataFrame. Use Series.")
+        raise RuntimeError(
+            "Cannot create histogram " "from a pandas DataFrame. Use Series."
+        )
 
     # Collect arguments (not to send them to binning algorithms)
     dropna = kwargs.pop("dropna", True)
@@ -121,16 +122,21 @@ def histogram(data, bins=None, *args, **kwargs):
         array = None
 
     # Get binning
-    binning = calculate_bins(array, bins, *args,
-                             check_nan=not dropna and array is not None,
-                             adaptive=adaptive, **kwargs)
+    binning = calculate_bins(
+        array,
+        bins,
+        *args,
+        check_nan=not dropna and array is not None,
+        adaptive=adaptive,
+        **kwargs
+    )
     # bins = binning.bins
 
     # Get frequencies
     if array is not None:
-        (frequencies, errors2, underflow, overflow, stats) =\
-            calculate_frequencies(array, binning=binning,
-                                  weights=weights, dtype=dtype)
+        (frequencies, errors2, underflow, overflow, stats) = calculate_frequencies(
+            array, binning=binning, weights=weights, dtype=dtype
+        )
     else:
         frequencies = None
         errors2 = None
@@ -145,15 +151,27 @@ def histogram(data, bins=None, *args, **kwargs):
     if not axis_name:
         if hasattr(data, "name"):
             axis_name = data.name
-        elif hasattr(data, "fields") and len(data.fields) == 1 \
-                and isinstance(data.fields[0], str):
+        elif (
+            hasattr(data, "fields")
+            and len(data.fields) == 1
+            and isinstance(data.fields[0], str)
+        ):
             # Case of dask fields (examples)
             axis_name = data.fields[0]
-    return Histogram1D(binning=binning, frequencies=frequencies,
-                       errors2=errors2, overflow=overflow,
-                       underflow=underflow, stats=stats, dtype=dtype,
-                       keep_missed=keep_missed, name=name, axis_name=axis_name,
-                       title=title)
+    return Histogram1D(
+        binning=binning,
+        frequencies=frequencies,
+        errors2=errors2,
+        overflow=overflow,
+        underflow=underflow,
+        stats=stats,
+        dtype=dtype,
+        keep_missed=keep_missed,
+        name=name,
+        axis_name=axis_name,
+        title=title,
+    )
+
 
 # Aliases
 
@@ -164,6 +182,7 @@ h1 = histogram
 def collection(data, bins=10, *args, **kwargs):
     """Create histogram collection with shared binnning."""
     from physt.histogram_collection import HistogramCollection
+
     if hasattr(data, "columns"):
         data = {column: data[column] for column in data.columns}
     return HistogramCollection.multi_h1(data, bins, **kwargs)

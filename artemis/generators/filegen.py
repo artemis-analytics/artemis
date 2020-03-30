@@ -31,10 +31,11 @@ class FileGenOptions:
 
 
 class FileGenerator(GeneratorBase):
-    '''
+    """
     Use a path and globbing pattern
     return a generator over the files
-    '''
+    """
+
     def __init__(self, name, **kwargs):
 
         options = dict(FileGenOptions())
@@ -55,16 +56,18 @@ class FileGenerator(GeneratorBase):
 
     def initialize(self):
         ids = []
-        for obj in self.gate.store.list(prefix=self.gate.meta.parentset_id,
-                                        suffix=self._glob):
+        for obj in self.gate.store.list(
+            prefix=self.gate.meta.parentset_id, suffix=self._glob
+        ):
             ids.append(obj.uuid)
         self._batch_iter = iter(ids)
 
     def reset(self):
         # self._batch_iter = pathlib.Path(self._path).glob(self._glob)
         ids = []
-        for obj in self.gate.store.list(prefix=self.gate.meta.parentset_id,
-                                        suffix=self._glob):
+        for obj in self.gate.store.list(
+            prefix=self.gate.meta.parentset_id, suffix=self._glob
+        ):
             ids.append(obj.uuid)
         self._batch_iter = iter(ids)
 
@@ -72,8 +75,7 @@ class FileGenerator(GeneratorBase):
         lst = list(self._batch_iter)
         self.__logger.info("File list %s", lst)
         try:
-            rndidx = iter(self.random_state.choice(len(lst),
-                          self._nsamples))
+            rndidx = iter(self.random_state.choice(len(lst), self._nsamples))
         except ValueError:
             self.__logger.info("Cannot obtain random file list")
             raise
@@ -88,8 +90,7 @@ class FileGenerator(GeneratorBase):
         self.__logger.debug("Generating the file paths")
         # _files = pathlib.Path(self._path).glob(self._glob)
         _files = []
-        glob_ = self.gate.store.list(prefix=self.gate.parentset_id,
-                                     suffix=self._glob)
+        glob_ = self.gate.store.list(prefix=self.gate.parentset_id, suffix=self._glob)
         for obj in glob_:
             _files.append(obj.uuid)
         for f in _files:

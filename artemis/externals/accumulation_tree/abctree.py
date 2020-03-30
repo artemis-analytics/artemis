@@ -30,10 +30,11 @@
 from __future__ import absolute_import
 
 import sys
-PYPY = hasattr(sys, 'pypy_version_info')
 
 from .treeslice import TreeSlice
 from operator import attrgetter
+
+PYPY = hasattr(sys, "pypy_version_info")
 
 
 class _ABCTree(object):
@@ -144,7 +145,7 @@ class _ABCTree(object):
     to objects, deleting objects in the associated tree also deletes the object
     in the TreeSlice.
 
-    * TreeSlice[k] -> 
+    * TreeSlice[k] ->
         get value for key k, raises KeyError if k not exists in range s:e
     * TreeSlice[s1:e1] -> TreeSlice object, with keys in range s1 <= key < e1
 
@@ -197,7 +198,7 @@ class _ABCTree(object):
 
     def __repr__(self):
         """T.__repr__(...) <==> repr(x)"""
-        tpl = "%s({%s})" % (self.__class__.__name__, '%s')
+        tpl = "%s({%s})" % (self.__class__.__name__, "%s")
         return tpl % ", ".join(("%r: %r" % item for item in self.items()))
 
     def copy(self):
@@ -205,6 +206,7 @@ class _ABCTree(object):
         tree = self.__class__()
         self.foreach(tree.insert, order=-1)
         return tree
+
     __copy__ = copy
 
     def __contains__(self, key):
@@ -260,6 +262,7 @@ class _ABCTree(object):
         to False
         """
         return (item[0] for item in self.iter_items(reverse=reverse))
+
     __iter__ = keys
 
     def __reversed__(self):
@@ -289,7 +292,7 @@ class _ABCTree(object):
     def __setitem__(self, key, value):
         """T.__setitem__(i, y) <==> x[i]=y"""
         if isinstance(key, slice):
-            raise ValueError('setslice is not supported')
+            raise ValueError("setslice is not supported")
         self.insert(key, value)
 
     def __delitem__(self, key):
@@ -313,8 +316,7 @@ class _ABCTree(object):
         Yields keys in ascending order if reverse is False
         else in descending order.
         """
-        return (k for k, v in self.iter_items(start_key, end_key,
-                                              reverse=reverse))
+        return (k for k, v in self.iter_items(start_key, end_key, reverse=reverse))
 
     def value_slice(self, start_key, end_key, reverse=False):
         """T.value_slice(start_key, end_key) -> value iterator:
@@ -323,8 +325,7 @@ class _ABCTree(object):
         Yields values in ascending key order if reverse is False
         else in descending key order.
         """
-        return (v for k, v in self.iter_items(start_key, end_key,
-                                              reverse=reverse))
+        return (v for k, v in self.iter_items(start_key, end_key, reverse=reverse))
 
     def item_slice(self, start_key, end_key, reverse=False):
         """T.item_slice(start_key, end_key) -> item iterator:
@@ -352,6 +353,7 @@ class _ABCTree(object):
         except KeyError:
             self.insert(key, default)
             return default
+
     setdefault = set_default  # for compatibility to dict()
 
     def update(self, *args):
@@ -374,6 +376,7 @@ class _ABCTree(object):
         for key in iterable:
             tree.insert(key, value)
         return tree
+
     fromkeys = from_keys  # for compatibility to dict()
 
     def get(self, key, default=None):
@@ -389,8 +392,9 @@ class _ABCTree(object):
         otherwise KeyError is raised
         """
         if len(args) > 1:
-            raise TypeError("pop expected at most "
-                            "2 arguments, got %d" % (1 + len(args)))
+            raise TypeError(
+                "pop expected at most " "2 arguments, got %d" % (1 + len(args))
+            )
         try:
             value = self.get_value(key)
             self.remove(key)
@@ -484,8 +488,7 @@ class _ABCTree(object):
         rkeys = thiskeys.union(*_build_sets(trees))
         all_trees = [self]
         all_trees.extend(trees)
-        return self.__class__(((key, _multi_tree_get(all_trees, key))
-                              for key in rkeys))
+        return self.__class__(((key, _multi_tree_get(all_trees, key)) for key in rkeys))
 
     def difference(self, *trees):
         """T.difference(t1, t2, ...) -> Tree with keys in T but not any of t1,
@@ -502,25 +505,27 @@ class _ABCTree(object):
         thiskeys = frozenset(self.keys())
         rkeys = thiskeys.symmetric_difference(frozenset(tree.keys()))
         all_trees = [self, tree]
-        return self.__class__(((key, _multi_tree_get(all_trees, key))
-                              for key in rkeys))
+        return self.__class__(((key, _multi_tree_get(all_trees, key)) for key in rkeys))
 
     def is_subset(self, tree):
         """T.issubset(tree) -> True if every element in x is in tree """
         thiskeys = frozenset(self.keys())
         return thiskeys.issubset(frozenset(tree.keys()))
+
     issubset = is_subset  # for compatibility to set()
 
     def is_superset(self, tree):
         """T.issubset(tree) -> True if every element in tree is in x """
         thiskeys = frozenset(self.keys())
         return thiskeys.issuperset(frozenset(tree.keys()))
+
     issuperset = is_superset  # for compatibility to set()
 
     def is_disjoint(self, tree):
         """T.isdisjoint(S) ->  True if x has a null intersection with tree """
         thiskeys = frozenset(self.keys())
         return thiskeys.isdisjoint(frozenset(tree.keys()))
+
     isdisjoint = is_disjoint  # for compatibility to set()
 
 
@@ -577,6 +582,7 @@ class CPYTHON_ABCTree(_ABCTree):
         get (k, v) pair, where k is the smallest key greater
         than or equal to key, O(log(n))
     """
+
     def __init__(self, items=None):
         """
         T.__init__(...) initializes T;
@@ -588,11 +594,13 @@ class CPYTHON_ABCTree(_ABCTree):
 
     def clear(self):
         """T.clear() -> None.  Remove all items from T."""
+
         def _clear(node):
             if node is not None:
                 _clear(node.left)
                 _clear(node.right)
                 node.free()
+
         _clear(self._root)
         self._count = 0
         self._root = None
@@ -631,6 +639,7 @@ class CPYTHON_ABCTree(_ABCTree):
         value = node.value
         self.remove(key)
         return key, value
+
     popitem = pop_item  # for compatibility  to dict()
 
     def foreach(self, func, order=0):
@@ -639,6 +648,7 @@ class CPYTHON_ABCTree(_ABCTree):
         parm func: function(key, value)
         param int order: inorder = 0, preorder = -1, postorder = +1
         """
+
         def _traverse(node):
             if order == -1:
                 func(node.key, node.value)
@@ -650,6 +660,7 @@ class CPYTHON_ABCTree(_ABCTree):
                 _traverse(node.right)
             if order == +1:
                 func(node.key, node.value)
+
         _traverse(self._root)
 
     def min_item(self):
@@ -793,7 +804,7 @@ class CPYTHON_ABCTree(_ABCTree):
             return succ_node.key, succ_node.value
         raise KeyError(str(key))
 
-    def iter_items(self,  start_key=None, end_key=None, reverse=False):
+    def iter_items(self, start_key=None, end_key=None, reverse=False):
         """Iterates over the (key, value) items of the associated tree,
         in ascending order if reverse is True, iterate in descending order,
         reverse defaults to False"""
@@ -808,19 +819,30 @@ class CPYTHON_ABCTree(_ABCTree):
             return self._iter_items_forward(start_key, end_key)
 
     def _iter_items_forward(self, start_key=None, end_key=None):
-        for item in self._iter_items(left=attrgetter("left"),
-                                     right=attrgetter("right"),
-                                     start_key=start_key, end_key=end_key):
+        for item in self._iter_items(
+            left=attrgetter("left"),
+            right=attrgetter("right"),
+            start_key=start_key,
+            end_key=end_key,
+        ):
             yield item
 
     def _iter_items_backward(self, start_key=None, end_key=None):
-        for item in self._iter_items(left=attrgetter("right"),
-                                     right=attrgetter("left"),
-                                     start_key=start_key, end_key=end_key):
+        for item in self._iter_items(
+            left=attrgetter("right"),
+            right=attrgetter("left"),
+            start_key=start_key,
+            end_key=end_key,
+        ):
             yield item
 
-    def _iter_items(self, left=attrgetter("left"), right=attrgetter("right"),
-                    start_key=None, end_key=None):
+    def _iter_items(
+        self,
+        left=attrgetter("left"),
+        right=attrgetter("right"),
+        start_key=None,
+        end_key=None,
+    ):
         node = self._root
         stack = []
         go_left = True

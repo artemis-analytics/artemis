@@ -18,7 +18,8 @@
 # limitations under the License.
 
 """
-Algorithm that parsers and converts a bytes object of flat-width data to Arrow record batch format. Calls a tool that executes an arrow-based flat-width file reader.
+Algorithm that parsers and converts a bytes object of flat-width data to Arrow record
+batch format. Calls a tool that executes an arrow-based flat-width file reader.
 """
 
 
@@ -28,25 +29,22 @@ from artemis.utils.utils import range_positive
 
 
 class LegacyDataAlgo(AlgoBase):
-
     def __init__(self, name, **kwargs):
         super().__init__(name, **kwargs)
-        self.__logger.info('%s: __init__ LegacyAlgo' % self.name)
+        self.__logger.info("%s: __init__ LegacyAlgo" % self.name)
         # TODO
         # Add any required tools to list of algo properties
         # All tools must be loaded in the ToolStore
         # Check for existence of tool
 
     def initialize(self):
-        self.__logger.info('%s: Initialized LegacyAlgo' % self.name)
+        self.__logger.info("%s: Initialized LegacyAlgo" % self.name)
 
     def book(self):
         self.__logger.info("Book")
-        bins = [x for x in range_positive(0., 100., 2.)]
-        self.gate.hbook.book(self.name, 'time.pyparse',
-                             bins, 'ms', timer=True)
-        self.gate.hbook.book(self.name, 'time.legacydataparse',
-                             bins, 'ms', timer=True)
+        bins = [x for x in range_positive(0.0, 100.0, 2.0)]
+        self.gate.hbook.book(self.name, "time.pyparse", bins, "ms", timer=True)
+        self.gate.hbook.book(self.name, "time.legacydataparse", bins, "ms", timer=True)
 
     def rebook(self):
         pass
@@ -54,7 +52,7 @@ class LegacyDataAlgo(AlgoBase):
     @timethis
     def pyarrow_parsing(self, block):
         try:
-            batch = self.get_tool('legacytool').execute(block)
+            batch = self.get_tool("legacytool").execute(block)
         except Exception:
             raise
         return batch
@@ -62,7 +60,7 @@ class LegacyDataAlgo(AlgoBase):
     @timethis
     def pyarrow_fwfr(self, block):
         try:
-            batch = self.get_tool('fwftool').execute(block)
+            batch = self.get_tool("fwftool").execute(block)
         except Exception:
             raise
         return batch
@@ -77,26 +75,24 @@ class LegacyDataAlgo(AlgoBase):
             self.__logger.error("PyArrow parsing fails")
             raise
 
-        self.gate.hbook.fill(self.name, 'time.legacydataparse', time_)
+        self.gate.hbook.fill(self.name, "time.legacydataparse", time_)
 
         try:
             fbatch, time_ = self.pyarrow_fwfr(raw_)
         except Exception:
             self.__logger.error("PyArrow parsing fails")
             raise
-        self.gate.hbook.fill(self.name, 'time.pyparse', time_)
+        self.gate.hbook.fill(self.name, "time.pyparse", time_)
 
         self.__logger.debug("Arrow schema: %s time: ", tbatch.schema)
 
         self.__logger.info("First Batch")
         self.__logger.info("Schema %s", tbatch.schema)
-        self.__logger.info("Rows %i Columns %i", tbatch.num_rows,
-                           tbatch.num_columns)
+        self.__logger.info("Rows %i Columns %i", tbatch.num_rows, tbatch.num_columns)
 
         self.__logger.info("Second Batch")
         self.__logger.info("Schema %s", fbatch.schema)
-        self.__logger.info("Rows %i Columns %i",
-                           fbatch.num_rows, fbatch.num_columns)
+        self.__logger.info("Rows %i Columns %i", fbatch.num_rows, fbatch.num_columns)
         # Does this overwrite the existing data for this element?
         element.add_data(tbatch)
         self.__logger.debug("Element Data type %s", type(element.get_data()))

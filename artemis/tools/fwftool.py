@@ -31,7 +31,6 @@ class FwfToolOptions:
 
 
 class FwfTool(ToolBase):
-
     def __init__(self, name, **kwargs):
 
         # Retrieves the default options from arrow
@@ -49,25 +48,25 @@ class FwfTool(ToolBase):
         self._readopts = pf.ReadOptions(**ropts)
         self._parseopts = pf.ParseOptions(**popts)
         self._convertopts = pf.ConvertOptions(**copts)
-        self.__logger.info('%s: __init__ FwfTool', self.name)
+        self.__logger.info("%s: __init__ FwfTool", self.name)
         self.__logger.info("Options %s", options)
 
     def _get_opts(self, cls, **kwargs):
         options = {}
         for attr in dir(cls):
-            if attr[:2] != '__' and attr != "buffer_safety_factor":
+            if attr[:2] != "__" and attr != "buffer_safety_factor":
                 options[attr] = getattr(cls, attr)
                 if attr in kwargs:
                     options[attr] = kwargs[attr]
         return options
 
     def initialize(self):
-        self.__logger.info("%s properties: %s",
-                           self.__class__.__name__,
-                           self.properties)
+        self.__logger.info(
+            "%s properties: %s", self.__class__.__name__, self.properties
+        )
 
     def execute(self, block):
-        '''
+        """
         Calls the read_csv module from pyarrow
 
         Parameters
@@ -77,12 +76,14 @@ class FwfTool(ToolBase):
         Returns
         ---------
         pyarrow RecordBatch
-        '''
+        """
         try:
-            table = pf.read_fwf(block,
-                                read_options=self._readopts,
-                                parse_options=self._parseopts,
-                                convert_options=self._convertopts)
+            table = pf.read_fwf(
+                block,
+                read_options=self._readopts,
+                parse_options=self._parseopts,
+                convert_options=self._convertopts,
+            )
         except Exception:
             self.__logger.error("Problem converting fwf to table")
             raise
