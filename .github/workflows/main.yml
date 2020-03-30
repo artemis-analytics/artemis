@@ -57,8 +57,7 @@ jobs:
           # condarc-file: # optional, default is 
           # Advanced. Prior to runnning "conda init" all shell profiles will be removed from the runner. Default is "true".
           # remove-profiles: # optional, default is true
-          channels: conda-forge 
-                    artemis-analytics
+          channels: conda-forge artemis-analytics
       - shell: bash -l {0}
         run: |
           conda info
