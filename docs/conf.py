@@ -13,6 +13,7 @@
 import sphinx_rtd_theme
 import os
 import sys
+import artemis
 
 print("Sphnix build path %s" % sys.path)
 # Minimum version, enforced by sphinx
