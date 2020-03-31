@@ -29,7 +29,7 @@ node and expect a pre-defined data input.
 
 Metaclasses, Base Classes and Mixins
 ------------------------------------
-:ref:`api:Base Classes`
+.. :ref:`api:Base Classes`
 
 Artemis class structure is designed to provide users with the following capabilities within algorithms:
 
@@ -126,6 +126,7 @@ An example user-defined algorithm
             # Algorithmic code
         def finalize(self):
             # gather any user-defined summary information
+
 Logging
 ^^^^^^^
 Standard python logging is available, either info or debug logging can be used. 
