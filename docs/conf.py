@@ -13,7 +13,8 @@
 import sphinx_rtd_theme
 import os
 import sys
-import artemis
+
+# import artemis
 
 print("Sphnix build path %s" % sys.path)
 # Minimum version, enforced by sphinx
@@ -37,12 +38,12 @@ author = "Ryan M. White, Dominic Parent, Russell Gill"
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
+    "autoapi.extension",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.autosummary",
     "sphinx_rtd_theme",
     "sphinx.ext.napoleon",
 ]
-#              'numpydoc']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -76,3 +77,5 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 autosummary_generate = True
+
+autoapi_dirs = ["../artemis"]
