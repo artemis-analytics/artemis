@@ -20,14 +20,4 @@ set -e
 set -x
 echo $(pwd)
 echo $(ls)
-cd fwfr;
-conda install -y -c conda-forge --file requirements.txt
-mkdir -p build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=$CONDA_PREFIX ..
-make install
-cd ..
-rm -r build
-cd bindings
-python setup.py build_ext --inplace install
-cd ../../
 $PYTHON setup.py build_ext --inplace install
