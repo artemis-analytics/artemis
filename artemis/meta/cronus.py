@@ -30,16 +30,16 @@ import pyarrow as pa
 import numpy as np
 from simplekv.fs import FilesystemStore
 
-from artemis.io.protobuf.cronus_pb2 import CronusObjectStore
-from artemis.io.protobuf.cronus_pb2 import CronusObject, FileType
-from artemis.io.protobuf.menu_pb2 import Menu as Menu_pb
-from artemis.io.protobuf.configuration_pb2 import Configuration
+from artemis_format.pymodels.cronus_pb2 import CronusObjectStore
+from artemis_format.pymodels.cronus_pb2 import CronusObject, FileType
+from artemis_format.pymodels.menu_pb2 import Menu as Menu_pb
+from artemis_format.pymodels.configuration_pb2 import Configuration
 from artemis.logger import Logger
 from artemis.core.book import BaseBook
 
 # Import all the info objects to set the oneof of a CronusObject
 # Annoying boiler plate
-from artemis.io.protobuf.cronus_pb2 import (
+from artemis_format.pymodels.cronus_pb2 import (
     MenuObjectInfo,
     ConfigObjectInfo,
     DatasetObjectInfo,

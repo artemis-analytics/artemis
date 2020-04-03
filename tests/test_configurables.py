@@ -31,11 +31,13 @@ from artemis.configurables.configs.csvgenconfig import CsvGenConfig
 
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
-from artemis.core.gate import ArtemisGateSvc 
-from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis.core.gate import ArtemisGateSvc
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
+
 logging.getLogger().setLevel(logging.INFO)
+
+
 class ConfigurableTestCase(unittest.TestCase):
-        
     def setUp(self):
         pass
 
@@ -46,15 +48,15 @@ class ConfigurableTestCase(unittest.TestCase):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        mb = MenuFactory('csvgen')
+        mb = MenuFactory("csvgen")
         msgmenu = mb.build()
-        config = CsvGenConfig(msgmenu, table_id='dummy')
+        config = CsvGenConfig(msgmenu, table_id="dummy")
         config.configure()
 
     def test_config_artemis(self):
-        '''
+        """
         See test_artemis.py
-        '''
+        """
         pass
 
 

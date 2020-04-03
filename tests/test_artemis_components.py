@@ -16,7 +16,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Copyright © Her Majesty the Queen in Right of Canada, as represented 
+# Copyright © Her Majesty the Queen in Right of Canada, as represented
 # by the Minister of Statistics Canada, 2019.
 #
 # Distributed under terms of the  license.
@@ -40,14 +40,13 @@ from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
 
-import artemis.io.protobuf.artemis_pb2 as artemis_pb2
-from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+import artemis_format.pymodels.artemis_pb2 as artemis_pb2
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 
 logging.getLogger().setLevel(logging.INFO)
 
 
 class ArtemisTestCase(unittest.TestCase):
-     
     def reset(self):
         Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
@@ -57,26 +56,27 @@ class ArtemisTestCase(unittest.TestCase):
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
         self.reset()
-        
-        mb = MenuFactory('csvgen')
+
+        mb = MenuFactory("csvgen")
         msgmenu = mb.build()
-        config = JobConfigFactory('csvgen',msgmenu,
-                                  jobname='arrowproto',
-                                  output_repo='')
+        config = JobConfigFactory(
+            "csvgen", msgmenu, jobname="arrowproto", output_repo=""
+        )
         config.configure()
         msg = config.job_config
-       
+
         self.job = JobInfo_pb()
-        self.job.name = 'arrowproto'
-        self.job.job_id = 'example'
-        self.job.output.repo = ''
+        self.job.name = "arrowproto"
+        self.job.job_id = "example"
+        self.job.output.repo = ""
         self.job.config.CopyFrom(msg)
 
     def tearDown(self):
         self.reset()
         # Should be able to call self.tmppath.cleanup()
         # But above, cannot join str and TemporaryDirectory types
-    ''' 
+
+    """ 
     def test_launch(self):
         self.reset()
         with tempfile.TemporaryDirectory() as dirpath:
@@ -222,19 +222,22 @@ class ArtemisTestCase(unittest.TestCase):
             print('Finalizing')
             bow.abort("abort")
             print('Job finished')
-    '''
+    """
+
+
 def suite():
     pass
-    #suite = unittest.TestSuite()
-    #suite.addTest(ArtemisTestCase('test_launch'))
-    #suite.addTest(ArtemisTestCase('test_configure'))
-    #suite.addTest(ArtemisTestCase('test_lock'))
-    #suite.addTest(ArtemisTestCase('test_initialize'))
-    #suite.addTest(ArtemisTestCase('test_book'))
-    #suite.addTest(ArtemisTestCase('test_run'))
-    #suite.addTest(ArtemisTestCase('test_finalize'))
+    # suite = unittest.TestSuite()
+    # suite.addTest(ArtemisTestCase('test_launch'))
+    # suite.addTest(ArtemisTestCase('test_configure'))
+    # suite.addTest(ArtemisTestCase('test_lock'))
+    # suite.addTest(ArtemisTestCase('test_initialize'))
+    # suite.addTest(ArtemisTestCase('test_book'))
+    # suite.addTest(ArtemisTestCase('test_run'))
+    # suite.addTest(ArtemisTestCase('test_finalize'))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     runner = unittest.ArtemisTestCase()
     runner.run(suite())
     pass

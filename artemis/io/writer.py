@@ -34,8 +34,8 @@ from artemis.logger import Logger
 from artemis.decorators import timethis, iterable
 from artemis.core.gate import ArtemisGateSvc
 
-from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
-from artemis.io.protobuf.table_pb2 import Table
+from artemis_format.pymodels.cronus_pb2 import FileObjectInfo, TableObjectInfo
+from artemis_format.pymodels.table_pb2 import Table
 
 
 @iterable

@@ -24,7 +24,7 @@ Property classes
 from collections import OrderedDict
 from pprint import pformat
 
-from artemis.io.protobuf.configuration_pb2 import Properties as Properties_pb
+from artemis_format.pymodels.configuration_pb2 import Properties as Properties_pb
 
 
 class Properties:

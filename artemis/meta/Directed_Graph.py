@@ -54,7 +54,7 @@ from functools import reduce as _reduce
 from queue import Queue
 from typing import List, Tuple
 
-from artemis.io.protobuf.menu_pb2 import Menu as Menu_pb
+from artemis_format.pymodels.menu_pb2 import Menu as Menu_pb
 from artemis.logger import Logger
 
 

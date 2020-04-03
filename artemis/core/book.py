@@ -35,16 +35,16 @@ import numpy as np
 
 from artemis.externals.physt.histogram_base import HistogramBase
 from artemis.externals.physt.histogram1d import Histogram1D
-from artemis.io.protobuf import write_many as physt_write_many
-from artemis.io.protobuf import read as physt_read
-from artemis.io.protobuf.histogram_pb2 import HistogramCollection
+from artemis.io.ioutils import write_many as physt_write_many
+from artemis.io.ioutils import read as physt_read
+from artemis_format.pymodels.histogram_pb2 import HistogramCollection
 
 from artemis.logger import Logger
 from artemis.utils.utils import autobinning
 from artemis.core.tool import ToolBase
 
 from artemis.externals.tdigest.tdigest import TDigest
-from artemis.io.protobuf.tdigest_pb2 import TDigest_store, TDigest_instance
+from artemis_format.pymodels.tdigest_pb2 import TDigest_store, TDigest_instance
 
 
 class BaseBook(collections.MutableMapping):

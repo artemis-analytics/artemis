@@ -25,8 +25,8 @@ import uuid
 
 # from pandas import ExcelFile
 
-from artemis.io.protobuf.cronus_pb2 import DatasetObjectInfo as Dataset
-from artemis.io.protobuf.table_pb2 import Table
+from artemis_format.pymodels.cronus_pb2 import DatasetObjectInfo as Dataset
+from artemis_format.pymodels.table_pb2 import Table
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase

@@ -16,7 +16,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Copyright © Her Majesty the Queen in Right of Canada, as represented 
+# Copyright © Her Majesty the Queen in Right of Canada, as represented
 # by the Minister of Statistics Canada, 2019.
 #
 # Distributed under terms of the  license.
@@ -33,14 +33,13 @@ from artemis.artemis import Artemis, ArtemisFactory
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
-from artemis.core.gate import ArtemisGateSvc 
-from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis.core.gate import ArtemisGateSvc
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 
 logging.getLogger().setLevel(logging.INFO)
 
 
 class ArtemisTestCase(unittest.TestCase):
-        
     def setUp(self):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
@@ -49,8 +48,8 @@ class ArtemisTestCase(unittest.TestCase):
     def tearDown(self):
         Singleton.reset(ArtemisGateSvc)
         Singleton.reset(ArrowSets)
-    
-    ''' 
+
+    """ 
     def test_proto(self):
         cov = coverage.Coverage()
         cov.start()
@@ -77,7 +76,8 @@ class ArtemisTestCase(unittest.TestCase):
             
             cov.stop()
             cov.save()
-        '''
+        """
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

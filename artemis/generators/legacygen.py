@@ -26,7 +26,7 @@ import pyarrow as pa
 
 from artemis.decorators import iterable
 from artemis.generators.common import GeneratorBase
-from artemis.io.protobuf.cronus_pb2 import FileObjectInfo
+from artemis_format.pymodels.cronus_pb2 import FileObjectInfo
 
 
 @iterable

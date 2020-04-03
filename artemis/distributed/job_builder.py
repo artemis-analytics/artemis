@@ -23,7 +23,7 @@
 import dask
 
 from artemis.artemis import Artemis
-from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 
 
 class JobBuilder:

@@ -30,7 +30,7 @@ from artemis.configurables.factories import FileHandlerFactory
 
 from artemis.tools.tdigesttool import TDigestTool
 
-from artemis.io.protobuf.configuration_pb2 import Configuration
+from artemis_format.pymodels.configuration_pb2 import Configuration
 from artemis.meta.Directed_Graph import GraphMenu
 
 

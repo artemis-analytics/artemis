@@ -20,6 +20,7 @@
 
 import sys
 import os
+
 sys.path = [os.path.join(os.path.dirname(__file__), "..")] + sys.path
 from artemis.externals.physt import h1
 import numpy as np
@@ -27,8 +28,11 @@ import unittest
 
 
 class TestAdaptive(unittest.TestCase):
-    
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
+
         pass
 
     def tearDown(self):
@@ -60,7 +64,7 @@ class TestAdaptive(unittest.TestCase):
         assert h.total == 2
         assert np.array_equal(h.bin_left_edges, [-20, -10, 0])
         assert np.array_equal(h.bin_right_edges, [-10, 0, 10])
-        assert np.array_equal(h.frequencies, [1, 0, 1])       
+        assert np.array_equal(h.frequencies, [1, 0, 1])
 
         h.fill(-14)
         assert h.bin_count == 3
@@ -73,8 +77,10 @@ class TestAdaptive(unittest.TestCase):
 
 
 class TestFillNAdaptive(unittest.TestCase):
-
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         pass
 
     def tearDown(self):
@@ -126,8 +132,10 @@ class TestFillNAdaptive(unittest.TestCase):
 
 
 class TestAdaptiveArithmetics(unittest.TestCase):
-
     def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
         pass
 
     def tearDown(self):
@@ -167,4 +175,4 @@ class TestAdaptiveArithmetics(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    unittest.main() 
+    unittest.main()

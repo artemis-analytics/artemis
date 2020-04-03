@@ -40,6 +40,11 @@ def module_exists(module_name, object_name):
     "filtercoltool not installed",
 )
 class FilterColTestCase(unittest.TestCase):
+    def setUp(self):
+        print("================================================")
+        print("Beginning new TestCase %s" % self._testMethodName)
+        print("================================================")
+
     def test_basic(self):
         from artemis.tools.filtercoltool import FilterColTool
 

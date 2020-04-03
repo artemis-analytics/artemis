@@ -31,7 +31,7 @@ from pprint import pformat
 
 from artemis.logger import Logger
 from artemis.core.properties import Properties
-from artemis.io.protobuf.configuration_pb2 import Module as Tool_pb
+from artemis_format.pymodels.configuration_pb2 import Module as Tool_pb
 
 from artemis.core.abcalgo import AbcAlgoBase
 

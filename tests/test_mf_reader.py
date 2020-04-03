@@ -34,13 +34,12 @@ from artemis.tools.mftool import MfTool
 from artemis.generators.legacygen import GenMF
 
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
-from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 
 from artemis.meta.cronus import BaseObjectStore
-from artemis.io.protobuf.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
-from artemis.io.protobuf.cronus_pb2 import FileObjectInfo, TableObjectInfo
-
-from artemis.io.protobuf.table_pb2 import Table
+from artemis_format.pymodels.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
+from artemis_format.pymodels.cronus_pb2 import FileObjectInfo, TableObjectInfo
+from artemis_format.pymodels.table_pb2 import Table
 
 logging.getLogger().setLevel(logging.INFO)
 

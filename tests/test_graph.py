@@ -33,13 +33,13 @@ from artemis.meta.Directed_Graph import Directed_Graph, Node, GraphMenu
 
 from google.protobuf import text_format
 
+
 class GraphTestCase(unittest.TestCase):
-    
     def setUp(self):
         print("================================================")
         print("Beginning new TestCase %s" % self._testMethodName)
         print("================================================")
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
 
     def tearDown(self):
         pass
@@ -61,8 +61,12 @@ class GraphTestCase(unittest.TestCase):
         node3 = Node(["initial", "node2", "node1", "node5"], ("genericalg"), "node3")
         node4 = Node(["initial", "node3"], ("genericalg"), "node4")
         node5 = Node(["initial", "node2"], ("genericalg"), "node5")
-        node6 = Node(["node1", "node2", "node3", "node4", "node5"], ("genericalg"), "node6")
-        node7 = Node(["node1", "node2", "node3", "node4", "node5"], ("genericalg"), "node7")
+        node6 = Node(
+            ["node1", "node2", "node3", "node4", "node5"], ("genericalg"), "node6"
+        )
+        node7 = Node(
+            ["node1", "node2", "node3", "node4", "node5"], ("genericalg"), "node7"
+        )
         node8 = Node(["initial", "node2"], ("genericalg"), "node8")
         node9 = Node(["initial", "node2"], ("genericalg"), "node9")
 
@@ -76,7 +80,6 @@ class GraphTestCase(unittest.TestCase):
         print(node8.__str__())
         print(node9.__str__())
 
-
         graph1 = Directed_Graph("graph1")
         graph1.add(node1)
         graph1.add(node2)
@@ -89,31 +92,31 @@ class GraphTestCase(unittest.TestCase):
         graph1.add(node9)
 
         for node in graph1.nodes:
-           print(node.id)
+            print(node.id)
 
         print(graph1.build())
-        #graph1.create_vis(terminal_print = False)
+        # graph1.create_vis(terminal_print = False)
         graph1.create_vis()
-        #print("LEAVES")
-        #print(str(graph1.get_leaves()))
-        #print("LEAVES")
+        # print("LEAVES")
+        # print(str(graph1.get_leaves()))
+        # print("LEAVES")
 
         print("SORTED NODES")
         for node in graph1.nodes:
             print(node.id)
         print("SORTED NODES")
-        
-        '''
+
+        """
         print("INTERNAL GRAPH")
         print(graph1.internal_graph())
         print("INTERNAL GRAPH")
-        '''
+        """
 
     def test_sequence_menu(self):
-        '''
+        """
         for this test we will make two dummy/test Directed_graphs
         these graphs will then be added to the Menu which will then be 
-        '''
+        """
 
         node1 = Node(["initial"], ("genericalg"), "node1")
         node2 = Node(["initial"], ("genericalg"), "node2")
@@ -138,7 +141,7 @@ class GraphTestCase(unittest.TestCase):
         test_graph2.add(node6)
         test_graph2.add(node7)
 
-        #build the second test graph
+        # build the second test graph
         test_graph2.build()
 
         print("===========X===============")
@@ -153,7 +156,7 @@ class GraphTestCase(unittest.TestCase):
         for node in graphX.nodes:
             print(node)
         print("===========Nodes===============")
-        #graphX.create_vis()
+        # graphX.create_vis()
         print("===========X===============")
 
         print("===========Y===============")
@@ -167,7 +170,7 @@ class GraphTestCase(unittest.TestCase):
         for node in graphY.nodes:
             print(node)
         print("===========Nodes===============")
-        #graphY.create_vis()
+        # graphY.create_vis()
         print("===========Y===============")
 
         test_menu = GraphMenu("test")
@@ -180,9 +183,9 @@ class GraphTestCase(unittest.TestCase):
         test_menu.build()
         print("===========Building menu===============")
 
-        #print("===========Creating visual===============")
-        #test_menu.create_vis()
-        #print("===========Creating visual===============")
+        # print("===========Creating visual===============")
+        # test_menu.create_vis()
+        # print("===========Creating visual===============")
 
         msg = test_menu.to_msg()
         print(text_format.MessageToBytes(msg))
@@ -190,7 +193,7 @@ class GraphTestCase(unittest.TestCase):
 
         test_menu2 = GraphMenu("test1")
         test_menu2.to_menu_from_msg(msg)
-        test_menu2.create_vis(terminal_print=True,prefix='test1')
+        test_menu2.create_vis(terminal_print=True, prefix="test1")
 
         pass
 
@@ -230,7 +233,7 @@ class GraphTestCase(unittest.TestCase):
 
         test_menu2 = GraphMenu("test1")
         test_menu2.to_menu_from_msg(msg)
-        #test_menu2.create_vis(terminal_print=True)
+        # test_menu2.create_vis(terminal_print=True)
 
         pass
 
@@ -241,7 +244,7 @@ class GraphTestCase(unittest.TestCase):
         graph1.build()
 
         node2 = Node([graph1], ("genericalg"), "TableInfo")
-        node3 = Node(["TableInfo"],("genericalg"), "Schema")
+        node3 = Node(["TableInfo"], ("genericalg"), "Schema")
         node4 = Node(["Schema"], ("genericalg"), "SchemaInfo")
         node5 = Node(["SchemaInfo"], ("genericalg"), "SchemaAuxInfo")
         node6 = Node(["SchemaAuxInfo"], ("genericalg"), "Frequency")
@@ -261,7 +264,8 @@ class GraphTestCase(unittest.TestCase):
         graph2.add(node9)
         graph2.add(node10)
         graph2.build()
-        graph2.create_vis(prefix='test_graph_viz')
+        graph2.create_vis(prefix="test_graph_viz")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

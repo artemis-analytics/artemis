@@ -28,7 +28,7 @@ from artemis.logger import Logger
 from artemis.core.abcalgo import AbcAlgoBase
 from artemis.core.properties import Properties
 from artemis.core.gate import ArtemisGateSvc
-from artemis.io.protobuf.configuration_pb2 import Module as Algo_pb
+from artemis_format.pymodels.configuration_pb2 import Module as Algo_pb
 
 from artemis.core.gate import IOMetaMixin, MetaMixin
 

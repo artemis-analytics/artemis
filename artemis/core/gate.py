@@ -25,15 +25,15 @@ from artemis.core.singleton import Singleton
 from artemis.core.tree import Tree
 from artemis.core.book import ArtemisBook, TDigestBook
 from artemis.meta.cronus import BaseObjectStore
-from artemis.io.protobuf.cronus_pb2 import (
+from artemis_format.pymodels.cronus_pb2 import (
     HistsObjectInfo,
     TDigestObjectInfo,
     JobObjectInfo,
 )
-from artemis.io.protobuf.artemis_pb2 import JobInfo as JobInfo_pb
-from artemis.io.protobuf.artemis_pb2 import JOB_SUCCESS
-from artemis.io.protobuf.configuration_pb2 import Configuration
-from artemis.io.protobuf.menu_pb2 import Menu
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis_format.pymodels.artemis_pb2 import JOB_SUCCESS
+from artemis_format.pymodels.configuration_pb2 import Configuration
+from artemis_format.pymodels.menu_pb2 import Menu
 from artemis.core.book import ToolStore
 from artemis.core.datastore import ArrowSets
 

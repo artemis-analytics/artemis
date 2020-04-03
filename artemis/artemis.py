@@ -43,7 +43,7 @@ from artemis.core.algo import AlgoBase
 from artemis.io.collector import Collector
 
 # Protobuf
-import artemis.io.protobuf.artemis_pb2 as artemis_pb2
+import artemis_format.pymodels.artemis_pb2 as artemis_pb2
 
 # Utils
 from artemis.utils.utils import bytes_to_mb, range_positive
