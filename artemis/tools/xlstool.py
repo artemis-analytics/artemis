@@ -30,7 +30,7 @@ from artemis_format.pymodels.table_pb2 import Table
 
 from artemis.decorators import iterable
 from artemis.core.tool import ToolBase
-from artemis.utils.list_genfx import local_providers, faker_providers
+from dolos.simutable.loader import local_providers, faker_providers
 
 
 class DataSet:

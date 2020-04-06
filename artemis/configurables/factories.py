@@ -24,7 +24,7 @@ from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.io.filehandler import FileHandlerTool
 from artemis.generators.filegen import FileGenerator
 from artemis.generators.legacygen import GenMF
-from artemis.generators.simutablegen import SimuTableGen
+from dolos.simutablegen import SimuTableGen
 
 
 class GeneratorFactory:
