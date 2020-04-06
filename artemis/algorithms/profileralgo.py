@@ -21,7 +21,7 @@
 Profiles record batch columns with TDigest
 """
 
-from artemis.externals.tdigest.tdigest import TDigest
+from artemis_externals.tdigest.tdigest import TDigest
 from artemis.core.algo import AlgoBase
 
 

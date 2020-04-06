@@ -17,9 +17,9 @@ from pkg_resources import parse_version
 import numpy as np
 from typing import Union
 
-from artemis.externals.physt import __version__
-from artemis.externals.physt.util import find_subclass
-from artemis.externals.physt.histogram_base import HistogramBase
+from artemis_externals.physt import __version__
+from artemis_externals.physt.util import find_subclass
+from artemis_externals.physt.histogram_base import HistogramBase
 from artemis_format.pymodels.histogram_pb2 import Histogram, Meta, HistogramCollection
 
 # Name of fields that are re-used from to_dict / from_dict

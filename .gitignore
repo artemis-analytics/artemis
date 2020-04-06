@@ -3,6 +3,7 @@
 *json
 *txt
 *pdf
+*png
 *.dat
 *parquet
 *csv
