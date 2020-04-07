@@ -24,13 +24,15 @@ from collections import OrderedDict
 import importlib
 from pprint import pformat
 
-from artemis.logger import Logger
-from artemis.core.abcalgo import AbcAlgoBase
-from artemis.core.properties import Properties
-from artemis.core.gate import ArtemisGateSvc
 from artemis_format.pymodels.configuration_pb2 import Module as Algo_pb
 
+from artemis_base.utils.logger import Logger
+from artemis_base.core.abcalgo import AbcAlgoBase
+from artemis_base.core.properties import Properties
+
+from artemis.core.gate import ArtemisGateSvc
 from artemis.core.gate import IOMetaMixin, MetaMixin
+
 
 # TODO Create an interface class to AlgoBase to expose the run,
 # finalize methods to framework

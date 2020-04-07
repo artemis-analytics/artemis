@@ -55,7 +55,8 @@ from queue import Queue
 from typing import List, Tuple
 
 from artemis_format.pymodels.menu_pb2 import Menu as Menu_pb
-from artemis.logger import Logger
+
+from artemis_base.utils.logger import Logger
 
 
 @Logger.logged

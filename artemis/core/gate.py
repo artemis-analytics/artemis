@@ -20,22 +20,26 @@
 Framework-level services and helper mixin classes to provide access to metadata,
 histograms, timers, and stores
 """
-from artemis.logger import Logger
-from artemis.core.singleton import Singleton
-from artemis.core.tree import Tree
-from cronus.core.book import ArtemisBook, TDigestBook
-from cronus.core.cronus import BaseObjectStore
+
+from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
+from artemis_format.pymodels.artemis_pb2 import JOB_SUCCESS
+from artemis_format.pymodels.configuration_pb2 import Configuration
+from artemis_format.pymodels.menu_pb2 import Menu
 from artemis_format.pymodels.cronus_pb2 import (
     HistsObjectInfo,
     TDigestObjectInfo,
     JobObjectInfo,
 )
-from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
-from artemis_format.pymodels.artemis_pb2 import JOB_SUCCESS
-from artemis_format.pymodels.configuration_pb2 import Configuration
-from artemis_format.pymodels.menu_pb2 import Menu
-from cronus.core.book import ToolStore
+
+from artemis_base.utils.logger import Logger
+
+from artemis.core.singleton import Singleton
+from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
+
+from cronus.core.book import ArtemisBook, TDigestBook
+from cronus.core.cronus import BaseObjectStore
+from cronus.core.book import ToolStore
 
 
 @Logger.logged

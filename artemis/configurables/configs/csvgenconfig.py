@@ -20,8 +20,8 @@
 """
 
 """
-from artemis.logger import Logger
-from artemis.decorators import iterable
+from artemis_base.utils.logger import Logger
+from artemis_base.utils.decorators import iterable
 
 from artemis.configurables.configurable import Configurable
 from artemis.configurables.configurable import GlobalConfigOptions

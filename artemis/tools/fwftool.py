@@ -19,8 +19,8 @@
 
 import pyfwfr as pf
 
-from artemis.decorators import iterable
-from artemis.core.tool import ToolBase
+from artemis_base.utils.decorators import iterable
+from artemis_base.core.tool import ToolBase
 
 
 @iterable

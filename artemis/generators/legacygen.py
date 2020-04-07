@@ -24,9 +24,11 @@ import string
 import tempfile
 import pyarrow as pa
 
-from artemis.decorators import iterable
-from artemis.generators.common import GeneratorBase
 from artemis_format.pymodels.cronus_pb2 import FileObjectInfo
+
+from artemis_base.utils.decorators import iterable
+
+from artemis.generators.common import GeneratorBase
 
 
 @iterable

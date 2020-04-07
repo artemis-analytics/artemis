@@ -33,12 +33,14 @@ import uuid
 import pyarrow as pa
 from sas7bdat import SAS7BDAT
 
-from artemis.decorators import iterable
+from artemis_format.pymodels.table_pb2 import Table
+from artemis_format.pymodels.cronus_pb2 import TableObjectInfo
+
+from artemis_base.utils.decorators import iterable
+
 from artemis.core.algo import IOAlgoBase
 from artemis.generators.common import BuiltinsGenerator
 from artemis.io.readers import ReaderFactory
-from artemis_format.pymodels.table_pb2 import Table
-from artemis_format.pymodels.cronus_pb2 import TableObjectInfo
 
 
 @iterable

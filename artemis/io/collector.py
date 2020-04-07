@@ -22,13 +22,14 @@ Collector monitors Arrow memory-pool and manages file creation, spills to disk d
 on-demand, and flushes memory pool when required.
 """
 import pyarrow as pa
+from google.protobuf import text_format
 
-from artemis.logger import Logger
-from artemis.decorators import timethis, iterable
+from artemis_base.utils.logger import Logger
+from artemis_base.utils.decorators import timethis, iterable
+
 from artemis.core.algo import IOAlgoBase
 from artemis.core.tree import Tree
 from artemis.core.datastore import ArrowSets
-from google.protobuf import text_format
 
 
 @iterable

@@ -52,12 +52,14 @@ import numbers
 
 import pyarrow as pa
 
-from artemis.logger import Logger
-from artemis.core.algo import AbcAlgoBase
-from artemis.core.properties import Properties
-from artemis.core.gate import ArtemisGateSvc
 from artemis_format.pymodels.configuration_pb2 import Module as Algo_pb
-from artemis.errors import AbstractMethodError
+
+from artemis_base.utils.logger import Logger
+from artemis_base.errors import AbstractMethodError
+from artemis_base.core.properties import Properties
+
+from artemis.core.algo import AbcAlgoBase
+from artemis.core.gate import ArtemisGateSvc
 
 KILOBYTE = 1 << 10
 MEGABYTE = KILOBYTE * KILOBYTE

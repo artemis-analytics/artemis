@@ -22,15 +22,15 @@ Base class for creating a job configuration
 """
 import uuid
 
-from artemis.logger import Logger
-from artemis.decorators import iterable
+from artemis_format.pymodels.configuration_pb2 import Configuration
+
+from artemis_base.utils.logger import Logger
+from artemis_base.utils.decorators import iterable
+
 from artemis.io.writer import BufferOutputWriter
 from artemis.configurables.factories import GeneratorFactory
 from artemis.configurables.factories import FileHandlerFactory
-
 from artemis.tools.tdigesttool import TDigestTool
-
-from artemis_format.pymodels.configuration_pb2 import Configuration
 from artemis.meta.Directed_Graph import GraphMenu
 
 

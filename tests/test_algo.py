@@ -33,7 +33,7 @@ from pprint import pformat
 import sys
 from google.protobuf import text_format
 
-from artemis.decorators import timethis
+from artemis_base.utils.decorators import timethis
 
 
 class AlgoTestCase(unittest.TestCase):

@@ -22,8 +22,8 @@
 """
 from pyarrow.csv import read_csv, ReadOptions, ParseOptions, ConvertOptions
 
-from artemis.decorators import iterable
-from artemis.core.tool import ToolBase
+from artemis_base.utils.decorators import iterable
+from artemis_base.core.tool import ToolBase
 
 
 @iterable

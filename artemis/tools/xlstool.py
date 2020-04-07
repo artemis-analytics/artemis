@@ -28,8 +28,8 @@ import uuid
 from artemis_format.pymodels.cronus_pb2 import DatasetObjectInfo as Dataset
 from artemis_format.pymodels.table_pb2 import Table
 
-from artemis.decorators import iterable
-from artemis.core.tool import ToolBase
+from artemis_base.utils.decorators import iterable
+from artemis_base.core.tool import ToolBase
 from dolos.simutable.loader import local_providers, faker_providers
 
 

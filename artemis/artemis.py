@@ -27,13 +27,17 @@ import traceback
 # Externals
 import pyarrow as pa
 
+# Protobuf
+import artemis_format.pymodels.artemis_pb2 as artemis_pb2
+
 # Framework
-from artemis.logger import Logger
+from artemis_base.utils.logger import Logger
+from artemis_base.core.properties import Properties
+from artemis_base.utils.decorators import timethis
 
 # from artemis.exceptions import NullDataError
 
 # Core
-from artemis.core.properties import Properties
 from artemis.core.gate import ArtemisGateSvc
 from artemis.core.gate import MetaMixin, IOMetaMixin
 from artemis.core.steering import Steering
@@ -42,12 +46,9 @@ from artemis.core.algo import AlgoBase
 # IO
 from artemis.io.collector import Collector
 
-# Protobuf
-import artemis_format.pymodels.artemis_pb2 as artemis_pb2
 
 # Utils
 from artemis.utils.utils import bytes_to_mb, range_positive
-from artemis.decorators import timethis
 
 
 class ArtemisFactory:

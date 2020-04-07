@@ -27,10 +27,8 @@ import uuid
 import itertools
 
 import pyarrow as pa
-from google.protobuf import text_format
 
 from artemis.tools.csvtool import CsvTool
-from artemis.core.tool import ToolBase
 from artemis.generators.csvgen import GenCsvLikeArrow
 from cronus.core.cronus import BaseObjectStore
 from artemis_format.pymodels.table_pb2 import Table
@@ -76,12 +74,6 @@ class CsvToolTestCase(unittest.TestCase):
             partition_key="generator",
         ).uuid
         return store, g_dataset.uuid, job_id, id_, fields
-
-    def test_to_msg(self):
-        tool = CsvTool("tool", block_size=2 ** 16)
-        print(text_format.MessageToString(tool.to_msg()))
-
-        newtool = ToolBase.from_msg(logging.getLogger(), tool.to_msg())
 
     def test(self):
         with tempfile.TemporaryDirectory() as dirpath:

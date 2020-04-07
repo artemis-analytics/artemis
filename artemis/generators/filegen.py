@@ -20,7 +20,7 @@
 """
 Class for generating lists of input files from OS
 """
-from artemis.decorators import iterable
+from artemis_base.utils.decorators import iterable
 from artemis.generators.common import GeneratorBase
 
 

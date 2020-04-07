@@ -14,7 +14,7 @@
 # limitations under the License.
 import logging
 import sys
-from artemis.logger import Logger
+from artemis_base.utils.logger import Logger
 
 # logging.basicConfig(stream=sys.stdout,
 #                    format=Logger.FMT,

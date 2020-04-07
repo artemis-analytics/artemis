@@ -26,21 +26,14 @@
 """
 import unittest
 import logging
-import tempfile
-import os
-import shutil
 
-from artemis.core.steering import Steering
 from artemis.artemis import Artemis, ArtemisFactory
 from artemis.core.gate import ArtemisGateSvc
-from artemis.logger import Logger
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 
-from artemis.core.tree import Tree
 from artemis.core.singleton import Singleton
 from artemis.core.datastore import ArrowSets
 
-import artemis_format.pymodels.artemis_pb2 as artemis_pb2
 from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 
 logging.getLogger().setLevel(logging.INFO)

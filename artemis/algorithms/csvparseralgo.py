@@ -21,8 +21,9 @@
 Algorithm that parsers and converts a bytes object of csv data to Arrow record batch
 format. Calls a tool that executes the pyarrow csv reader.
 """
+from artemis_base.utils.decorators import timethis
+
 from artemis.core.algo import AlgoBase
-from artemis.decorators import timethis
 from artemis.utils.utils import range_positive
 
 

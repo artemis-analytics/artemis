@@ -19,11 +19,6 @@
 
 import unittest
 import pyarrow as pa
-from random import randint
-
-from artemis.core.tool import ToolBase
-
-# from artemis.tools.filtercoltool import FilterColTool
 
 
 def module_exists(module_name, object_name):

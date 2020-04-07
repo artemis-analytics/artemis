@@ -22,8 +22,9 @@ Steering executes business processes as a computation graph
 """
 from collections import OrderedDict
 
+from artemis_base.utils.decorators import timethis
+
 from artemis.utils.utils import range_positive
-from artemis.decorators import timethis
 from artemis.core.algo import AlgoBase
 from artemis.core.tree import Node, Element
 

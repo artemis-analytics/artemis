@@ -25,8 +25,9 @@ import six
 import pyarrow as pa
 from sas7bdat import SAS7BDAT
 
-from artemis.logger import Logger
-from artemis.errors import AbstractMethodError
+from artemis_base.utils.logger import Logger
+from artemis_base.errors import AbstractMethodError
+
 from artemis.core.gate import ArtemisGateSvc
 
 

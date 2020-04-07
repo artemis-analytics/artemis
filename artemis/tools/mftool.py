@@ -25,8 +25,8 @@ import pyarrow as pa
 import numpy as np
 from artemis_externals import ebcdic
 
-from artemis.decorators import iterable
-from artemis.core.tool import ToolBase
+from artemis_base.utils.decorators import iterable
+from artemis_base.core.tool import ToolBase
 
 
 @iterable
