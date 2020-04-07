@@ -36,7 +36,7 @@ from artemis.generators.legacygen import GenMF
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
 from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 
-from artemis.meta.cronus import BaseObjectStore
+from cronus.core.cronus import BaseObjectStore
 from artemis_format.pymodels.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
 from artemis_format.pymodels.cronus_pb2 import FileObjectInfo, TableObjectInfo
 from artemis_format.pymodels.table_pb2 import Table

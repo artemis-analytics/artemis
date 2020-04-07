@@ -37,7 +37,7 @@ from artemis.generators.csvgen import GenCsvLike, GenCsvLikeArrow
 from artemis.generators.filegen import FileGenerator
 from artemis.generators.common import BuiltinsGenerator
 
-from artemis.meta.cronus import BaseObjectStore
+from cronus.core.cronus import BaseObjectStore
 from artemis_format.pymodels.cronus_pb2 import TableObjectInfo
 from artemis_format.pymodels.table_pb2 import Table
 

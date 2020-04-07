@@ -28,7 +28,7 @@ import os, shutil
 import sys
 from pathlib import Path
 
-from artemis.meta.cronus import BaseObjectStore, JobBuilder
+from cronus.core.cronus import BaseObjectStore, JobBuilder
 from artemis.meta.Directed_Graph import Directed_Graph, Node, GraphMenu
 
 from google.protobuf import text_format

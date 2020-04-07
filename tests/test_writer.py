@@ -32,7 +32,7 @@ import pyarrow as pa
 from artemis.io.writer import BufferOutputWriter
 from artemis.core.tree import Element
 from artemis.core.gate import ArtemisGateSvc
-from artemis.meta.cronus import BaseObjectStore
+from cronus.core.cronus import BaseObjectStore
 from artemis_format.pymodels.table_pb2 import Table
 from artemis_format.pymodels.cronus_pb2 import TableObjectInfo
 

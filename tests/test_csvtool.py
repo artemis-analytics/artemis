@@ -32,7 +32,7 @@ from google.protobuf import text_format
 from artemis.tools.csvtool import CsvTool
 from artemis.core.tool import ToolBase
 from artemis.generators.csvgen import GenCsvLikeArrow
-from artemis.meta.cronus import BaseObjectStore
+from cronus.core.cronus import BaseObjectStore
 from artemis_format.pymodels.table_pb2 import Table
 from artemis_format.pymodels.cronus_pb2 import TableObjectInfo
 

@@ -39,7 +39,7 @@ from artemis.core.gate import ArtemisGateSvc
 from artemis.core.datastore import ArrowSets
 from artemis.generators.csvgen import GenCsvLikeArrow
 from artemis.configurables.factories import MenuFactory, JobConfigFactory
-from artemis.meta.cronus import BaseObjectStore
+from cronus.core.cronus import BaseObjectStore
 from artemis_format.pymodels.artemis_pb2 import JobInfo as JobInfo_pb
 from artemis_format.pymodels.cronus_pb2 import MenuObjectInfo, ConfigObjectInfo
 from artemis_format.pymodels.cronus_pb2 import (
