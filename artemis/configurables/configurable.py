@@ -30,7 +30,7 @@ from artemis_base.utils.decorators import iterable
 from artemis.io.writer import BufferOutputWriter
 from artemis.configurables.factories import GeneratorFactory
 from artemis.configurables.factories import FileHandlerFactory
-from artemis.tools.tdigesttool import TDigestTool
+from artemis_tools.tools.tdigesttool import TDigestTool
 from artemis.meta.Directed_Graph import GraphMenu
 
 

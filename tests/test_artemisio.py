@@ -291,6 +291,101 @@ class ArtemisTestCase(unittest.TestCase):
             store.save_store()
             print(store[dataset.uuid].dataset)
 
+    @unittest.skipUnless(
+        module_exists("artemis.tools.fwftool", "FwfTool"), "mftool not installed"
+    )
+    def test_mfartemis(self):
+
+        # IO tests are no longer required
+        # generated data is written out in batches
+        with tempfile.TemporaryDirectory() as dirpath:
+            mb = MenuFactory("legacygen")
+            msgmenu = mb.build()
+            store = BaseObjectStore(dirpath, "artemis")
+            menuinfo = MenuObjectInfo()
+            menuinfo.created.GetCurrentTime()
+
+            g_dataset = store.register_dataset()
+            job_id = store.new_job(g_dataset.uuid)
+            store.new_partition(g_dataset.uuid, "generator")
+            # define the schema for the data
+            # g_table = Table()
+            # g_table.name = 'generator'
+            # g_table.uuid = str(uuid.uuid4())
+            # g_table.info.schema.name = 'csv'
+            # g_table.info.schema.uuid = str(uuid.uuid4())
+
+            intconf0 = {"utype": "int", "length": 10, "min_val": 0, "max_val": 10}
+            intuconf0 = {"utype": "uint", "length": 6, "min_val": 0, "max_val": 10}
+            strconf0 = {"utype": "str", "length": 4}
+            # Schema definition.
+            # Size of chunk to create.
+            # Create a generator objected, properly configured.
+
+            config = JobConfigFactory(
+                "legacygen",
+                msgmenu,
+                generator_type="legacy",
+                nbatches=1,
+                num_rows=10000,
+                header="header",
+                header_offset=20,
+                footer="footer",
+                footer_size=20,
+                delimiter="\r\n",
+                nrecords_per_block=4095,
+                max_file_size=1073741824,
+                write_csv=True,
+                output_repo=dirpath,
+                skip_rows=0,
+                column_names=["column_a", "column_b", "column_c"],
+                field_widths=[10, 6, 4],
+            )
+            #  Passes the schema for new data layout
+            config.configure(column_a=intconf0, column_b=intuconf0, column_c=strconf0)
+
+            config.add_algos(mb.algos)
+
+            configinfo = ConfigObjectInfo()
+            configinfo.created.GetCurrentTime()
+
+            menu_uuid = store.register_content(msgmenu, menuinfo).uuid
+            config_uuid = store.register_content(config._msg, configinfo).uuid
+
+            dataset = store.register_dataset(menu_id=menu_uuid, config_id=config_uuid)
+            job_id = store.new_job(dataset.uuid)
+            store.save_store()
+            # msg = config.job_config  # Or retrieve from a DB
+
+            #  For each subjob, requires a new JobInfo
+            #  Driver application generates new JobInfo object per input datum
+            #  All input metadata resides in memory
+            #  Define menu and config
+            #  Retrieve menu and config from either existing message or from DB
+            #  Create new JobInfo message
+            #  Set job properties
+            #  Create instance of Artemis
+            #  Update input and output repo properties before instance creatio
+            #  Distribute processes
+            #  Collect output messages
+            #  Serialize and store
+
+            msg = config.job_config
+            job = JobInfo_pb()
+            job.name = "arrowproto"
+            job.store_id = store.store_uuid
+            job.store_name = store.store_name
+            job.store_path = dirpath
+            job.menu_id = menu_uuid
+            job.config_id = config_uuid
+            job.dataset_id = dataset.uuid
+            job.parentset_id = g_dataset.uuid
+            job.job_id = str(job_id)
+            bow = Artemis(job, loglevel="INFO")
+            bow.control()
+            bow.gate.store.save_store()
+            store = BaseObjectStore(dirpath, store.store_name, store_uuid=job.store_id)
+
 
 if __name__ == "__main__":
     test = ArtemisTestCase()
