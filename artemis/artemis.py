@@ -34,6 +34,7 @@ import artemis_format.pymodels.artemis_pb2 as artemis_pb2
 from artemis_base.utils.logger import Logger
 from artemis_base.core.properties import Properties
 from artemis_base.utils.decorators import timethis
+from artemis_base.utils.utils import bytes_to_mb, range_positive
 
 # from artemis.exceptions import NullDataError
 
@@ -45,10 +46,6 @@ from artemis.core.algo import AlgoBase
 
 # IO
 from artemis.io.collector import Collector
-
-
-# Utils
-from artemis.utils.utils import bytes_to_mb, range_positive
 
 
 class ArtemisFactory:

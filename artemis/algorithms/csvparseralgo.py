@@ -22,9 +22,9 @@ Algorithm that parsers and converts a bytes object of csv data to Arrow record b
 format. Calls a tool that executes the pyarrow csv reader.
 """
 from artemis_base.utils.decorators import timethis
+from artemis_base.utils.utils import range_positive
 
 from artemis.core.algo import AlgoBase
-from artemis.utils.utils import range_positive
 
 
 class CsvParserAlgo(AlgoBase):
