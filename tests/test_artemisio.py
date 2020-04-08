@@ -56,6 +56,15 @@ logging.getLogger().setLevel(logging.INFO)
 
 # Improve temporary outputs and context handling
 # stackoverflow 3223604
+def module_exists(module_name, object_name):
+    try:
+        __import__(module_name, fromlist=[object_name])
+    except ImportError:
+        print("fails to import %s" % object_name)
+        return False
+    else:
+        print("imported module %s" % object_name)
+        return True
 
 
 class ArtemisTestCase(unittest.TestCase):
