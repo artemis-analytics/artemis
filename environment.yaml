@@ -47,3 +47,7 @@ dependencies:
     - dask
     - plotly
     - pyfwfr
+    - artemis-base
+    - cronus
+    - dolos
+    - artemis-tools
