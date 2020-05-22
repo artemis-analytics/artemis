@@ -51,3 +51,5 @@ dependencies:
     - cronus
     - dolos
     - artemis-tools
+    - anaconda-client
+    - conda-build
